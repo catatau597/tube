@@ -45,6 +45,10 @@
             return;
           }
 
+          if (body.mustChangePassword) {
+            window.location.href = '/setup';
+            return;
+          }
           window.location.href = '/';
         } catch {
           output.textContent = 'Erro de conexão com o servidor';

@@ -10,8 +10,66 @@
     <main class="auth-page">
       <section class="auth-card">
       <h1 class="auth-title">Setup inicial</h1>
-      <p>Use o usuário padrão <strong>admin</strong> e altere a senha via endpoint <strong>/api/auth/password</strong>.</p>
+      <p>Para continuar, troque a senha do usuário <strong>admin</strong>.</p>
+      <form id="setup-form" class="auth-form">
+        <input name="current" type="password" placeholder="Senha atual" required />
+        <input name="next" type="password" placeholder="Nova senha" required minlength="8" />
+        <button id="setup-btn" type="submit">Salvar nova senha</button>
+      </form>
+      <div id="output" class="auth-msg"></div>
       </section>
     </main>
+    <script>
+      async function ensureSession() {
+        const response = await fetch('/api/auth/me', { credentials: 'include' });
+        if (!response.ok) {
+          window.location.href = '/login';
+          return null;
+        }
+        const me = await response.json();
+        if (!me.mustChangePassword) {
+          window.location.href = '/';
+          return null;
+        }
+        return me;
+      }
+
+      ensureSession();
+
+      document.getElementById('setup-form').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const output = document.getElementById('output');
+        const button = document.getElementById('setup-btn');
+        output.textContent = '';
+        button.disabled = true;
+
+        const form = new FormData(event.target);
+        const payload = {
+          current: form.get('current'),
+          new: form.get('next'),
+        };
+
+        try {
+          const response = await fetch('/api/auth/password', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(payload),
+          });
+
+          const body = await response.json().catch(() => ({}));
+          if (!response.ok) {
+            output.textContent = body.error || 'Não foi possível salvar a nova senha';
+            return;
+          }
+
+          window.location.href = '/';
+        } catch {
+          output.textContent = 'Erro de conexão com o servidor';
+        } finally {
+          button.disabled = false;
+        }
+      });
+    </script>
   </body>
 </html>

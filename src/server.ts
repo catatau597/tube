@@ -76,13 +76,21 @@ app.get('/login', (_request, response) => {
   response.sendFile(path.join(publicDir, 'login.html'));
 });
 
-app.get('/setup', (_request, response) => {
+app.get('/setup', (request, response) => {
+  if (!request.session.user) {
+    response.redirect('/login');
+    return;
+  }
   response.sendFile(path.join(publicDir, 'setup.html'));
 });
 
 app.get('/', (request, response) => {
   if (!request.session.user) {
     response.redirect('/login');
+    return;
+  }
+  if (request.session.user.mustChangePassword) {
+    response.redirect('/setup');
     return;
   }
   response.sendFile(path.join(publicDir, 'index.html'));
@@ -95,6 +103,9 @@ app.use('/api', createPlayerRouter());
 app.use('/api', (request, response, next) => {
   if (
     request.path.startsWith('/auth/login') ||
+    request.path.startsWith('/auth/password') ||
+    request.path.startsWith('/auth/me') ||
+    request.path.startsWith('/auth/logout') ||
     request.path.startsWith('/stream/') ||
     request.path.startsWith('/thumbnail/')
   ) {
@@ -102,6 +113,14 @@ app.use('/api', (request, response, next) => {
     return;
   }
   requireAuth(request, response, next);
+});
+
+app.use('/api', (request, response, next) => {
+  if (request.session.user?.mustChangePassword) {
+    response.status(403).json({ error: 'Password change required', code: 'PASSWORD_CHANGE_REQUIRED' });
+    return;
+  }
+  next();
 });
 
 app.use('/api/channels', createChannelsRouter(youtubeApi, scheduler));
