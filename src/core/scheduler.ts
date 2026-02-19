@@ -82,6 +82,36 @@ export class Scheduler {
     await this.safeTick();
   }
 
+  /**
+   * Sincroniza apenas um canal específico pelo channelId.
+   */
+  async syncChannel(channelId: string): Promise<void> {
+    const channels = this.state.getActiveChannels().filter((ch) => ch.channelId === channelId);
+    if (channels.length === 0) {
+      logger.warn(`[Scheduler] syncChannel: canal ${channelId} não encontrado ou não está ativo.`);
+      return;
+    }
+
+    const channel = channels[0];
+    logger.info(`[Scheduler] Sincronização individual do canal ${channelId} (${channel.title}).`);
+
+    try {
+      const streams = [];
+      if (this.config.usePlaylistItems && channel.uploadsPlaylistId) {
+        streams.push(...(await this.api.fetchByPlaylistItems(channel.uploadsPlaylistId)));
+      } else {
+        streams.push(...(await this.api.fetchBySearch(channel.channelId)));
+      }
+      this.state.updateStreams(streams);
+      this.state.saveEpgTexts(this.config.localTimezone);
+      this.state.mirrorStreamsToDb();
+      this.state.saveToDisk();
+      logger.info(`[Scheduler] Sincronização individual concluída: ${streams.length} streams.`);
+    } catch (error) {
+      logger.error(`[Scheduler] Erro na sincronização individual do canal ${channelId}: ${String(error)}`);
+    }
+  }
+
   getStatus(): object {
     return {
       running: !!this.tickInterval,

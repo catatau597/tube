@@ -76,3 +76,8 @@
 - ✅ Erro: submenus de Configurações apareciam, mas carregavam conteúdo genérico (páginas não correspondentes).
   - Causa: `settings.js` reutilizava o mesmo formulário para todas as subrotas, mudando apenas título/subtítulo.
   - Solução: renderização por seção com formulários e ações específicas para `api`, `scheduler`, `content`, `player` e `tech`, alinhadas ao documento de implantação.
+
+
+
+
+## Revisão Cloude 4.6

@@ -19,9 +19,77 @@ export interface ResolvedChannel {
   uploadsPlaylistId: string;
 }
 
+/**
+ * Gerencia rotação de API keys com rastreamento de quota esgotada
+ * e reset automático à meia-noite UTC.
+ */
+class ApiKeyRotator {
+  private keys: string[] = [];
+  private currentIndex = 0;
+  private exhausted: Set<number> = new Set();
+  private midnightTimer: ReturnType<typeof setTimeout> | null = null;
+
+  constructor() {
+    this._scheduleMidnightReset();
+  }
+
+  setKeys(keys: string[]): void {
+    this.keys = keys;
+    this.currentIndex = 0;
+    this.exhausted.clear();
+  }
+
+  getKey(): string {
+    if (this.keys.length === 0) {
+      throw new Error('YOUTUBE_API_KEY não configurada no banco.');
+    }
+
+    // Tenta encontrar uma key não esgotada
+    for (let i = 0; i < this.keys.length; i++) {
+      const idx = (this.currentIndex + i) % this.keys.length;
+      if (!this.exhausted.has(idx)) {
+        this.currentIndex = (idx + 1) % this.keys.length;
+        return this.keys[idx];
+      }
+    }
+
+    throw new Error('Todas as API keys estão esgotadas. Reset à meia-noite UTC.');
+  }
+
+  markCurrentExhausted(): void {
+    const idx = (this.currentIndex - 1 + this.keys.length) % this.keys.length;
+    this.exhausted.add(idx);
+    logger.warn(`[ApiKeyRotator] Key #${idx} marcada como esgotada (${this.exhausted.size}/${this.keys.length}).`);
+  }
+
+  get allExhausted(): boolean {
+    return this.keys.length > 0 && this.exhausted.size >= this.keys.length;
+  }
+
+  private _scheduleMidnightReset(): void {
+    if (this.midnightTimer) clearTimeout(this.midnightTimer);
+
+    const now = new Date();
+    const midnight = new Date(Date.UTC(
+      now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0
+    ));
+    const msUntilMidnight = midnight.getTime() - now.getTime();
+
+    this.midnightTimer = setTimeout(() => {
+      this.exhausted.clear();
+      logger.info('[ApiKeyRotator] Reset de keys à meia-noite UTC.');
+      this._scheduleMidnightReset();
+    }, msUntilMidnight);
+
+    // Não impedir o processo de fechar por causa do timer
+    if (this.midnightTimer.unref) this.midnightTimer.unref();
+  }
+}
+
 export class YouTubeApi {
-  private apiKeys: string[] = [];
-  private apiKeyIndex = 0;
+  private rotator = new ApiKeyRotator();
+  private static readonly MAX_RETRIES = 3;
+  private static readonly MAX_PAGES = 40;
 
   constructor() {
     this.reloadKeys();
@@ -32,31 +100,86 @@ export class YouTubeApi {
     });
   }
 
+  /**
+   * Wrapper que detecta 403 quotaExceeded e faz retry com outra key.
+   */
+  private async _call<T>(fn: (yt: youtube_v3.Youtube) => Promise<T>): Promise<T> {
+    let lastError: unknown;
+
+    for (let attempt = 0; attempt < YouTubeApi.MAX_RETRIES; attempt++) {
+      try {
+        const key = this.rotator.getKey();
+        const yt = google.youtube({ version: 'v3', auth: key });
+        return await fn(yt);
+      } catch (error: unknown) {
+        lastError = error;
+        const isQuotaError = this.isQuotaExceeded(error);
+        if (isQuotaError) {
+          this.rotator.markCurrentExhausted();
+          if (this.rotator.allExhausted) {
+            throw new Error('Todas as API keys estão com quota esgotada.');
+          }
+          logger.warn(`[YouTubeApi] Quota esgotada, tentando próxima key (tentativa ${attempt + 1}/${YouTubeApi.MAX_RETRIES}).`);
+          continue;
+        }
+        throw error;
+      }
+    }
+
+    throw lastError;
+  }
+
+  private isQuotaExceeded(error: unknown): boolean {
+    if (error && typeof error === 'object') {
+      const err = error as Record<string, unknown>;
+      if (err.code === 403 || err.status === 403) return true;
+      const message = String(err.message ?? '');
+      if (message.includes('quotaExceeded') || message.includes('dailyLimitExceeded')) return true;
+      // googleapis wraps errors
+      const response = err.response as Record<string, unknown> | undefined;
+      if (response?.status === 403) return true;
+    }
+    return false;
+  }
+
   async fetchByPlaylistItems(playlistId: string, publishedAfter?: string): Promise<Stream[]> {
     if (!playlistId) return [];
 
     const videoIds = new Set<string>();
     let nextPageToken: string | undefined;
+    let pageCount = 0;
+    let shouldStop = false;
 
     do {
-      const response = await this.youtube().playlistItems.list({
-        part: ['contentDetails', 'snippet'],
-        playlistId,
-        maxResults: 50,
-        pageToken: nextPageToken,
-      });
+      const response = await this._call((yt) =>
+        yt.playlistItems.list({
+          part: ['contentDetails', 'snippet'],
+          playlistId,
+          maxResults: 50,
+          pageToken: nextPageToken,
+        })
+      );
 
       for (const item of response.data.items ?? []) {
         const publishedAt = item.snippet?.publishedAt;
-        if (publishedAfter && publishedAt && new Date(publishedAt) < new Date(publishedAfter)) {
-          continue;
+        if (publishedAfter && publishedAt && new Date(publishedAt) <= new Date(publishedAfter)) {
+          // Playlist em ordem cronológica decrescente — parada antecipada
+          shouldStop = true;
+          break;
         }
         const videoId = item.contentDetails?.videoId;
         if (videoId) videoIds.add(videoId);
       }
 
+      if (shouldStop) break;
+
       nextPageToken = response.data.nextPageToken ?? undefined;
-    } while (nextPageToken);
+      pageCount++;
+    } while (nextPageToken && pageCount < YouTubeApi.MAX_PAGES);
+
+    if (pageCount >= YouTubeApi.MAX_PAGES) {
+      logger.warn(`[YouTubeApi] fetchByPlaylistItems atingiu limite de ${YouTubeApi.MAX_PAGES} páginas.`);
+    }
 
     return this.fetchStreamsByIds(Array.from(videoIds));
   }
@@ -67,16 +190,17 @@ export class YouTubeApi {
     const ids = new Set<string>();
     let nextPageToken: string | undefined;
     do {
-      const response = await this.youtube().search.list({
-        part: ['snippet'],
-        channelId,
-        maxResults: 50,
-        order: 'date',
-        type: ['video'],
-        eventType: 'completed',
-        publishedAfter,
-        pageToken: nextPageToken,
-      });
+      const response = await this._call((yt) =>
+        yt.search.list({
+          part: ['snippet'],
+          channelId,
+          maxResults: 50,
+          order: 'date',
+          type: ['video'],
+          publishedAfter,
+          pageToken: nextPageToken,
+        })
+      );
       for (const item of response.data.items ?? []) {
         const id = item.id?.videoId;
         if (id) ids.add(id);
@@ -92,10 +216,12 @@ export class YouTubeApi {
 
     const output: Stream[] = [];
     for (const batch of chunkArray(videoIds, 50)) {
-      const response = await this.youtube().videos.list({
-        part: ['snippet', 'contentDetails', 'liveStreamingDetails'],
-        id: batch,
-      });
+      const response = await this._call((yt) =>
+        yt.videos.list({
+          part: ['snippet', 'contentDetails', 'liveStreamingDetails'],
+          id: batch,
+        })
+      );
       for (const item of response.data.items ?? []) {
         const formatted = this.formatStreamData(item);
         if (formatted) output.push(formatted);
@@ -110,12 +236,14 @@ export class YouTubeApi {
     if (!trimmed) return null;
 
     if (trimmed.startsWith('@')) {
-      const response = await this.youtube().search.list({
-        part: ['snippet'],
-        q: trimmed,
-        type: ['channel'],
-        maxResults: 1,
-      });
+      const response = await this._call((yt) =>
+        yt.search.list({
+          part: ['snippet'],
+          q: trimmed,
+          type: ['channel'],
+          maxResults: 1,
+        })
+      );
       const first = response.data.items?.[0];
       const channelId = first?.id?.channelId;
       if (!channelId) return null;
@@ -126,11 +254,13 @@ export class YouTubeApi {
   }
 
   private async resolveChannelById(channelId: string, handle: string | null): Promise<ResolvedChannel | null> {
-    const response = await this.youtube().channels.list({
-      part: ['snippet', 'contentDetails'],
-      id: [channelId],
-      maxResults: 1,
-    });
+    const response = await this._call((yt) =>
+      yt.channels.list({
+        part: ['snippet', 'contentDetails'],
+        id: [channelId],
+        maxResults: 1,
+      })
+    );
 
     const item = response.data.items?.[0];
     if (!item) return null;
@@ -178,25 +308,12 @@ export class YouTubeApi {
 
   private reloadKeys(): void {
     const raw = getConfig('YOUTUBE_API_KEY');
-    this.apiKeys = raw
+    const keys = raw
       .split(',')
       .map((value) => value.trim())
       .filter(Boolean);
 
-    this.apiKeyIndex = 0;
-    logger.info(`[YouTubeApi] Lista de chaves atualizada (${this.apiKeys.length} chave(s)).`);
-  }
-
-  private nextApiKey(): string {
-    if (this.apiKeys.length === 0) {
-      throw new Error('YOUTUBE_API_KEY não configurada no banco.');
-    }
-    const key = this.apiKeys[this.apiKeyIndex % this.apiKeys.length];
-    this.apiKeyIndex += 1;
-    return key;
-  }
-
-  private youtube(): youtube_v3.Youtube {
-    return google.youtube({ version: 'v3', auth: this.nextApiKey() });
+    this.rotator.setKeys(keys);
+    logger.info(`[YouTubeApi] Lista de chaves atualizada (${keys.length} chave(s)).`);
   }
 }

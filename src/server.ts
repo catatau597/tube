@@ -7,7 +7,6 @@ import { WebSocketServer } from 'ws';
 import { initDb } from './core/db';
 import {
   configEvents,
-  getAllConfig,
   getConfig,
   getConfigBool,
   getConfigNumber,
@@ -129,7 +128,7 @@ app.use('/api', (request, response, next) => {
 
 app.use('/api/channels', createChannelsRouter(youtubeApi, scheduler));
 app.use('/api/streams', createStreamsRouter());
-app.use('/api/config', createConfigRouter(getAllConfig()));
+app.use('/api/config', createConfigRouter());
 app.use('/api/scheduler', createSchedulerRouter(scheduler));
 app.use('/api/credentials', createCredentialsRouter());
 app.use('/api/logs', createLogsRouter());

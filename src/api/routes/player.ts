@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { SmartPlayer } from '../../player/smart-player';
+import { getConfigNumber } from '../../core/config-manager';
 
 export function createPlayerRouter(): Router {
   const router = Router();
@@ -23,7 +24,8 @@ export function createPlayerRouter(): Router {
         return;
       }
 
-      response.setHeader('Cache-Control', 'public, max-age=3600');
+      const cacheHours = getConfigNumber('PROXY_THUMBNAIL_CACHE_HOURS', 24);
+      response.setHeader('Cache-Control', `public, max-age=${cacheHours * 3600}`);
       response.setHeader('Content-Type', upstream.headers.get('content-type') ?? 'image/jpeg');
       const stream = upstream.body as unknown as NodeJS.ReadableStream;
       stream.pipe(response);

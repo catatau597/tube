@@ -65,7 +65,7 @@ export class StateManager {
   getActiveChannels(): Channel[] {
     const rows = getDb()
       .prepare(
-        'SELECT channel_id, handle, title, COALESCE(thumbnail_url,\'\') as thumbnail_url, COALESCE(uploads_playlist_id,\'\') as uploads_playlist_id, status FROM channels WHERE status = \"active\"',
+        "SELECT channel_id, handle, title, COALESCE(thumbnail_url,'') as thumbnail_url, COALESCE(uploads_playlist_id,'') as uploads_playlist_id, status FROM channels WHERE status = 'active'",
       )
       .all() as Array<Record<string, unknown>>;
 
@@ -117,12 +117,19 @@ export class StateManager {
       if (!incoming.videoId || !incoming.channelId) continue;
 
       if (filterByCategory && incoming.categoryId && !allowedCategoryIds.has(incoming.categoryId)) {
+        // Regra 1: se já existe no cache, REMOVE (mudou de categoria)
+        const existingForCategory = this.streams.get(incoming.videoId);
+        if (existingForCategory) {
+          this.streams.delete(incoming.videoId);
+          logger.debug(`[StateManager] Stream ${incoming.videoId} removido: categoria ${incoming.categoryId} não permitida.`);
+        }
         continue;
       }
 
       const existing = this.streams.get(incoming.videoId);
       if (!existing) {
-        if (!incoming.status) continue;
+        // Regra 2: não importar VODs históricos (status 'none' ou ausente)
+        if (!incoming.status || incoming.status === 'none') continue;
         this.streams.set(incoming.videoId, {
           videoId: incoming.videoId,
           channelId: incoming.channelId,
@@ -277,6 +284,9 @@ export class StateManager {
     const staleCutoff = new Date(now.getTime() - Math.max(staleHours * 2, mainHours * 2) * 3600_000);
     const recordedCutoff = new Date(now.getTime() - recordedRetentionDays * 24 * 3600_000);
 
+    // Coletar IDs para deletar em um Set primeiro (evita mutação durante iteração)
+    const toDelete = new Set<string>();
+
     const byChannel: Record<string, Stream[]> = {};
     for (const stream of this.streams.values()) {
       if (stream.status === 'none') {
@@ -287,10 +297,10 @@ export class StateManager {
 
     for (const stream of this.streams.values()) {
       if ((stream.status === 'live' || stream.status === 'upcoming') && stream.fetchTime < staleCutoff) {
-        this.streams.delete(stream.videoId);
+        toDelete.add(stream.videoId);
       }
       if (!keepRecorded && stream.status === 'none') {
-        this.streams.delete(stream.videoId);
+        toDelete.add(stream.videoId);
       }
     }
 
@@ -298,12 +308,16 @@ export class StateManager {
       for (const entries of Object.values(byChannel)) {
         entries.sort((a, b) => (b.actualEnd?.getTime() ?? 0) - (a.actualEnd?.getTime() ?? 0));
         const overLimit = entries.slice(maxRecordedPerChannel);
-        for (const stream of overLimit) this.streams.delete(stream.videoId);
+        for (const stream of overLimit) toDelete.add(stream.videoId);
         for (const stream of entries) {
           const pivot = stream.actualEnd ?? stream.lastSeen;
-          if (pivot < recordedCutoff) this.streams.delete(stream.videoId);
+          if (pivot < recordedCutoff) toDelete.add(stream.videoId);
         }
       }
+    }
+
+    for (const id of toDelete) {
+      this.streams.delete(id);
     }
   }
 

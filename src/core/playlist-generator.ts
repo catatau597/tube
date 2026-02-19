@@ -11,6 +11,12 @@ function parseMap(raw: string): Record<string, string> {
   return output;
 }
 
+const PLACEHOLDER_TITLES: Record<string, string> = {
+  live: 'NO MOMENTO SEM TRANSMISSÃO AO VIVO',
+  upcoming: 'SEM EVENTOS AGENDADOS',
+  vod: 'SEM VÍDEOS GRAVADOS',
+};
+
 export class PlaylistGenerator {
   generateM3U(
     type: 'live' | 'upcoming' | 'vod',
@@ -21,21 +27,39 @@ export class PlaylistGenerator {
     const cfg = getAllConfig();
     const lines = ['#EXTM3U'];
     const filtered = this.filterByType(type, streams, cfg);
+    const categoryMap = parseMap(cfg.CATEGORY_MAPPINGS || '');
+    const useInvisible = cfg.USE_INVISIBLE_PLACEHOLDER === 'true';
+    const placeholderImage = cfg.PLACEHOLDER_IMAGE_URL || '';
+
+    if (filtered.length === 0) {
+      // Playlist vazia — adicionar placeholder
+      const placeholderTitle = PLACEHOLDER_TITLES[type] || 'SEM CONTEÚDO';
+      const logo = placeholderImage;
+
+      if (useInvisible && logo) {
+        // Placeholder invisível: URL comentada para ser ignorada pelo player
+        lines.push(`#EXTINF:-1 tvg-id="placeholder" tvg-name="${placeholderTitle}" tvg-logo="${logo}" group-title="Placeholder",${placeholderTitle}`);
+        lines.push(`#${logo}`);
+      } else if (logo) {
+        lines.push(`#EXTINF:-1 tvg-id="placeholder" tvg-name="${placeholderTitle}" tvg-logo="${logo}" group-title="Placeholder",${placeholderTitle}`);
+        lines.push(logo);
+      }
+
+      return lines.join('\n');
+    }
 
     for (const stream of filtered) {
       const title = this.displayTitle(stream, cfg);
-      const logo = stream.thumbnailUrl || cfg.PLACEHOLDER_IMAGE_URL || '';
+      const logo = stream.thumbnailUrl || placeholderImage;
+      const groupTitle = this.resolveGroupTitle(stream.categoryId, categoryMap);
       const url =
         mode === 'direct'
           ? stream.watchUrl
           : `${baseUrl}/api/stream/${encodeURIComponent(stream.videoId)}`;
 
       lines.push(
-        `#EXTINF:-1 tvg-id="${stream.videoId}" tvg-name="${title}" tvg-logo="${logo}" group-title="YouTube",${title}`,
+        `#EXTINF:-1 tvg-id="${stream.videoId}" tvg-name="${title}" tvg-logo="${logo}" group-title="${groupTitle}",${title}`,
       );
-      if (cfg.USE_INVISIBLE_PLACEHOLDER === 'true' && logo) {
-        lines.push(`# ${logo}`);
-      }
       lines.push(url);
     }
 
@@ -43,6 +67,8 @@ export class PlaylistGenerator {
   }
 
   generateEPG(streams: Stream[]): string {
+    const cfg = getAllConfig();
+    const categoryMap = parseMap(cfg.CATEGORY_MAPPINGS || '');
     const lines: string[] = ['<?xml version="1.0" encoding="UTF-8"?>', '<tv>'];
     const sorted = [...streams].sort(
       (a, b) => (a.scheduledStart?.getTime() ?? a.fetchTime.getTime()) - (b.scheduledStart?.getTime() ?? b.fetchTime.getTime()),
@@ -60,16 +86,24 @@ export class PlaylistGenerator {
     for (const stream of sorted) {
       const start = stream.actualStart ?? stream.scheduledStart ?? stream.fetchTime;
       const stop = stream.actualEnd ?? new Date(start.getTime() + 2 * 3600_000);
+      const category = this.resolveGroupTitle(stream.categoryId, categoryMap);
       lines.push(
         `  <programme channel="${stream.channelId}" start="${this.xmltvDate(start)}" stop="${this.xmltvDate(stop)}">`,
       );
       lines.push(`    <title>${this.xml(stream.titleOriginal)}</title>`);
       lines.push(`    <desc>${this.xml(stream.description || stream.titleOriginal)}</desc>`);
+      lines.push(`    <category>${this.xml(category)}</category>`);
       lines.push('  </programme>');
     }
 
     lines.push('</tv>');
     return lines.join('\n');
+  }
+
+  private resolveGroupTitle(categoryId: string | null, categoryMap: Record<string, string>): string {
+    if (!categoryId) return 'YouTube';
+    // categoryMap pode ter mapeamentos por ID ("17" → "ESPORTES") ou por nome
+    return categoryMap[categoryId] || 'YouTube';
   }
 
   private filterByType(type: 'live' | 'upcoming' | 'vod', streams: Stream[], cfg: Record<string, string>): Stream[] {

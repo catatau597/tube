@@ -166,17 +166,17 @@ export function createChannelsRouter(
       return;
     }
 
-    const exists = getDb()
-      .prepare("SELECT id FROM channels WHERE id = ?")
-      .get(id) as { id: number } | undefined;
-    if (!exists) {
+    const row = getDb()
+      .prepare("SELECT id, channel_id FROM channels WHERE id = ?")
+      .get(id) as { id: number; channel_id: string } | undefined;
+    if (!row) {
       response.status(404).json({ error: "Canal não encontrado" });
       return;
     }
 
-    await scheduler.triggerNow();
+    await scheduler.syncChannel(row.channel_id);
     logger.info(
-      `[API][channels] Sincronização manual solicitada para canal id=${id}`,
+      `[API][channels] Sincronização individual solicitada para canal id=${id} (${row.channel_id})`,
     );
     response.json({ ok: true });
   });

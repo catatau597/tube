@@ -41,11 +41,11 @@ export class WebSocketLogHub {
   }
 }
 
-class WsTransport extends transports.Stream {
+class WsTransport extends transports.Console {
   private hub: WebSocketLogHub;
 
   constructor(hub: WebSocketLogHub) {
-    super({ stream: process.stdout });
+    super({ silent: true });
     this.hub = hub;
   }
 

@@ -47,6 +47,10 @@ const DEFAULT_SETTINGS: Record<string, string> = {
   LOG_LEVEL: 'INFO',
 };
 
+export function getDefaultSettings(): Record<string, string> {
+  return { ...DEFAULT_SETTINGS };
+}
+
 function parseSimpleEnvFile(filePath: string): Record<string, string> {
   if (!fs.existsSync(filePath)) return {};
   const content = fs.readFileSync(filePath, 'utf-8');

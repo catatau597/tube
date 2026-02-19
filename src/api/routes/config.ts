@@ -4,12 +4,13 @@ import {
   patchConfig,
   resetConfig,
 } from "../../core/config-manager";
+import { getDefaultSettings } from "../../core/db";
 import { logger } from "../../core/logger";
 
 /**
  * Cria o roteador HTTP para leitura e manutenção das configurações do sistema.
  */
-export function createConfigRouter(defaults: Record<string, string>): Router {
+export function createConfigRouter(): Router {
   const router = Router();
 
   router.get("/", (_request, response) => {
@@ -52,7 +53,7 @@ export function createConfigRouter(defaults: Record<string, string>): Router {
   });
 
   router.post("/reset", (_request, response) => {
-    resetConfig(defaults);
+    resetConfig(getDefaultSettings());
     logger.warn("[API][config] Reset de configurações para valores padrão.");
     response.json({ ok: true });
   });
