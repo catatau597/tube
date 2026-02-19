@@ -32,6 +32,7 @@ initDb();
 const app = express();
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
+const publicDir = path.join(process.cwd(), 'public');
 
 const state = new StateManager('/data');
 const cacheLoaded = state.loadFromDisk();
@@ -69,6 +70,22 @@ app.use(
 
 app.get('/health', (_request, response) => {
   response.json({ status: 'ok', version: '1.0.0' });
+});
+
+app.get('/login', (_request, response) => {
+  response.sendFile(path.join(publicDir, 'login.html'));
+});
+
+app.get('/setup', (_request, response) => {
+  response.sendFile(path.join(publicDir, 'setup.html'));
+});
+
+app.get('/', (request, response) => {
+  if (!request.session.user) {
+    response.redirect('/login');
+    return;
+  }
+  response.sendFile(path.join(publicDir, 'index.html'));
 });
 
 app.use('/api/auth', createAuthRouter());
@@ -116,7 +133,7 @@ app.use((request, response, next) => {
   next();
 });
 
-app.use(express.static(path.join(process.cwd(), 'public')));
+app.use(express.static(publicDir));
 
 wss.on('connection', (socket, request) => {
   if (request.url !== '/ws/logs') {
