@@ -7,29 +7,50 @@
     <link rel="stylesheet" href="/css/style.css" />
   </head>
   <body>
-    <main>
-      <h1>Login</h1>
-      <form id="login-form">
-        <input name="username" placeholder="Usuário" required />
+    <main class="auth-page">
+      <section class="auth-card">
+      <h1 class="auth-title">Login</h1>
+      <form id="login-form" class="auth-form">
+        <input name="username" placeholder="Usuário" value="admin" required />
         <input name="password" placeholder="Senha" type="password" required />
-        <button type="submit">Entrar</button>
+        <button id="login-btn" type="submit">Entrar</button>
       </form>
-      <pre id="output"></pre>
+      <div id="output" class="auth-msg"></div>
+      </section>
     </main>
     <script>
       document.getElementById('login-form').addEventListener('submit', async (event) => {
         event.preventDefault();
+        const output = document.getElementById('output');
+        const button = document.getElementById('login-btn');
+        output.textContent = '';
+        button.disabled = true;
+
         const form = new FormData(event.target);
         const payload = {
           username: form.get('username'),
           password: form.get('password'),
         };
-        const response = await fetch('/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-        document.getElementById('output').textContent = await response.text();
+
+        try {
+          const response = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+
+          const body = await response.json().catch(() => ({}));
+          if (!response.ok) {
+            output.textContent = body.error || 'Falha no login';
+            return;
+          }
+
+          window.location.href = '/';
+        } catch {
+          output.textContent = 'Erro de conexão com o servidor';
+        } finally {
+          button.disabled = false;
+        }
       });
     </script>
   </body>
