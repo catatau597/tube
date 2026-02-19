@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login - TubeWranglerr</title>
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <main>
+      <h1>Login</h1>
+      <form id="login-form">
+        <input name="username" placeholder="Usuário" required />
+        <input name="password" placeholder="Senha" type="password" required />
+        <button type="submit">Entrar</button>
+      </form>
+      <pre id="output"></pre>
+    </main>
+    <script>
+      document.getElementById('login-form').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const form = new FormData(event.target);
+        const payload = {
+          username: form.get('username'),
+          password: form.get('password'),
+        };
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        document.getElementById('output').textContent = await response.text();
+      });
+    </script>
+  </body>
+</html>

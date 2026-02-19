@@ -1,0 +1,11 @@
+services:
+  tubewranglerr:
+    container_name: tubewranglerr
+    build: .
+    ports:
+      - "8888:8888"
+    env_file:
+      - .env
+    volumes:
+      - ./data:/data
+    restart: unless-stopped
