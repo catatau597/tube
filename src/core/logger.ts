@@ -3,8 +3,16 @@ import path from 'path';
 import { createLogger, format, transports, Logger } from 'winston';
 import { WebSocket } from 'ws';
 
+export interface LogEntry {
+  level: string;
+  message: string;
+  module?: string;
+  timestamp: string;
+}
+
 export class WebSocketLogHub {
   private clients = new Set<WebSocket>();
+  private recentLogs: LogEntry[] = [];
 
   addClient(client: WebSocket): void {
     this.clients.add(client);
@@ -16,11 +24,20 @@ export class WebSocketLogHub {
 
   broadcast(payload: object): void {
     const text = JSON.stringify(payload);
+    const entry = payload as LogEntry;
+    this.recentLogs.push(entry);
+    while (this.recentLogs.length > 1000) {
+      this.recentLogs.shift();
+    }
     for (const client of this.clients) {
       if (client.readyState === WebSocket.OPEN) {
         client.send(text);
       }
     }
+  }
+
+  getRecentLogs(limit = 200): LogEntry[] {
+    return this.recentLogs.slice(-limit);
   }
 }
 

@@ -16,6 +16,11 @@ const routes = {
 	'/streams': renderStreams,
 	'/playlists': renderPlaylists,
 	'/settings': renderSettings,
+	'/settings/api': renderSettings,
+	'/settings/scheduler': renderSettings,
+	'/settings/content': renderSettings,
+	'/settings/player': renderSettings,
+	'/settings/tech': renderSettings,
 	'/logs': renderLogs,
 };
 
@@ -44,15 +49,18 @@ async function updateHeaderBadges() {
 
 async function renderRoute() {
 	const hash = window.location.hash.replace('#', '') || '/';
-	const routeFn = routes[hash] || routes['/'];
+	const routeKey = Object.keys(routes).find((key) => key === hash) || '/';
+	const routeFn = routes[routeKey] || routes['/'];
 	document.querySelectorAll('[data-route]').forEach((a) => {
-		if (a.getAttribute('href') === `#${hash}` || (hash === '/' && a.getAttribute('href') === '#/')) {
+		const href = a.getAttribute('href')?.replace('#', '');
+		const isActive = href === hash || (href === '/settings' && hash.startsWith('/settings')) || (hash === '/' && href === '/');
+		if (isActive) {
 			a.classList.add('active');
 		} else {
 			a.classList.remove('active');
 		}
 	});
-	await routeFn(app, api);
+	await routeFn(app, api, hash);
 	await updateHeaderBadges();
 }
 

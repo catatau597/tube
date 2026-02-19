@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import fs from 'fs';
 import path from 'path';
+import { wsLogHub } from '../../core/logger';
 
 export function createLogsRouter(): Router {
   const router = Router();
@@ -8,10 +9,23 @@ export function createLogsRouter(): Router {
   router.get('/', (request, response) => {
     const limitRaw = Number(request.query.limit ?? 200);
     const limit = Number.isFinite(limitRaw) ? Math.max(1, Math.min(1000, limitRaw)) : 200;
+
+    const buffered = wsLogHub.getRecentLogs(limit);
+    if (buffered.length > 0) {
+      response.json(buffered);
+      return;
+    }
+
     const logPath = path.join('/data', 'tubewranglerr.log');
 
     if (!fs.existsSync(logPath)) {
-      response.json([]);
+      response.json([
+        {
+          level: 'info',
+          message: 'Log stream inicializado. Aguardando novas entradas.',
+          timestamp: new Date().toISOString(),
+        },
+      ]);
       return;
     }
 
@@ -21,7 +35,17 @@ export function createLogsRouter(): Router {
       message: line,
       timestamp: new Date().toISOString(),
     }));
-    response.json(tail);
+    response.json(
+      tail.length > 0
+        ? tail
+        : [
+            {
+              level: 'info',
+              message: 'Log stream inicializado. Aguardando novas entradas.',
+              timestamp: new Date().toISOString(),
+            },
+          ],
+    );
   });
 
   router.get('/meta', (_request, response) => {

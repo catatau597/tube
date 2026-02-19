@@ -47,6 +47,20 @@ body {
   border-radius: 0.45rem;
 }
 
+.sidebar nav .submenu {
+  display: flex;
+  flex-direction: column;
+  margin: 0.1rem 0 0.5rem 0;
+  padding-left: 0.7rem;
+  border-left: 1px solid #233047;
+}
+
+.sidebar nav .submenu a {
+  font-size: 0.88rem;
+  color: #9fb3d8;
+  padding: 0.4rem 0.6rem;
+}
+
 .sidebar nav a.active,
 .sidebar nav a:hover {
   background: #1f2937;

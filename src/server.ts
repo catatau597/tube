@@ -81,6 +81,10 @@ app.get('/setup', (request, response) => {
     response.redirect('/login');
     return;
   }
+  if (!request.session.user.mustChangePassword) {
+    response.redirect('/');
+    return;
+  }
   response.sendFile(path.join(publicDir, 'setup.html'));
 });
 
@@ -134,6 +138,9 @@ app.use((request, response, next) => {
   const isPublicPath =
     request.path === '/login' ||
     request.path === '/setup' ||
+    request.path === '/favicon.ico' ||
+    request.path.startsWith('/css/') ||
+    request.path.startsWith('/js/') ||
     request.path.startsWith('/health') ||
     request.path.endsWith('.m3u') ||
     request.path.endsWith('.xml') ||

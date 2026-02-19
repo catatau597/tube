@@ -43,27 +43,36 @@ export function createChannelsRouter(api: YouTubeApi, scheduler: Scheduler): Rou
       return;
     }
 
-    const resolved = await api.resolveChannelByInput(normalizedInput);
-    if (!resolved) {
-      response.status(400).json({ error: 'Canal não pôde ser validado na API do YouTube' });
-      return;
+    try {
+      const resolved = await api.resolveChannelByInput(normalizedInput);
+      if (!resolved) {
+        response.status(400).json({ error: 'Canal não pôde ser validado na API do YouTube' });
+        return;
+      }
+
+      getDb()
+        .prepare(
+          'INSERT OR REPLACE INTO channels (channel_id, handle, title, thumbnail_url, uploads_playlist_id, status, updated_at) VALUES (?, ?, ?, ?, ?, ?, datetime(\'now\'))',
+        )
+        .run(
+          resolved.channelId,
+          resolved.handle,
+          resolved.title,
+          resolved.thumbnailUrl,
+          resolved.uploadsPlaylistId,
+          'active',
+        );
+
+      await scheduler.triggerNow();
+      response.json({ ok: true, channel: resolved });
+    } catch (error) {
+      const message = String(error);
+      if (message.includes('YOUTUBE_API_KEY')) {
+        response.status(400).json({ error: 'YOUTUBE_API_KEY não configurada. Defina em Configurações.' });
+        return;
+      }
+      response.status(500).json({ error: 'Erro ao adicionar canal', details: message });
     }
-
-    getDb()
-      .prepare(
-        'INSERT OR REPLACE INTO channels (channel_id, handle, title, thumbnail_url, uploads_playlist_id, status, updated_at) VALUES (?, ?, ?, ?, ?, ?, datetime(\'now\'))',
-      )
-      .run(
-        resolved.channelId,
-        resolved.handle,
-        resolved.title,
-        resolved.thumbnailUrl,
-        resolved.uploadsPlaylistId,
-        'active',
-      );
-
-    await scheduler.triggerNow();
-    response.json({ ok: true, channel: resolved });
   });
 
   router.delete('/:id', (request, response) => {

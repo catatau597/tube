@@ -35,3 +35,32 @@
 - Inconsistência de rota entre UI e API (`/refresh` vs `/sync`) corrigida em `public/js/channels.js`.
 - Em validação automatizada, login paralelo ao `docker compose up` falhou por race de inicialização; revalidação sequencial confirmou funcionamento (`health/login/me/js/channels/logs` todos 200 com sessão).
 - Em execução imediatamente após restart do container, o teste de integração retornou `fetch failed` por startup race; rerun com serviço estável passou integralmente.
+
+## erros pós implementação
+
+- ✅ Erro: `Cannot GET /login` e tela de login sem CSS (layout "feio"/descentralizado).
+	- Causa: assets estáticos (`/css`, `/js`) estavam sendo bloqueados por middleware de auth antes do `express.static`.
+	- Solução: liberação explícita de paths estáticos no middleware + rota `/login` servindo `login.html`; login e setup usando o mesmo layout centralizado (`auth-page` + `auth-card`).
+
+- ✅ Erro: troca obrigatória de senha no primeiro login incompleta.
+	- Causa: `mustChangePassword` era retornado pela API, mas fluxo UI/roteamento não bloqueava a navegação completa.
+	- Solução: redirecionamento para `/setup`, bloqueio de APIs protegidas com `403 PASSWORD_CHANGE_REQUIRED` até `PATCH /api/auth/password`, e formulário funcional de troca na tela de setup.
+
+- ✅ Erro: ao adicionar `@cazetv` sem `YOUTUBE_API_KEY`, ocorria erro e aparente "deslogar".
+	- Causa: exceção assíncrona sem tratamento no `POST /api/channels` (falha de API key) podia quebrar fluxo do cliente.
+	- Solução: `try/catch` no endpoint, retorno controlado `400` com mensagem clara, sem invalidar sessão do usuário.
+
+- ✅ Erro: página de logs sem nenhuma entrada inicial.
+	- Causa: leitura inicial podia vir vazia quando arquivo ainda sem linhas/buffer vazio.
+	- Solução: fallback com mensagem inicial de stream de logs (`Log stream inicializado...`) e suporte a buffer em memória + arquivo.
+
+- ✅ Erro: submenus de configurações não implementados/expandidos.
+	- Causa: navegação tinha apenas item único `#/settings`.
+	- Solução: inclusão de submenus na sidebar (`api`, `scheduler`, `content`, `player`, `tech`) e roteamento hash correspondente em `app.js` com renderização por seção em `settings.js`.
+
+- ✅ Erro anterior: inconsistência de rota entre UI e API (`/refresh` vs `/sync`).
+	- Solução: UI de canais alinhada para `POST /api/channels/:id/sync`.
+
+- ✅ Erro anterior: falhas intermitentes em validação logo após restart do container.
+	- Causa: startup race.
+	- Solução: revalidações sequenciais após estabilidade do serviço, registradas no fluxo de testes.
