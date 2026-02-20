@@ -52,10 +52,11 @@ export class PlaylistGenerator {
       const title = this.displayTitle(stream, cfg);
       const logo = stream.thumbnailUrl || placeholderImage;
       const groupTitle = this.resolveGroupTitle(stream.categoryId, categoryMap);
-      const url =
-        mode === 'direct'
-          ? stream.watchUrl
-          : `${baseUrl}/api/stream/${encodeURIComponent(stream.videoId)}`;
+      // Corrige: upcoming nunca pode ter URL 'direct', só proxy
+      const isUpcoming = stream.status === 'upcoming';
+      const url = (mode === 'direct' && !isUpcoming)
+        ? stream.watchUrl
+        : `${baseUrl}/api/stream/${encodeURIComponent(stream.videoId)}`;
 
       lines.push(
         `#EXTINF:-1 tvg-id="${stream.videoId}" tvg-name="${title}" tvg-logo="${logo}" group-title="${groupTitle}",${title}`,

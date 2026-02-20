@@ -412,23 +412,25 @@ O plano segue a ordem de prioridade definida na Seção 10, agrupando correçõe
 | 1.2 | `src/core/state-manager.ts` | Corrigir `updateStreams()`: (a) remover streams existentes com categoria errada, (b) bloquear novos streams `status === 'none'`. Corrigir `_pruneEndedStreams()` para coletar IDs em `Set` antes de deletar. Corrigir aspas na query SQL. |
 | 1.3 | `src/core/playlist-generator.ts` | Implementar `group-title` via `CATEGORY_MAPPINGS`. Corrigir `USE_INVISIBLE_PLACEHOLDER` (só em playlist vazia). Adicionar placeholders para playlists vazias. Adicionar `<category>` no EPG. |
 
-#### Etapa 2 — Backend Moderado (M5, M7, M8, M12)
+#### Etapa 2 — Backend Moderado (M5, M7, M8, M9, M10, M12, L8, F8)
 
 | # | Arquivo | Ação |
 |---|---------|------|
 | 2.1 | `src/api/routes/playlists.ts` | Verificar flags `PLAYLIST_GENERATE_DIRECT`/`PROXY` antes de servir. Retornar 404 se desabilitado. |
 | 2.2 | `src/api/routes/config.ts` | Usar `DEFAULT_SETTINGS` de `db.ts` em vez de snapshot de startup para `resetConfig`. |
-| 2.3 | `src/core/logger.ts` | Eliminar log duplicado: `WsTransport` não deve herdar de `transports.Stream` com stdout. Usar `Transport` base. |
-| 2.4 | `src/api/routes/channels.ts` | Adicionar método `syncChannel(channelId)` ao Scheduler para sync individual. |
+| 2.3 | `src/core/db.ts` | Exporta `getDefaultSettings()` retornando `{ ...DEFAULT_SETTINGS }`. |
+| 2.4 | `src/server.ts` | Removido `getAllConfig` do import; `createConfigRouter()` sem argumento. |
+| 2.5 | `src/core/logger.ts` | `WsTransport` é `transports.Console({ silent: true })` em vez de `transports.Stream({ stream: process.stdout })`. Elimina duplicação no stdout. |
+| 2.6 | `src/api/routes/channels.ts` | Adicionar método `syncChannel(channelId)` ao Scheduler para sync individual. |
 
-#### Etapa 3 — Frontend Completo (M1–M4, M11, L4–L9, F1–F5)
+#### Etapa 3 — Frontend Completo (M1–M4, M11, F1–F5)
 
 | # | Arquivo | Ação |
 |---|---------|------|
 | 3.1 | `public/js/streams.js` | Reescrever com colunas corretas: Canal, Título, Status (com ícone), Início Agendado, Video ID. Mapear campos da API corretamente. |
-| 3.2 | `public/js/channels.js` | Reescrever com: Avatar+Nome, Handle, ID, Live/Upcoming/VOD counters, Status (ícone 🟢🔵🔴), Ações (Sync, Freeze, Delete). |
-| 3.3 | `public/js/playlists.js` | Corrigir path VOD (→ `/vod.m3u`). Adicionar todas as variantes proxy. |
-| 3.4 | `public/js/dashboard.js` | Adicionar: última sync, quota estimada, links proxy/VOD. |
+| 3.2 | `public/js/channels.js` | Reescrever com: Avatar+Nome, Handle, ID, Live/Upcoming/VOD counters, Status (ícone 🟢🔵🔴), Ações (Sync, Freeze, Delete com `confirm()`. Removida coluna "Custom". |
+| 3.3 | `public/js/playlists.js` | Corrigido `/vods.m3u` → `/vod.m3u`. Adicionadas variantes: `upcoming-proxy.m3u`, `vod-proxy.m3u`. 7 entradas totais com botão "📋 Copiar" e feedback "✅ Copiado!". |
+| 3.4 | `public/js/dashboard.js` | Reescrito. Busca `/api/config` para `PLAYLIST_GENERATE_*`. Mostra: última sincronização, próxima, estimativa de quota/dia. Cards com emoji. Playlists rápidas condicionais (direct/proxy). |
 | 3.5 | `public/js/settings.js` | Reorganizar sub-páginas em 8 seções conforme especificação. Adicionar: Formato de Títulos (com drag-and-drop + preview), Retenção VOD, Mídia & Placeholders. |
 | 3.6 | `public/index.html` | Adicionar 3 sub-menus na sidebar. |
 
@@ -437,9 +439,9 @@ O plano segue a ordem de prioridade definida na Seção 10, agrupando correçõe
 | # | Arquivo | Ação |
 |---|---------|------|
 | 4.1 | `Dockerfile` | Reescrever como multi-stage (builder + runtime Alpine). |
-| 4.2 | `docker-compose.yml` | Adicionar `version: "3.9"`, `TZ`, `SESSION_SECRET`. |
-| 4.3 | `package.json` | Adicionar `ts-node` em devDependencies. |
-| 4.4 | `.env.example` | Adicionar `SESSION_SECRET`. |
+| 4.2 | `docker-compose.yml` | Adicionado `version: "3.9"`, `environment: NODE_ENV=production, TZ=America/Sao_Paulo`, volume `.env:/app/.env:ro`. |
+| 4.3 | `package.json` | Adicionado `"ts-node": "10.9.2"` em `devDependencies`. |
+| 4.4 | `.env.example` | Adicionado `SESSION_SECRET="change-me-to-a-random-string"`. |
 
 ---
 
@@ -555,3 +557,28 @@ Após deploy do container, a interface carregava a barra lateral mas a área de 
 
 
 ### É importande pedir para revisar ou ter atenção a criação de arquivos gerados com templates literals ou escapados ?
+````
+This is the description of what the code block changes:
+<changeDescription>
+Relatando diagnóstico, causa e recomendações sobre erro ao reproduzir playlist upcoming, conforme solicitado.
+</changeDescription>
+
+This is the code block that represents the suggested code change:
+```markdown
+### Correção técnica: erro ao reproduzir playlist upcoming
+
+- **Causa:** ffmpeg falhava ao gerar placeholder para streams upcoming devido à ausência de fontes no container e, em alguns casos, imagem inválida. Além disso, a playlist upcoming podia gerar URLs "direct" (inexistentes para eventos futuros).
+
+- **Solução aplicada:**
+  - Dockerfile atualizado para instalar fontes (`font-dejavu`), garantindo que ffmpeg consiga renderizar texto.
+  - `playlist-generator.ts` corrigido: streams upcoming nunca geram URL "direct", apenas proxy (`/api/stream/:videoId`).
+  - Agora, ao reproduzir um evento upcoming, o SmartPlayer sempre usa ffmpeg com imagem e texto, e a playlist só referencia o endpoint proxy.
+
+- **Resultado esperado:**
+  - ffmpeg gera placeholder corretamente para upcoming (sem erro de fonte).
+  - Playlist upcoming nunca referencia URLs inválidas.
+
+- **Referência:** Veja logs em [DOC/log_.md](DOC/log_.md) para validação.
+
+---
+```
