@@ -33,6 +33,13 @@ async function api(path, options = {}) {
 		window.location.href = '/login';
 		throw new Error('Unauthorized');
 	}
+	if (response.status === 403) {
+		const body = await response.json().catch(() => ({}));
+		if (body.code === 'PASSWORD_CHANGE_REQUIRED') {
+			window.location.href = '/setup';
+			throw new Error('Password change required');
+		}
+	}
 	return response;
 }
 
@@ -63,7 +70,12 @@ async function renderRoute() {
 			a.classList.remove('active');
 		}
 	});
-	await routeFn(app, api, hash);
+	try {
+		await routeFn(app, api, hash);
+	} catch (error) {
+		console.error('[app] renderRoute error:', error);
+		app.innerHTML = `<div class="card"><h3>Erro ao carregar página</h3><p style="color:#fca5a5">${error.message || 'Erro desconhecido'}</p><button class="action-btn" onclick="window.dispatchEvent(new Event('hashchange'))">🔄 Tentar novamente</button></div>`;
+	}
 	await updateHeaderBadges();
 }
 
@@ -101,3 +113,21 @@ document.getElementById('logout-btn').addEventListener('click', async () => {
 window.addEventListener('hashchange', renderRoute);
 setupSidebarResize();
 renderRoute();
+
+/* Clipboard helper that works on HTTP (non-HTTPS) via fallback */
+window.copyToClipboard = async function (text) {
+	try {
+		if (navigator.clipboard && window.isSecureContext) {
+			await navigator.clipboard.writeText(text);
+			return;
+		}
+	} catch { /* fallback below */ }
+	const textarea = document.createElement('textarea');
+	textarea.value = text;
+	textarea.style.position = 'fixed';
+	textarea.style.opacity = '0';
+	document.body.appendChild(textarea);
+	textarea.select();
+	document.execCommand('copy');
+	textarea.remove();
+};

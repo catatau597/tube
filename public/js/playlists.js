@@ -35,7 +35,7 @@ export async function renderPlaylists(root) {
 
   root.querySelectorAll('[data-copy]').forEach((button) => {
     button.addEventListener('click', async () => {
-      await navigator.clipboard.writeText(button.getAttribute('data-copy'));
+      await window.copyToClipboard(button.getAttribute('data-copy'));
       const original = button.textContent;
       button.textContent = '✅ Copiado!';
       setTimeout(() => { button.textContent = original; }, 1500);

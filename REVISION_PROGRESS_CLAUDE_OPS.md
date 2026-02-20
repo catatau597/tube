@@ -522,3 +522,33 @@ O plano segue a ordem de prioridade definida na Seção 10, agrupando correçõe
 | F7 | Teste de conectividade com output streaming | WebSocket já existe para logs; adaptar para testes requer refactor no endpoint. |
 | L6 | Canais seed com `pending:@handle` | Serão resolvidos na primeira execução do scheduler; não é bloqueante. |
 | L10 | Aspas na query SQL de `getActiveChannels()` | Funcional; melhoria cosmetica. |
+
+---
+
+### Correções após revisão (2026-02-20)
+
+Após deploy do container, a interface carregava a barra lateral mas a área de conteúdo ficava em branco. Diagnóstico e correções abaixo.
+
+#### Causa raiz
+
+1. **`renderRoute()` sem try/catch** — Se qualquer função de renderização (`renderDashboard`, `renderChannels`, etc.) lançasse exceção, a promise rejection era silenciosa e `<section id="app">` permanecia vazio.
+2. **`navigator.clipboard.writeText` em HTTP** — A Clipboard API só funciona em contextos seguros (HTTPS ou localhost). Como o usuário acessa via `http://192.168.x.x:8888`, qualquer página com botão "copiar" causava exceção não tratada.
+3. **403 PASSWORD_CHANGE_REQUIRED sem tratamento** — Quando `mustChangePassword=true`, todas as APIs retornam 403. O `api()` não tratava esse código, causando falha em cascata no JS.
+
+#### Correções aplicadas
+
+| # | Arquivo | Correção |
+|---|---------|----------|
+| P1 | `public/js/app.js` | `api()`: adicionado tratamento de status 403 com código `PASSWORD_CHANGE_REQUIRED` → redireciona para `/setup`. |
+| P2 | `public/js/app.js` | `renderRoute()`: envolvido em try/catch — em caso de erro exibe card com mensagem e botão "🔄 Tentar novamente". |
+| P3 | `public/js/app.js` | Adicionado `window.copyToClipboard(text)` global: tenta `navigator.clipboard.writeText` em contexto seguro, fallback para `document.execCommand('copy')` via textarea temporário. |
+| P4 | `public/js/dashboard.js` | Substituído `navigator.clipboard.writeText()` por `window.copyToClipboard()`. |
+| P5 | `public/js/playlists.js` | Substituído `navigator.clipboard.writeText()` por `window.copyToClipboard()`. |
+
+#### Validação
+
+- Build limpo (`npm run build` → `tsc` sem erros)
+- Login `admin`/`tubewranglerr` → `{"ok":true,"mustChangePassword":true}` ✅
+- PATCH `/api/auth/password` com `{current, new}` → `{"ok":true}` ✅
+- APIs protegidas retornam 403 `PASSWORD_CHANGE_REQUIRED` antes da troca de senha ✅
+- Após troca de senha, todas as APIs (`scheduler/status`, `channels`, `streams`, `config`) retornam dados corretamente ✅
