@@ -552,3 +552,6 @@ Após deploy do container, a interface carregava a barra lateral mas a área de 
 - PATCH `/api/auth/password` com `{current, new}` → `{"ok":true}` ✅
 - APIs protegidas retornam 403 `PASSWORD_CHANGE_REQUIRED` antes da troca de senha ✅
 - Após troca de senha, todas as APIs (`scheduler/status`, `channels`, `streams`, `config`) retornam dados corretamente ✅
+
+
+### É importande pedir para revisar ou ter atenção a criação de arquivos gerados com templates literals ou escapados ?

@@ -4,17 +4,36 @@ function formatDate(iso) {
 }
 
 export async function renderDashboard(root, api) {
-  const [schedulerRes, channelsRes, streamsRes, configRes] = await Promise.all([
-    api('/api/scheduler/status'),
-    api('/api/channels'),
-    api('/api/streams'),
-    api('/api/config'),
+  console.log('[dashboard] renderDashboard called');
+
+  let scheduler = { running: false, paused: false, lastMainRun: null, nextMainRun: null };
+  let channels = [];
+  let streams = [];
+  let config = {};
+
+  const results = await Promise.allSettled([
+    api('/api/scheduler/status').then(r => r.json()),
+    api('/api/channels').then(r => r.json()),
+    api('/api/streams').then(r => r.json()),
+    api('/api/config').then(r => r.json()),
   ]);
 
-  const scheduler = await schedulerRes.json();
-  const channels = await channelsRes.json();
-  const streams = await streamsRes.json();
-  const config = await configRes.json();
+  if (results[0].status === 'fulfilled') scheduler = results[0].value;
+  else console.error('[dashboard] scheduler fetch failed:', results[0].reason);
+
+  if (results[1].status === 'fulfilled') channels = Array.isArray(results[1].value) ? results[1].value : [];
+  else console.error('[dashboard] channels fetch failed:', results[1].reason);
+
+  if (results[2].status === 'fulfilled') streams = Array.isArray(results[2].value) ? results[2].value : [];
+  else console.error('[dashboard] streams fetch failed:', results[2].reason);
+
+  if (results[3].status === 'fulfilled') config = results[3].value || {};
+  else console.error('[dashboard] config fetch failed:', results[3].reason);
+
+  const errors = results.filter(r => r.status === 'rejected');
+  const errorBanner = errors.length > 0
+    ? `<div class="card" style="border-color:#dc2626"><p style="color:#fca5a5">⚠️ ${errors.length} chamada(s) API falharam. Verifique o console do navegador (F12).</p></div>`
+    : '';
 
   const live = streams.filter((s) => s.status === 'live').length;
   const upcoming = streams.filter((s) => s.status === 'upcoming').length;
@@ -30,6 +49,7 @@ export async function renderDashboard(root, api) {
   const estimatedDaily = quotaPerSync * syncsPerDay;
 
   root.innerHTML = `
+    ${errorBanner}
     <div class="grid">
       <div class="card"><h3>🔴 Live</h3><p style="font-size:2rem;margin:0">${live}</p></div>
       <div class="card"><h3>🟡 Upcoming</h3><p style="font-size:2rem;margin:0">${upcoming}</p></div>

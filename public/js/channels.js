@@ -80,7 +80,7 @@ export async function renderChannels(root, api) {
     const messageNode = document.getElementById("channel-message");
 
     function paintMessage() {
-      messageNode.className = \`form-msg \${message.type} \${message.text ? "show" : ""}\`;
+      messageNode.className = `form-msg ${message.type} ${message.text ? "show" : ""}`;
       messageNode.textContent = message.text;
     }
 
@@ -110,7 +110,7 @@ export async function renderChannels(root, api) {
 
     root.querySelectorAll('button[data-action="sync"]').forEach((button) => {
       button.addEventListener("click", async () => {
-        const response = await api(\`/api/channels/\${button.dataset.id}/sync\`, { method: "POST" });
+        const response = await api(`/api/channels/${button.dataset.id}/sync`, { method: "POST" });
         if (!response.ok) {
           const payload = await response.json().catch(() => ({}));
           setMessage("error", formatApiError(payload, "Falha ao sincronizar canal."));
@@ -124,7 +124,7 @@ export async function renderChannels(root, api) {
 
     root.querySelectorAll('button[data-action="freeze"]').forEach((button) => {
       button.addEventListener("click", async () => {
-        const response = await api(\`/api/channels/\${button.dataset.id}/freeze\`, { method: "PATCH" });
+        const response = await api(`/api/channels/${button.dataset.id}/freeze`, { method: "PATCH" });
         if (!response.ok) {
           const payload = await response.json().catch(() => ({}));
           setMessage("error", formatApiError(payload, "Falha ao alterar status do canal."));
@@ -139,7 +139,7 @@ export async function renderChannels(root, api) {
     root.querySelectorAll('button[data-action="delete"]').forEach((button) => {
       button.addEventListener("click", async () => {
         if (!confirm("Remover este canal e todos os seus streams?")) return;
-        const response = await api(\`/api/channels/\${button.dataset.id}\`, { method: "DELETE" });
+        const response = await api(`/api/channels/${button.dataset.id}`, { method: "DELETE" });
         if (!response.ok) {
           const payload = await response.json().catch(() => ({}));
           setMessage("error", formatApiError(payload, "Falha ao remover canal."));

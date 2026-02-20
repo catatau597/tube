@@ -5,10 +5,15 @@ import { renderPlaylists } from './playlists.js';
 import { renderSettings } from './settings.js';
 import { renderLogs } from './logs.js';
 
+console.log('[app] Module loaded OK');
+
 const app = document.getElementById('app');
 const sidebar = document.getElementById('sidebar');
 const resizer = document.getElementById('sidebar-resizer');
 const statusBadges = document.getElementById('status-badges');
+
+if (!app) console.error('[app] CRITICAL: #app element not found!');
+if (!statusBadges) console.error('[app] CRITICAL: #status-badges element not found!');
 
 const routes = {
 	'/': renderDashboard,
@@ -28,7 +33,15 @@ const routes = {
 };
 
 async function api(path, options = {}) {
-	const response = await fetch(path, { credentials: 'include', ...options });
+	console.log('[api] Fetching:', path);
+	let response;
+	try {
+		response = await fetch(path, { credentials: 'include', ...options });
+	} catch (networkErr) {
+		console.error('[api] Network error fetching', path, networkErr);
+		throw new Error(`Erro de rede ao acessar ${path}: ${networkErr.message}`);
+	}
+	console.log('[api]', path, '→', response.status);
 	if (response.status === 401) {
 		window.location.href = '/login';
 		throw new Error('Unauthorized');
@@ -39,6 +52,10 @@ async function api(path, options = {}) {
 			window.location.href = '/setup';
 			throw new Error('Password change required');
 		}
+	}
+	if (!response.ok) {
+		const text = await response.text().catch(() => '');
+		console.warn('[api]', path, 'returned', response.status, text.slice(0, 200));
 	}
 	return response;
 }
@@ -52,13 +69,15 @@ async function updateHeaderBadges() {
 			`<span class="badge">Live: ${status.activeLives ?? 0}</span>`,
 			`<span class="badge">Upcoming: ${status.activeUpcoming ?? 0}</span>`,
 		].join('');
-	} catch {
+	} catch (err) {
+		console.warn('[app] updateHeaderBadges error:', err);
 		statusBadges.innerHTML = '<span class="badge">Sem conexão</span>';
 	}
 }
 
 async function renderRoute() {
 	const hash = window.location.hash.replace('#', '') || '/';
+	console.log('[app] renderRoute →', hash);
 	const routeKey = Object.keys(routes).find((key) => key === hash) || '/';
 	const routeFn = routes[routeKey] || routes['/'];
 	document.querySelectorAll('[data-route]').forEach((a) => {
@@ -70,11 +89,15 @@ async function renderRoute() {
 			a.classList.remove('active');
 		}
 	});
+	if (app) app.innerHTML = '<div class="card"><p>⏳ Carregando...</p></div>';
 	try {
 		await routeFn(app, api, hash);
+		console.log('[app] renderRoute complete for', hash);
 	} catch (error) {
 		console.error('[app] renderRoute error:', error);
-		app.innerHTML = `<div class="card"><h3>Erro ao carregar página</h3><p style="color:#fca5a5">${error.message || 'Erro desconhecido'}</p><button class="action-btn" onclick="window.dispatchEvent(new Event('hashchange'))">🔄 Tentar novamente</button></div>`;
+		if (app) {
+			app.innerHTML = `<div class="card"><h3>Erro ao carregar página</h3><p style="color:#fca5a5">${error.message || 'Erro desconhecido'}</p><pre style="color:#fca5a5;font-size:0.75rem;overflow:auto;max-height:200px">${error.stack || ''}</pre><button class="action-btn" onclick="window.dispatchEvent(new Event('hashchange'))">🔄 Tentar novamente</button></div>`;
+		}
 	}
 	await updateHeaderBadges();
 }

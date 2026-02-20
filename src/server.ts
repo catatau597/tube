@@ -67,6 +67,17 @@ app.use(
   }),
 );
 
+// Log every HTTP request for debugging
+app.use((request, response, next) => {
+  const start = Date.now();
+  response.on('finish', () => {
+    const ms = Date.now() - start;
+    const user = request.session?.user?.username || 'anon';
+    logger.info(`[HTTP] ${request.method} ${request.originalUrl} → ${response.statusCode} (${ms}ms) [${user}]`);
+  });
+  next();
+});
+
 app.get('/health', (_request, response) => {
   response.json({ status: 'ok', version: '1.0.0' });
 });

@@ -69,7 +69,7 @@ const logFile = path.join(dataDir, 'tubewranglerr.log');
 export const wsLogHub = new WebSocketLogHub();
 
 export const logger: Logger = createLogger({
-  level: process.env.LOG_LEVEL || 'info',
+  level: (process.env.LOG_LEVEL || 'info').toLowerCase(),
   format: format.combine(format.timestamp(), format.json()),
   transports: [
     new transports.Console({
