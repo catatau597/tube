@@ -6,6 +6,7 @@ import { runFfmpegPlaceholder } from './ffmpeg-runner';
 import { runStreamlink, streamlinkHasPlayableStream } from './streamlink-runner';
 import { runYtDlp } from './ytdlp-runner';
 import { getConfig } from '../core/config-manager';
+import { logger } from '../core/logger';
 
 interface CacheStream {
   videoId: string;
@@ -31,27 +32,39 @@ export class SmartPlayer {
     const cache = this.readStateCache();
     const stream = cache.streams[videoId];
 
+    logger.info(`[SmartPlayer] Requisição de stream: videoId=${videoId}`);
+
     if (!stream) {
+      logger.warn(`[SmartPlayer] Stream não encontrado no cache: videoId=${videoId}`);
       const placeholder = getConfig('PLACEHOLDER_IMAGE_URL');
       if (!placeholder) {
+        logger.error(`[SmartPlayer] Sem placeholder configurado para videoId=${videoId}`);
         response.status(404).json({ error: 'Stream não encontrado e sem placeholder configurado' });
         return;
       }
+      logger.info(`[SmartPlayer] Enviando placeholder para videoId=${videoId}`);
       await runFfmpegPlaceholder({ imageUrl: placeholder, userAgent: creds.userAgent, response });
       return;
     }
 
+    logger.info(`[SmartPlayer] Stream encontrado: videoId=${videoId} status=${stream.status}`);
+
     if (stream.status === 'live' && this.isGenuinelyLive(stream)) {
+      logger.info(`[SmartPlayer] Stream está genuinamente ao vivo: videoId=${videoId}`);
       const playable = await streamlinkHasPlayableStream(stream.watchUrl, creds.userAgent, creds.cookieFile);
+      logger.info(`[SmartPlayer] streamlinkHasPlayableStream=${playable} videoId=${videoId}`);
       if (playable) {
+        logger.info(`[SmartPlayer] Usando Streamlink para videoId=${videoId}`);
         await runStreamlink(stream.watchUrl, creds.userAgent, creds.cookieFile, response);
         return;
       }
+      logger.info(`[SmartPlayer] Streamlink não conseguiu, tentando yt-dlp para videoId=${videoId}`);
       await runYtDlp(stream.watchUrl, creds.userAgent, creds.cookieFile, response);
       return;
     }
 
     if (stream.status === 'none' || stream.status === 'live') {
+      logger.info(`[SmartPlayer] Usando yt-dlp para videoId=${videoId} status=${stream.status}`);
       await runYtDlp(stream.watchUrl, creds.userAgent, creds.cookieFile, response);
       return;
     }
@@ -59,10 +72,12 @@ export class SmartPlayer {
     const texts = this.readTextsCache()[videoId] ?? { line1: '', line2: '' };
     const image = stream.thumbnailUrl || getConfig('PLACEHOLDER_IMAGE_URL');
     if (!image) {
+      logger.error(`[SmartPlayer] Sem thumbnail/placeholder para stream upcoming videoId=${videoId}`);
       response.status(404).json({ error: 'Sem thumbnail/placeholder para stream upcoming' });
       return;
     }
 
+    logger.info(`[SmartPlayer] Enviando placeholder com texto para videoId=${videoId}`);
     await runFfmpegPlaceholder({
       imageUrl: image,
       userAgent: creds.userAgent,

@@ -1,5 +1,7 @@
+
 import { Response } from 'express';
 import { spawn } from 'child_process';
+import { logger } from '../core/logger';
 
 function escapeFfmpegText(text: string): string {
   return text
@@ -76,17 +78,27 @@ export async function runFfmpegPlaceholder(params: {
     'pipe:1',
   ];
 
+  logger.info(`[ffmpeg-runner] Iniciando ffmpeg placeholder: imageUrl=${imageUrl}`);
   response.setHeader('Content-Type', 'video/mp2t');
   const proc = spawn('ffmpeg', args, { stdio: ['ignore', 'pipe', 'pipe'] });
 
   proc.stdout.pipe(response);
-  proc.stderr.on('data', () => undefined);
+  proc.stderr.on('data', (data) => {
+    logger.warn(`[ffmpeg-runner][stderr] ${String(data)}`);
+  });
   response.on('close', () => {
     if (!proc.killed) proc.kill('SIGTERM');
+    logger.info(`[ffmpeg-runner] Resposta fechada, processo ffmpeg encerrado.`);
   });
 
   await new Promise<void>((resolve) => {
-    proc.on('close', () => resolve());
-    proc.on('error', () => resolve());
+    proc.on('close', (code) => {
+      logger.info(`[ffmpeg-runner] ffmpeg finalizado com code=${code}`);
+      resolve();
+    });
+    proc.on('error', (err) => {
+      logger.error(`[ffmpeg-runner] Erro ao iniciar ffmpeg: ${err}`);
+      resolve();
+    });
   });
 }
