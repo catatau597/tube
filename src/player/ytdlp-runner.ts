@@ -4,8 +4,8 @@ import { Response } from 'express';
 import { logger } from '../core/logger';
 
 function buildArgs(url: string, userAgent: string, cookieFile: string | null, simulate: boolean): string[] {
-  // Para streaming contínuo, use bestvideo+bestaudio, sem merge-output-format
-  const args = ['-f', 'bestvideo+bestaudio', '--user-agent', userAgent];
+  // Para streaming MPEG-TS, force formatos compatíveis: mp4 (H.264) e m4a (AAC)
+  const args = ['-f', "bestvideo[ext=mp4]+bestaudio[ext=m4a]", '--user-agent', userAgent];
   if (cookieFile) args.push('--cookies', cookieFile);
   if (simulate) {
     args.push('--simulate', '--print', 'title');
