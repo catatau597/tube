@@ -34,12 +34,11 @@ export async function runFfmpegPlaceholder(params: {
       `drawtext=fontfile='${fontPath}':text='${escapeFfmpegText(textLine2)}':x=(w-text_w)/2:y=h-50:fontsize=36:fontcolor=white:borderw=2:bordercolor=black@0.8`
     );
   }
-  // Filtro complexo igual ao Python
-  const filterComplex = `[0:v]fps=25,scale=1280:720,loop=-1:1:0${drawtextFilters.length > 0 ? ',' + drawtextFilters.join(',') : ''}[v]`;
+  // Filtro otimizado: 1 fps, sem loop/fps extra
+  const filterComplex = `[0:v]scale=1280:720${drawtextFilters.length > 0 ? ',' + drawtextFilters.join(',') : ''}[v]`;
 
   const args = [
     '-loglevel', 'error',
-    '-re',
     '-user_agent', userAgent,
     '-i', imageUrl,
     '-f', 'lavfi',
@@ -49,10 +48,13 @@ export async function runFfmpegPlaceholder(params: {
     '-map', '1:a',
     '-c:v', 'libx264',
     '-preset', 'ultrafast',
+    '-crf', '40',
+    '-b:v', '300k',
+    '-r', '1',
+    '-g', '60',
     '-pix_fmt', 'yuv420p',
     '-c:a', 'aac',
-    '-b:a', '128k',
-    '-shortest',
+    '-b:a', '32k',
     '-tune', 'stillimage',
     '-f', 'mpegts',
     'pipe:1',
