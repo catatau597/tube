@@ -4,8 +4,8 @@ import { Response } from 'express';
 import { logger } from '../core/logger';
 
 function buildArgs(url: string, userAgent: string, cookieFile: string | null, simulate: boolean): string[] {
-  // Para streaming contínuo, use bestvideo+bestaudio e merge-output-format mpegts
-  const args = ['-f', 'bestvideo+bestaudio', '--merge-output-format', 'mpegts', '--user-agent', userAgent];
+  // Para streaming contínuo, use bestvideo+bestaudio, sem merge-output-format
+  const args = ['-f', 'bestvideo+bestaudio', '--user-agent', userAgent];
   if (cookieFile) args.push('--cookies', cookieFile);
   if (simulate) {
     args.push('--simulate', '--print', 'title');
