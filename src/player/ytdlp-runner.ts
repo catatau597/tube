@@ -41,6 +41,9 @@ export async function testYtDlp(url: string, userAgent: string, cookieFile: stri
 }
 
 export async function runYtDlp(
+    response.on('error', (err) => {
+      logger.warn(`[ytdlp-runner] Socket error: ${err.code} (${err.message})`);
+    });
   url: string,
   userAgent: string,
   cookieFile: string | null,
