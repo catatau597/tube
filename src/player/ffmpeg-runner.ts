@@ -35,26 +35,27 @@ export async function runFfmpegPlaceholder(params: {
     );
   }
   // Filtro otimizado com loop igual ao Python
-  const filterComplex = `[0:v]scale=1280:720,loop=-1:1:0${drawtextFilters.length > 0 ? ',' + drawtextFilters.join(',') : ''}[v]`;
+  const filterComplex = `[0:v]scale=854:480,loop=-1:1:0${drawtextFilters.length > 0 ? ',' + drawtextFilters.join(',') : ''}[v]`;
 
   const args = [
     '-loglevel', 'error',
     '-user_agent', userAgent,
     '-i', imageUrl,
     '-f', 'lavfi',
-    '-i', 'anullsrc=r=44100:cl=stereo',
+    '-i', 'anullsrc=r=44100:cl=mono',
     '-filter_complex', filterComplex,
     '-map', '[v]',
     '-map', '1:a',
     '-c:v', 'libx264',
     '-preset', 'ultrafast',
-    '-crf', '40',
-    '-b:v', '300k',
+    '-crf', '45',
+    '-b:v', '150k',
     '-r', '1',
-    '-g', '60',
+    '-g', '120',
     '-pix_fmt', 'yuv420p',
     '-c:a', 'aac',
-    '-b:a', '32k',
+    '-b:a', '24k',
+    '-ac', '1',
     '-tune', 'stillimage',
     '-f', 'mpegts',
     'pipe:1',
