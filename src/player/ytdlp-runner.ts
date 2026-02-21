@@ -57,22 +57,17 @@ export async function runYtDlp(
   ytDlpProc.stdout.pipe(ffmpegProc.stdin);
   ffmpegProc.stdout.pipe(response);
 
-  const ytDlpStderrListener = (data: Buffer) => {
+  ytDlpProc.stderr.on('data', (data: Buffer) => {
     logger.warn(`[ytdlp-runner][yt-dlp stderr] ${String(data)}`);
-  };
-  const ffmpegStderrListener = (data: Buffer) => {
+  });
+  ffmpegProc.stderr.on('data', (data: Buffer) => {
     logger.warn(`[ytdlp-runner][ffmpeg stderr] ${String(data)}`);
-  };
-  ytDlpProc.stderr.on('data', ytDlpStderrListener);
-  ffmpegProc.stderr.on('data', ffmpegStderrListener);
+  });
 
   response.on('close', () => {
     if (!ytDlpProc.killed) ytDlpProc.kill('SIGTERM');
     if (!ffmpegProc.killed) ffmpegProc.kill('SIGTERM');
     logger.info(`[ytdlp-runner] Resposta fechada, processos yt-dlp e ffmpeg encerrados.`);
-    // Remove listeners para evitar logs residuais
-    ytDlpProc.stderr.off('data', ytDlpStderrListener);
-    ffmpegProc.stderr.off('data', ffmpegStderrListener);
     // Kill agressivo após timeout se ainda estiverem vivos
     setTimeout(() => {
       if (!ytDlpProc.killed) ytDlpProc.kill('SIGKILL');
