@@ -57,17 +57,27 @@ export async function runYtDlp(
   ytDlpProc.stdout.pipe(ffmpegProc.stdin);
   ffmpegProc.stdout.pipe(response);
 
-  ytDlpProc.stderr.on('data', (data) => {
+  const ytDlpStderrListener = (data: Buffer) => {
     logger.warn(`[ytdlp-runner][yt-dlp stderr] ${String(data)}`);
-  });
-  ffmpegProc.stderr.on('data', (data) => {
+  };
+  const ffmpegStderrListener = (data: Buffer) => {
     logger.warn(`[ytdlp-runner][ffmpeg stderr] ${String(data)}`);
-  });
+  };
+  ytDlpProc.stderr.on('data', ytDlpStderrListener);
+  ffmpegProc.stderr.on('data', ffmpegStderrListener);
 
   response.on('close', () => {
     if (!ytDlpProc.killed) ytDlpProc.kill('SIGTERM');
     if (!ffmpegProc.killed) ffmpegProc.kill('SIGTERM');
     logger.info(`[ytdlp-runner] Resposta fechada, processos yt-dlp e ffmpeg encerrados.`);
+    // Remove listeners para evitar logs residuais
+    ytDlpProc.stderr.off('data', ytDlpStderrListener);
+    ffmpegProc.stderr.off('data', ffmpegStderrListener);
+    // Kill agressivo após timeout se ainda estiverem vivos
+    setTimeout(() => {
+      if (!ytDlpProc.killed) ytDlpProc.kill('SIGKILL');
+      if (!ffmpegProc.killed) ffmpegProc.kill('SIGKILL');
+    }, 1000);
   });
 
   await new Promise<void>((resolve) => {
