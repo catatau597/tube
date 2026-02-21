@@ -582,3 +582,38 @@ This is the code block that represents the suggested code change:
 
 ---
 ```
+`````
+This is the description of what the code block changes:
+<changeDescription>
+Adicionar no final do documento um resumo das alterações de log e perfil ffmpeg para streams upcoming, conforme solicitado.
+</changeDescription>
+
+This is the code block that represents the suggested code change:
+```markdown
+---
+
+### Alterações recentes: logs e perfil ffmpeg para streams upcoming
+
+- **Logs detalhados:**
+  - Adicionamos logs explícitos do comando ffmpeg e do User-Agent no runner TypeScript, permitindo rastreamento completo do comando gerado e dos parâmetros usados.
+  - Agora, toda chamada do ffmpeg para placeholder/upcoming exibe no terminal o comando completo e o User-Agent, facilitando debug e comparação com o script Python.
+
+- **Perfil ffmpeg otimizado:**
+  - O perfil ffmpeg para streams upcoming foi portado fielmente do Python, incluindo todos os filtros, drawtext, loop, fps, mapeamento e parâmetros.
+  - Foram aplicadas otimizações progressivas para reduzir consumo de CPU e banda:
+    - Frame rate mínimo (1 fps)
+    - Bitrate de vídeo reduzido (150k–300k)
+    - CRF alto (45–40)
+    - GOP longo (g=120)
+    - Áudio mono e bitrate baixo (24k–32k)
+    - Resolução reduzida (854x480)
+    - Filtro loop=-1:1:0 mantido para garantir repetição da imagem
+    - Parâmetro -shortest testado e removido sem impacto
+  - Todas as alterações foram testadas e validadas, com possibilidade de reversão via git.
+
+- **Resumo:**
+  - O sistema agora gera placeholders/upcoming com ffmpeg de forma eficiente, com logs detalhados e consumo mínimo de recursos.
+  - Todas as alterações estão documentadas e podem ser revertidas se necessário.
+
+---
+```
