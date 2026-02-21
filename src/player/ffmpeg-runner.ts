@@ -21,60 +21,40 @@ export async function runFfmpegPlaceholder(params: {
 }): Promise<void> {
   const { imageUrl, userAgent, response, textLine1, textLine2 } = params;
 
-  const drawtext: string[] = [];
+  // Monta filtros drawtext igual ao Python
+  const drawtextFilters: string[] = [];
+  const fontPath = '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf';
   if (textLine1) {
-    drawtext.push(
-      `drawtext=text='${escapeFfmpegText(textLine1)}':x=(w-text_w)/2:y=h-110:fontsize=48:fontcolor=white:borderw=2:bordercolor=black@0.8`,
+    drawtextFilters.push(
+      `drawtext=fontfile='${fontPath}':text='${escapeFfmpegText(textLine1)}':x=(w-text_w)/2:y=h-100:fontsize=48:fontcolor=white:borderw=2:bordercolor=black@0.8`
     );
   }
   if (textLine2) {
-    drawtext.push(
-      `drawtext=text='${escapeFfmpegText(textLine2)}':x=(w-text_w)/2:y=h-60:fontsize=36:fontcolor=white:borderw=2:bordercolor=black@0.8`,
+    drawtextFilters.push(
+      `drawtext=fontfile='${fontPath}':text='${escapeFfmpegText(textLine2)}':x=(w-text_w)/2:y=h-50:fontsize=36:fontcolor=white:borderw=2:bordercolor=black@0.8`
     );
   }
-
-  const filter = drawtext.length > 0 ? `scale=1280:720,${drawtext.join(',')}` : 'scale=1280:720';
+  // Filtro complexo igual ao Python
+  const filterComplex = `[0:v]fps=25,scale=1280:720,loop=-1:1:0${drawtextFilters.length > 0 ? ',' + drawtextFilters.join(',') : ''}[v]`;
 
   const args = [
-    '-loglevel',
-    'error',
+    '-loglevel', 'error',
     '-re',
-    '-user_agent',
-    userAgent,
-    '-loop',
-    '1',
-    '-i',
-    imageUrl,
-    '-f',
-    'lavfi',
-    '-i',
-    'anullsrc=r=44100:cl=stereo',
-    '-filter_complex',
-    `[0:v]${filter}[v]`,
-    '-map',
-    '[v]',
-    '-map',
-    '1:a',
-    '-c:v',
-    'libx264',
-    '-preset',
-    'ultrafast',
-    '-tune',
-    'stillimage',
-    '-r',
-    '1',
-    '-g',
-    '2',
-    '-crf',
-    '35',
-    '-pix_fmt',
-    'yuv420p',
-    '-c:a',
-    'aac',
-    '-b:a',
-    '64k',
-    '-f',
-    'mpegts',
+    '-user_agent', userAgent,
+    '-i', imageUrl,
+    '-f', 'lavfi',
+    '-i', 'anullsrc=r=44100:cl=stereo',
+    '-filter_complex', filterComplex,
+    '-map', '[v]',
+    '-map', '1:a',
+    '-c:v', 'libx264',
+    '-preset', 'ultrafast',
+    '-pix_fmt', 'yuv420p',
+    '-c:a', 'aac',
+    '-b:a', '128k',
+    '-shortest',
+    '-tune', 'stillimage',
+    '-f', 'mpegts',
     'pipe:1',
   ];
 
