@@ -83,26 +83,6 @@ export async function runFfmpegPlaceholder(params: {
   console.log('[ffmpeg-runner] Comando ffmpeg:', 'ffmpeg', args.map(a => `'${a}'`).join(' '));
   // eslint-disable-next-line no-console
   console.log('[ffmpeg-runner] User-Agent:', userAgent);
-    '-preset',
-    'ultrafast',
-    '-tune',
-    'stillimage',
-    '-r',
-    '1',
-    '-g',
-    '2',
-    '-crf',
-    '35',
-    '-pix_fmt',
-    'yuv420p',
-    '-c:a',
-    'aac',
-    '-b:a',
-    '64k',
-    '-f',
-    'mpegts',
-    'pipe:1',
-  ];
 
   logger.info(`[ffmpeg-runner] Iniciando ffmpeg placeholder: imageUrl=${imageUrl}`);
   response.setHeader('Content-Type', 'video/mp2t');
