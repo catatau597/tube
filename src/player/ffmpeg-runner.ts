@@ -21,62 +21,51 @@ export async function runFfmpegPlaceholder(params: {
 }): Promise<void> {
   const { imageUrl, userAgent, response, textLine1, textLine2 } = params;
 
-  const drawtext: string[] = [];
+  // Monta filtros drawtext igual ao Python
+  const drawtextFilters: string[] = [];
+  const fontPath = '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf';
   if (textLine1) {
-    drawtext.push(
-      `drawtext=text='${escapeFfmpegText(textLine1)}':x=(w-text_w)/2:y=h-110:fontsize=48:fontcolor=white:borderw=2:bordercolor=black@0.8`,
+    drawtextFilters.push(
+      `drawtext=fontfile='${fontPath}':text='${escapeFfmpegText(textLine1)}':x=(w-text_w)/2:y=h-100:fontsize=48:fontcolor=white:borderw=2:bordercolor=black@0.8`
     );
   }
   if (textLine2) {
-    drawtext.push(
-      `drawtext=text='${escapeFfmpegText(textLine2)}':x=(w-text_w)/2:y=h-60:fontsize=36:fontcolor=white:borderw=2:bordercolor=black@0.8`,
+    drawtextFilters.push(
+      `drawtext=fontfile='${fontPath}':text='${escapeFfmpegText(textLine2)}':x=(w-text_w)/2:y=h-50:fontsize=36:fontcolor=white:borderw=2:bordercolor=black@0.8`
     );
   }
-
-  const filter = drawtext.length > 0 ? `scale=1280:720,${drawtext.join(',')}` : 'scale=1280:720';
+  // Filtro otimizado com loop igual ao Python
+  const filterComplex = `[0:v]scale=854:480,loop=-1:1:0${drawtextFilters.length > 0 ? ',' + drawtextFilters.join(',') : ''}[v]`;
 
   const args = [
-    '-loglevel',
-    'error',
-    '-re',
-    '-user_agent',
-    userAgent,
-    '-loop',
-    '1',
-    '-i',
-    imageUrl,
-    '-f',
-    'lavfi',
-    '-i',
-    'anullsrc=r=44100:cl=stereo',
-    '-filter_complex',
-    `[0:v]${filter}[v]`,
-    '-map',
-    '[v]',
-    '-map',
-    '1:a',
-    '-c:v',
-    'libx264',
-    '-preset',
-    'ultrafast',
-    '-tune',
-    'stillimage',
-    '-r',
-    '1',
-    '-g',
-    '2',
-    '-crf',
-    '35',
-    '-pix_fmt',
-    'yuv420p',
-    '-c:a',
-    'aac',
-    '-b:a',
-    '64k',
-    '-f',
-    'mpegts',
+    '-loglevel', 'error',
+    '-user_agent', userAgent,
+    '-i', imageUrl,
+    '-f', 'lavfi',
+    '-i', 'anullsrc=r=44100:cl=mono',
+    '-filter_complex', filterComplex,
+    '-map', '[v]',
+    '-map', '1:a',
+    '-c:v', 'libx264',
+    '-preset', 'ultrafast',
+    '-crf', '45',
+    '-b:v', '150k',
+    '-r', '1',
+    '-g', '120',
+    '-pix_fmt', 'yuv420p',
+    '-c:a', 'aac',
+    '-b:a', '24k',
+    '-ac', '1',
+    '-tune', 'stillimage',
+    '-f', 'mpegts',
     'pipe:1',
   ];
+
+  // Log detalhado do comando ffmpeg e do user agent
+  // eslint-disable-next-line no-console
+  console.log('[ffmpeg-runner] Comando ffmpeg:', 'ffmpeg', args.map(a => `'${a}'`).join(' '));
+  // eslint-disable-next-line no-console
+  console.log('[ffmpeg-runner] User-Agent:', userAgent);
 
   logger.info(`[ffmpeg-runner] Iniciando ffmpeg placeholder: imageUrl=${imageUrl}`);
   response.setHeader('Content-Type', 'video/mp2t');

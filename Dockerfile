@@ -10,8 +10,7 @@ RUN npm run build
 FROM node:20-alpine AS runtime
 WORKDIR /app
 
-# Ferramentas externas
-RUN apk add --no-cache ffmpeg python3 py3-pip curl && \
+RUN apk add --no-cache ffmpeg python3 py3-pip curl font-dejavu && \
     pip3 install --break-system-packages streamlink yt-dlp
 
 # Dependências de produção
