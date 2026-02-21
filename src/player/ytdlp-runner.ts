@@ -71,10 +71,23 @@ export async function runYtDlp(
     if (!ytDlpProc.killed) ytDlpProc.kill('SIGTERM');
     if (!ffmpegProc.killed) ffmpegProc.kill('SIGTERM');
     logger.info(`[ytdlp-runner] Resposta fechada, processos yt-dlp e ffmpeg encerrados.`);
+    // Fechar explicitamente todos os streams
+    ytDlpProc.stdout && ytDlpProc.stdout.end && ytDlpProc.stdout.end();
+    ytDlpProc.stderr && ytDlpProc.stderr.end && ytDlpProc.stderr.end();
+    ytDlpProc.stdin && ytDlpProc.stdin.end && ytDlpProc.stdin.end();
+    ffmpegProc.stdout && ffmpegProc.stdout.end && ffmpegProc.stdout.end();
+    ffmpegProc.stderr && ffmpegProc.stderr.end && ffmpegProc.stderr.end();
+    ffmpegProc.stdin && ffmpegProc.stdin.end && ffmpegProc.stdin.end();
     // Kill agressivo após timeout se ainda estiverem vivos
     setTimeout(() => {
       if (!ytDlpProc.killed) ytDlpProc.kill('SIGKILL');
       if (!ffmpegProc.killed) ffmpegProc.kill('SIGKILL');
+      ytDlpProc.stdout && ytDlpProc.stdout.destroy && ytDlpProc.stdout.destroy();
+      ytDlpProc.stderr && ytDlpProc.stderr.destroy && ytDlpProc.stderr.destroy();
+      ytDlpProc.stdin && ytDlpProc.stdin.destroy && ytDlpProc.stdin.destroy();
+      ffmpegProc.stdout && ffmpegProc.stdout.destroy && ffmpegProc.stdout.destroy();
+      ffmpegProc.stderr && ffmpegProc.stderr.destroy && ffmpegProc.stderr.destroy();
+      ffmpegProc.stdin && ffmpegProc.stdin.destroy && ffmpegProc.stdin.destroy();
     }, 1000);
   });
 
