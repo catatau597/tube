@@ -41,14 +41,14 @@ export async function testYtDlp(url: string, userAgent: string, cookieFile: stri
 }
 
 export async function runYtDlp(
-    response.on('error', (err) => {
-      logger.warn(`[ytdlp-runner] Socket error: ${err.code} (${err.message})`);
-    });
   url: string,
   userAgent: string,
   cookieFile: string | null,
   response: Response,
 ): Promise<void> {
+    response.on('error', (err) => {
+      logger.warn(`[ytdlp-runner] Socket error: ${err.message}`);
+    });
   logger.info(`[ytdlp-runner] Iniciando yt-dlp: url=${url}`);
   response.setHeader('Content-Type', 'video/mp2t');
   // yt-dlp pipe para ffmpeg para garantir streaming MPEG-TS
@@ -72,22 +72,16 @@ export async function runYtDlp(
     if (!ffmpegProc.killed) ffmpegProc.kill('SIGTERM');
     logger.info(`[ytdlp-runner] Resposta fechada, processos yt-dlp e ffmpeg encerrados.`);
     // Fechar explicitamente todos os streams
-    ytDlpProc.stdout && ytDlpProc.stdout.end && ytDlpProc.stdout.end();
-    ytDlpProc.stderr && ytDlpProc.stderr.end && ytDlpProc.stderr.end();
-    ytDlpProc.stdin && ytDlpProc.stdin.end && ytDlpProc.stdin.end();
-    ffmpegProc.stdout && ffmpegProc.stdout.end && ffmpegProc.stdout.end();
-    ffmpegProc.stderr && ffmpegProc.stderr.end && ffmpegProc.stderr.end();
-    ffmpegProc.stdin && ffmpegProc.stdin.end && ffmpegProc.stdin.end();
+    // Streams do not have .end methods; just rely on process kill
     // Kill agressivo após timeout se ainda estiverem vivos
     setTimeout(() => {
       if (!ytDlpProc.killed) ytDlpProc.kill('SIGKILL');
       if (!ffmpegProc.killed) ffmpegProc.kill('SIGKILL');
       ytDlpProc.stdout && ytDlpProc.stdout.destroy && ytDlpProc.stdout.destroy();
       ytDlpProc.stderr && ytDlpProc.stderr.destroy && ytDlpProc.stderr.destroy();
-      ytDlpProc.stdin && ytDlpProc.stdin.destroy && ytDlpProc.stdin.destroy();
       ffmpegProc.stdout && ffmpegProc.stdout.destroy && ffmpegProc.stdout.destroy();
       ffmpegProc.stderr && ffmpegProc.stderr.destroy && ffmpegProc.stderr.destroy();
-      ffmpegProc.stdin && ffmpegProc.stdin.destroy && ffmpegProc.stdin.destroy();
+      // stdin is not always a stream; skip destroy for stdin
     }, 1000);
   });
 
