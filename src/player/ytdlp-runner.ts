@@ -4,7 +4,8 @@ import { Response } from 'express';
 import { logger } from '../core/logger';
 
 function buildArgs(url: string, userAgent: string, cookieFile: string | null, simulate: boolean): string[] {
-  const args = ['-f', 'best', '--user-agent', userAgent];
+  // Para streaming contínuo, use bestvideo+bestaudio e merge-output-format mpegts
+  const args = ['-f', 'bestvideo+bestaudio', '--merge-output-format', 'mpegts', '--user-agent', userAgent];
   if (cookieFile) args.push('--cookies', cookieFile);
   if (simulate) {
     args.push('--simulate', '--print', 'title');
@@ -47,26 +48,35 @@ export async function runYtDlp(
 ): Promise<void> {
   logger.info(`[ytdlp-runner] Iniciando yt-dlp: url=${url}`);
   response.setHeader('Content-Type', 'video/mp2t');
-  const proc = spawn('yt-dlp', buildArgs(url, userAgent, cookieFile, false), {
-    stdio: ['ignore', 'pipe', 'pipe'],
+  // yt-dlp pipe para ffmpeg para garantir streaming MPEG-TS
+  const ytDlpArgs = buildArgs(url, userAgent, cookieFile, false);
+  const ffmpegArgs = ['-i', '-', '-c', 'copy', '-f', 'mpegts', 'pipe:1'];
+  const ytDlpProc = spawn('yt-dlp', ytDlpArgs, { stdio: ['ignore', 'pipe', 'pipe'] });
+  const ffmpegProc = spawn('ffmpeg', ffmpegArgs, { stdio: ['pipe', 'pipe', 'pipe'] });
+
+  ytDlpProc.stdout.pipe(ffmpegProc.stdin);
+  ffmpegProc.stdout.pipe(response);
+
+  ytDlpProc.stderr.on('data', (data) => {
+    logger.warn(`[ytdlp-runner][yt-dlp stderr] ${String(data)}`);
+  });
+  ffmpegProc.stderr.on('data', (data) => {
+    logger.warn(`[ytdlp-runner][ffmpeg stderr] ${String(data)}`);
   });
 
-  proc.stdout.pipe(response);
-  proc.stderr.on('data', (data) => {
-    logger.warn(`[ytdlp-runner][stderr] ${String(data)}`);
-  });
   response.on('close', () => {
-    if (!proc.killed) proc.kill('SIGTERM');
-    logger.info(`[ytdlp-runner] Resposta fechada, processo yt-dlp encerrado.`);
+    if (!ytDlpProc.killed) ytDlpProc.kill('SIGTERM');
+    if (!ffmpegProc.killed) ffmpegProc.kill('SIGTERM');
+    logger.info(`[ytdlp-runner] Resposta fechada, processos yt-dlp e ffmpeg encerrados.`);
   });
 
   await new Promise<void>((resolve) => {
-    proc.on('close', (code) => {
-      logger.info(`[ytdlp-runner] yt-dlp finalizado com code=${code}`);
+    ffmpegProc.on('close', (code) => {
+      logger.info(`[ytdlp-runner] ffmpeg finalizado com code=${code}`);
       resolve();
     });
-    proc.on('error', (err) => {
-      logger.error(`[ytdlp-runner] Erro ao iniciar yt-dlp: ${err}`);
+    ffmpegProc.on('error', (err) => {
+      logger.error(`[ytdlp-runner] Erro ao iniciar ffmpeg: ${err}`);
       resolve();
     });
   });
