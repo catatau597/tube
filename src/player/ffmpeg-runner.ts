@@ -55,7 +55,6 @@ export async function runFfmpegPlaceholder(params: {
     '-pix_fmt', 'yuv420p',
     '-c:a', 'aac',
     '-b:a', '32k',
-    '-shortest',
     '-tune', 'stillimage',
     '-f', 'mpegts',
     'pipe:1',
