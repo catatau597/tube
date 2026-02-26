@@ -1,5 +1,5 @@
 
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { spawn } from 'child_process';
 import { logger } from '../core/logger';
 
@@ -16,10 +16,11 @@ export async function runFfmpegPlaceholder(params: {
   imageUrl: string;
   userAgent: string;
   response: Response;
+  request: Request;
   textLine1?: string;
   textLine2?: string;
 }): Promise<void> {
-  const { imageUrl, userAgent, response, textLine1, textLine2 } = params;
+  const { imageUrl, userAgent, response, request, textLine1, textLine2 } = params;
 
   // Monta filtros drawtext igual ao Python
   const drawtextFilters: string[] = [];
@@ -72,20 +73,25 @@ export async function runFfmpegPlaceholder(params: {
   const proc = spawn('ffmpeg', args, { stdio: ['ignore', 'pipe', 'pipe'] });
 
   proc.stdout.pipe(response);
-  proc.stderr.on('data', (data) => {
-    logger.warn(`[ffmpeg-runner][stderr] ${String(data)}`);
+  proc.stderr.on('data', (data: Buffer) => {
+    logger.warn(`[ffmpeg-runner][stderr] ${data.toString()}`);
   });
-  response.on('close', () => {
-    if (!proc.killed) proc.kill('SIGTERM');
-    logger.info(`[ffmpeg-runner] Resposta fechada, processo ffmpeg encerrado.`);
-  });
+  const killFfmpeg = (origin: string) => {
+    if (!proc.killed) {
+      logger.info(`[ffmpeg-runner] Cliente desconectou (${origin}), encerrando ffmpeg pid=${proc.pid}...`);
+      proc.kill('SIGTERM');
+    }
+  };
+  
+  response.on('close', () => killFfmpeg('response'));
+  request.on('close', () => killFfmpeg('request'));
 
   await new Promise<void>((resolve) => {
-    proc.on('close', (code) => {
+    proc.on('close', (code: number) => {
       logger.info(`[ffmpeg-runner] ffmpeg finalizado com code=${code}`);
       resolve();
     });
-    proc.on('error', (err) => {
+    proc.on('error', (err: Error) => {
       logger.error(`[ffmpeg-runner] Erro ao iniciar ffmpeg: ${err}`);
       resolve();
     });

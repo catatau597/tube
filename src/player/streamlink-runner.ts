@@ -1,6 +1,6 @@
 
 import { spawn } from 'child_process';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { logger } from '../core/logger';
 
 function buildArgs(url: string, userAgent: string, cookieFile: string | null, mode: 'stream' | 'url' | 'simulate'): string[] {
@@ -49,6 +49,7 @@ export async function runStreamlink(
   userAgent: string,
   cookieFile: string | null,
   response: Response,
+  request: Request,
 ): Promise<void> {
   logger.info(`[streamlink-runner] Iniciando streamlink: url=${url}`);
   response.setHeader('Content-Type', 'video/mp2t');
@@ -60,10 +61,16 @@ export async function runStreamlink(
   proc.stderr.on('data', (data) => {
     logger.warn(`[streamlink-runner][stderr] ${String(data)}`);
   });
-  response.on('close', () => {
-    if (!proc.killed) proc.kill('SIGTERM');
-    logger.info(`[streamlink-runner] Resposta fechada, processo streamlink encerrado.`);
-  });
+  
+  const killProc = (origin: string = 'event') => {
+    if (!proc.killed) {
+        proc.kill('SIGTERM');
+        logger.info(`[streamlink-runner] Cliente desconectou (${origin}), encerrando streamlink pid=${proc.pid}`);
+    }
+  };
+  
+  response.on('close', () => killProc('response'));
+  request.on('close', () => killProc('request'));
 
   await new Promise<void>((resolve) => {
     proc.on('close', (code) => {

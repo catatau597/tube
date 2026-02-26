@@ -26,7 +26,7 @@ export class SmartPlayer {
   private readonly textsPath = path.join('/data', 'textos_epg.json');
   private credentials = new CredentialsManager();
 
-  async serveVideo(videoId: string, _request: Request, response: Response): Promise<void> {
+  async serveVideo(videoId: string, request: Request, response: Response): Promise<void> {
     const platform = 'youtube';
     const creds = this.credentials.resolveCredentials(platform);
     const cache = this.readStateCache();
@@ -43,7 +43,7 @@ export class SmartPlayer {
         return;
       }
       logger.info(`[SmartPlayer] Enviando placeholder para videoId=${videoId}`);
-      await runFfmpegPlaceholder({ imageUrl: placeholder, userAgent: creds.userAgent, response });
+      await runFfmpegPlaceholder({ imageUrl: placeholder, userAgent: creds.userAgent, response, request });
       return;
     }
 
@@ -55,17 +55,17 @@ export class SmartPlayer {
       logger.info(`[SmartPlayer] streamlinkHasPlayableStream=${playable} videoId=${videoId}`);
       if (playable) {
         logger.info(`[SmartPlayer] Usando Streamlink para videoId=${videoId}`);
-        await runStreamlink(stream.watchUrl, creds.userAgent, creds.cookieFile, response);
+        await runStreamlink(stream.watchUrl, creds.userAgent, creds.cookieFile, response, request);
         return;
       }
       logger.info(`[SmartPlayer] Streamlink não conseguiu, tentando yt-dlp para videoId=${videoId}`);
-      await runYtDlp(stream.watchUrl, creds.userAgent, creds.cookieFile, response);
+      await runYtDlp(stream.watchUrl, creds.userAgent, creds.cookieFile, response, request);
       return;
     }
 
     if (stream.status === 'none' || stream.status === 'live') {
       logger.info(`[SmartPlayer] Usando yt-dlp para videoId=${videoId} status=${stream.status}`);
-      await runYtDlp(stream.watchUrl, creds.userAgent, creds.cookieFile, response);
+      await runYtDlp(stream.watchUrl, creds.userAgent, creds.cookieFile, response, request);
       return;
     }
 
@@ -82,6 +82,7 @@ export class SmartPlayer {
       imageUrl: image,
       userAgent: creds.userAgent,
       response,
+      request,
       textLine1: texts.line1,
       textLine2: texts.line2,
     });

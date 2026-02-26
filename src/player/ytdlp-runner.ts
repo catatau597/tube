@@ -1,6 +1,6 @@
 
 import { spawn } from 'child_process';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { logger } from '../core/logger';
 
 function buildArgs(url: string, userAgent: string, cookieFile: string | null, simulate: boolean): string[] {
@@ -45,6 +45,7 @@ export async function runYtDlp(
   userAgent: string,
   cookieFile: string | null,
   response: Response,
+  request: Request,
 ): Promise<void> {
     response.on('error', (err) => {
       logger.warn(`[ytdlp-runner] Socket error: ${err.message}`);
@@ -67,23 +68,48 @@ export async function runYtDlp(
     logger.warn(`[ytdlp-runner][ffmpeg stderr] ${String(data)}`);
   });
 
-  response.on('close', () => {
+  // Função de limpeza robusta e segura contra crashes
+  const cleanup = (origin: string) => {
+    logger.info(`[ytdlp-runner] Iniciando limpeza (origem: ${origin})...`);
+    
+    // 1. Desconectar pipes para evitar EPIPE no processo pai
+    try {
+        ytDlpProc.stdout.unpipe(ffmpegProc.stdin);
+        ffmpegProc.stdout.unpipe(response);
+    } catch (e) { /* ignore */ }
+
+    // 2. Destruir streams
+    try {
+        if (!ytDlpProc.stdout.destroyed) ytDlpProc.stdout.destroy();
+        if (!ffmpegProc.stdin.destroyed) ffmpegProc.stdin.destroy();
+        if (!ffmpegProc.stdout.destroyed) ffmpegProc.stdout.destroy();
+    } catch (e) { /* ignore */ }
+
+    // 3. Matar processos
     if (!ytDlpProc.killed) ytDlpProc.kill('SIGTERM');
     if (!ffmpegProc.killed) ffmpegProc.kill('SIGTERM');
-    logger.info(`[ytdlp-runner] Resposta fechada, processos yt-dlp e ffmpeg encerrados.`);
-    // Fechar explicitamente todos os streams
-    // Streams do not have .end methods; just rely on process kill
-    // Kill agressivo após timeout se ainda estiverem vivos
+
+    // 4. Garantia final (watchdog de limpeza)
     setTimeout(() => {
-      if (!ytDlpProc.killed) ytDlpProc.kill('SIGKILL');
-      if (!ffmpegProc.killed) ffmpegProc.kill('SIGKILL');
-      ytDlpProc.stdout && ytDlpProc.stdout.destroy && ytDlpProc.stdout.destroy();
-      ytDlpProc.stderr && ytDlpProc.stderr.destroy && ytDlpProc.stderr.destroy();
-      ffmpegProc.stdout && ffmpegProc.stdout.destroy && ffmpegProc.stdout.destroy();
-      ffmpegProc.stderr && ffmpegProc.stderr.destroy && ffmpegProc.stderr.destroy();
-      // stdin is not always a stream; skip destroy for stdin
-    }, 1000);
-  });
+        if (!ytDlpProc.killed) {
+            logger.warn('[ytdlp-runner] Forçando SIGKILL em yt-dlp');
+            try { ytDlpProc.kill('SIGKILL'); } catch(e) {}
+        }
+        if (!ffmpegProc.killed) {
+             try { ffmpegProc.kill('SIGKILL'); } catch(e) {}
+        }
+    }, 2000);
+  };
+  
+  response.on('close', () => cleanup('response-close'));
+  request.on('close', () => cleanup('request-close'));
+  
+  // Tratar erros de pipe silenciosamente para evitar crash
+  const noop = () => {};
+  response.on('error', noop);
+  ytDlpProc.stdout.on('error', noop);
+  ffmpegProc.stdin.on('error', noop);
+  ffmpegProc.stdout.on('error', noop);
 
   await new Promise<void>((resolve) => {
     ffmpegProc.on('close', (code) => {
