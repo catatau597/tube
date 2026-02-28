@@ -1,8 +1,10 @@
 import fs from 'fs';
 import path from 'path';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 import { getDb } from './db';
 import { logger } from './logger';
+
+const COOKIES_DIR = '/data/cookies';
 
 export interface CookieProfile {
   id: number;
@@ -10,200 +12,239 @@ export interface CookieProfile {
   platform: string;
   file_path: string;
   user_agent: string | null;
-  is_default: number; // 1 = true, 0 = false
-  active: number;     // 1 = true, 0 = false
+  is_default: number;
+  active: number;
   created_at: string;
   updated_at: string;
 }
 
-export interface CookieCredentials {
-  cookieFile: string | null;
-  userAgent: string;
+export interface CreateCookieProfileInput {
+  name: string;
+  platform: string;
+  fileContent: string; // Conteúdo do arquivo Netscape
+  userAgent?: string;
+  isDefault?: boolean;
+  active?: boolean;
+}
+
+export interface UpdateCookieProfileInput {
+  name?: string;
+  userAgent?: string;
+  isDefault?: boolean;
+  active?: boolean;
+  fileContent?: string; // Opcional: atualizar o arquivo
 }
 
 export class CookieManager {
-  private readonly cookiesDir = '/data/cookies';
-  private readonly defaultUserAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
+  /**
+   * Cria um novo perfil de cookie
+   */
+  create(input: CreateCookieProfileInput): CookieProfile {
+    const db = getDb();
+    const now = new Date().toISOString();
+    const uuid = randomUUID();
+    const filePath = path.join(COOKIES_DIR, `${uuid}.txt`);
 
-  constructor() {
-    fs.mkdirSync(this.cookiesDir, { recursive: true });
+    // Salva o arquivo no disco
+    fs.mkdirSync(COOKIES_DIR, { recursive: true });
+    fs.writeFileSync(filePath, input.fileContent, 'utf-8');
+    logger.info(`[CookieManager] Arquivo salvo: ${filePath}`);
+
+    // Se marcar como padrão, remove o padrão anterior da mesma plataforma
+    if (input.isDefault) {
+      db.prepare('UPDATE cookie_profiles SET is_default = 0 WHERE platform = ?').run(
+        input.platform,
+      );
+    }
+
+    const result = db
+      .prepare(
+        `INSERT INTO cookie_profiles (name, platform, file_path, user_agent, is_default, active, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      )
+      .run(
+        input.name,
+        input.platform,
+        filePath,
+        input.userAgent || null,
+        input.isDefault ? 1 : 0,
+        input.active !== false ? 1 : 0,
+        now,
+        now,
+      );
+
+    logger.info(
+      `[CookieManager] Perfil criado: id=${result.lastInsertRowid} name=${input.name} platform=${input.platform}`,
+    );
+
+    return this.getById(Number(result.lastInsertRowid))!;
   }
 
   /**
-   * Lista todos os perfis de cookie
+   * Lista todos os perfis
    */
-  listProfiles(): CookieProfile[] {
-    const db = getDb();
-    return db.prepare('SELECT * FROM cookie_profiles ORDER BY platform, name').all() as CookieProfile[];
+  listAll(): CookieProfile[] {
+    return getDb()
+      .prepare('SELECT * FROM cookie_profiles ORDER BY platform, is_default DESC, name')
+      .all() as CookieProfile[];
   }
 
   /**
    * Lista perfis por plataforma
    */
   listByPlatform(platform: string): CookieProfile[] {
-    const db = getDb();
-    return db.prepare('SELECT * FROM cookie_profiles WHERE platform = ? ORDER BY name').all(platform) as CookieProfile[];
+    return getDb()
+      .prepare(
+        'SELECT * FROM cookie_profiles WHERE platform = ? ORDER BY is_default DESC, name',
+      )
+      .all(platform) as CookieProfile[];
   }
 
   /**
    * Busca perfil por ID
    */
-  getProfile(id: number): CookieProfile | null {
-    const db = getDb();
-    return db.prepare('SELECT * FROM cookie_profiles WHERE id = ?').get(id) as CookieProfile | null;
+  getById(id: number): CookieProfile | null {
+    const row = getDb()
+      .prepare('SELECT * FROM cookie_profiles WHERE id = ?')
+      .get(id) as CookieProfile | undefined;
+    return row || null;
   }
 
   /**
-   * Cria novo perfil de cookie
-   * @param name Nome amigável do perfil
-   * @param platform Plataforma (youtube, twitch, etc)
-   * @param cookieContent Conteúdo do arquivo Netscape (texto)
-   * @param userAgent User-Agent específico (opcional)
-   * @param setAsDefault Marcar como padrão da plataforma
+   * Atualiza um perfil
    */
-  createProfile(params: {
-    name: string;
-    platform: string;
-    cookieContent: string;
-    userAgent?: string;
-    setAsDefault?: boolean;
-  }): CookieProfile {
-    const { name, platform, cookieContent, userAgent, setAsDefault } = params;
+  update(id: number, input: UpdateCookieProfileInput): CookieProfile | null {
     const db = getDb();
+    const existing = this.getById(id);
+    if (!existing) return null;
 
-    // Salva arquivo cookie com UUID
-    const uuid = uuidv4();
-    const fileName = `${uuid}.txt`;
-    const filePath = path.join(this.cookiesDir, fileName);
-    fs.writeFileSync(filePath, cookieContent, 'utf-8');
-    logger.info(`[CookieManager] Arquivo cookie salvo: ${filePath}`);
-
-    // Se marcar como padrão, remove padrão anterior da mesma plataforma
-    if (setAsDefault) {
-      db.prepare('UPDATE cookie_profiles SET is_default = 0 WHERE platform = ?').run(platform);
-    }
-
-    const result = db.prepare(`
-      INSERT INTO cookie_profiles (name, platform, file_path, user_agent, is_default, active, updated_at)
-      VALUES (?, ?, ?, ?, ?, 1, datetime('now'))
-    `).run(
-      name,
-      platform,
-      filePath,
-      userAgent || null,
-      setAsDefault ? 1 : 0
-    );
-
-    logger.info(`[CookieManager] Perfil criado: id=${result.lastInsertRowid} name=${name} platform=${platform}`);
-    return this.getProfile(Number(result.lastInsertRowid))!;
-  }
-
-  /**
-   * Atualiza perfil existente
-   */
-  updateProfile(id: number, params: {
-    name?: string;
-    userAgent?: string;
-    active?: boolean;
-    setAsDefault?: boolean;
-  }): CookieProfile | null {
-    const db = getDb();
-    const profile = this.getProfile(id);
-    if (!profile) return null;
-
+    const now = new Date().toISOString();
     const updates: string[] = [];
-    const values: unknown[] = [];
+    const values: any[] = [];
 
-    if (params.name !== undefined) {
+    if (input.name !== undefined) {
       updates.push('name = ?');
-      values.push(params.name);
+      values.push(input.name);
     }
-    if (params.userAgent !== undefined) {
+    if (input.userAgent !== undefined) {
       updates.push('user_agent = ?');
-      values.push(params.userAgent || null);
+      values.push(input.userAgent || null);
     }
-    if (params.active !== undefined) {
+    if (input.active !== undefined) {
       updates.push('active = ?');
-      values.push(params.active ? 1 : 0);
+      values.push(input.active ? 1 : 0);
     }
-    if (params.setAsDefault !== undefined && params.setAsDefault) {
-      // Remove padrão anterior da mesma plataforma
-      db.prepare('UPDATE cookie_profiles SET is_default = 0 WHERE platform = ?').run(profile.platform);
+    if (input.isDefault !== undefined) {
+      if (input.isDefault) {
+        // Remove o padrão anterior da mesma plataforma
+        db.prepare('UPDATE cookie_profiles SET is_default = 0 WHERE platform = ?').run(
+          existing.platform,
+        );
+      }
       updates.push('is_default = ?');
-      values.push(1);
+      values.push(input.isDefault ? 1 : 0);
+    }
+    if (input.fileContent !== undefined) {
+      // Atualiza o arquivo no disco
+      fs.writeFileSync(existing.file_path, input.fileContent, 'utf-8');
+      logger.info(`[CookieManager] Arquivo atualizado: ${existing.file_path}`);
     }
 
-    if (updates.length === 0) return profile;
+    updates.push('updated_at = ?');
+    values.push(now);
 
-    updates.push("updated_at = datetime('now')");
-    values.push(id);
+    if (updates.length > 0) {
+      values.push(id);
+      db.prepare(`UPDATE cookie_profiles SET ${updates.join(', ')} WHERE id = ?`).run(...values);
+      logger.info(`[CookieManager] Perfil atualizado: id=${id}`);
+    }
 
-    db.prepare(`UPDATE cookie_profiles SET ${updates.join(', ')} WHERE id = ?`).run(...values);
-    logger.info(`[CookieManager] Perfil atualizado: id=${id}`);
-    return this.getProfile(id);
+    return this.getById(id);
   }
 
   /**
-   * Exclui perfil e remove arquivo cookie
+   * Exclui um perfil
    */
-  deleteProfile(id: number): boolean {
-    const db = getDb();
-    const profile = this.getProfile(id);
-    if (!profile) return false;
+  delete(id: number): boolean {
+    const existing = this.getById(id);
+    if (!existing) return false;
 
-    // Remove arquivo físico
-    if (fs.existsSync(profile.file_path)) {
-      fs.unlinkSync(profile.file_path);
-      logger.info(`[CookieManager] Arquivo cookie removido: ${profile.file_path}`);
+    // Remove o arquivo do disco
+    if (fs.existsSync(existing.file_path)) {
+      fs.unlinkSync(existing.file_path);
+      logger.info(`[CookieManager] Arquivo excluído: ${existing.file_path}`);
     }
 
-    db.prepare('DELETE FROM cookie_profiles WHERE id = ?').run(id);
-    logger.info(`[CookieManager] Perfil excluído: id=${id} name=${profile.name}`);
+    getDb().prepare('DELETE FROM cookie_profiles WHERE id = ?').run(id);
+    logger.info(`[CookieManager] Perfil excluído: id=${id}`);
     return true;
   }
 
   /**
-   * Resolve credenciais de cookie para uma plataforma
-   * Lógica: padrão ativo > primeiro ativo > sem cookie
+   * Resolve o perfil de cookie correto para uma plataforma
+   * Prioridade: padrão ativo > primeiro ativo > null
    */
-  resolve(platform: string): CookieCredentials {
-    const db = getDb();
+  resolve(platform: string): { cookieFile: string | null; userAgent: string | null } {
+    const profile = getDb()
+      .prepare(
+        `SELECT * FROM cookie_profiles 
+         WHERE platform = ? AND active = 1 
+         ORDER BY is_default DESC, id ASC 
+         LIMIT 1`,
+      )
+      .get(platform) as CookieProfile | undefined;
 
-    // Tenta perfil padrão ativo
-    const defaultProfile = db.prepare(`
-      SELECT * FROM cookie_profiles 
-      WHERE platform = ? AND is_default = 1 AND active = 1
-    `).get(platform) as CookieProfile | undefined;
-
-    if (defaultProfile) {
-      logger.debug(`[CookieManager] Usando perfil padrão: ${defaultProfile.name} (platform=${platform})`);
-      return {
-        cookieFile: defaultProfile.file_path,
-        userAgent: defaultProfile.user_agent || this.defaultUserAgent,
-      };
+    if (!profile) {
+      return { cookieFile: null, userAgent: null };
     }
 
-    // Tenta primeiro perfil ativo
-    const firstActive = db.prepare(`
-      SELECT * FROM cookie_profiles 
-      WHERE platform = ? AND active = 1 
-      ORDER BY created_at ASC 
-      LIMIT 1
-    `).get(platform) as CookieProfile | undefined;
-
-    if (firstActive) {
-      logger.debug(`[CookieManager] Usando primeiro perfil ativo: ${firstActive.name} (platform=${platform})`);
-      return {
-        cookieFile: firstActive.file_path,
-        userAgent: firstActive.user_agent || this.defaultUserAgent,
-      };
+    // Verifica se o arquivo ainda existe
+    if (!fs.existsSync(profile.file_path)) {
+      logger.warn(
+        `[CookieManager] Arquivo não encontrado para perfil id=${profile.id}: ${profile.file_path}`,
+      );
+      return { cookieFile: null, userAgent: null };
     }
 
-    // Sem cookie disponível
-    logger.debug(`[CookieManager] Nenhum perfil ativo para platform=${platform}, usando sem cookie`);
     return {
-      cookieFile: null,
-      userAgent: this.defaultUserAgent,
+      cookieFile: profile.file_path,
+      userAgent: profile.user_agent || null,
     };
+  }
+
+  /**
+   * Define um perfil como padrão (remove o padrão anterior da mesma plataforma)
+   */
+  setDefault(id: number): boolean {
+    const profile = this.getById(id);
+    if (!profile) return false;
+
+    const db = getDb();
+    db.prepare('UPDATE cookie_profiles SET is_default = 0 WHERE platform = ?').run(
+      profile.platform,
+    );
+    db.prepare('UPDATE cookie_profiles SET is_default = 1, updated_at = ? WHERE id = ?').run(
+      new Date().toISOString(),
+      id,
+    );
+
+    logger.info(`[CookieManager] Perfil id=${id} definido como padrão para ${profile.platform}`);
+    return true;
+  }
+
+  /**
+   * Toggle ativo/inativo
+   */
+  toggleActive(id: number): boolean {
+    const profile = this.getById(id);
+    if (!profile) return false;
+
+    const newActive = profile.active === 1 ? 0 : 1;
+    getDb()
+      .prepare('UPDATE cookie_profiles SET active = ?, updated_at = ? WHERE id = ?')
+      .run(newActive, new Date().toISOString(), id);
+
+    logger.info(`[CookieManager] Perfil id=${id} active=${newActive}`);
+    return true;
   }
 }
