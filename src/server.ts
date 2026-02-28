@@ -27,6 +27,7 @@ import { createPlayerRouter } from './api/routes/player';
 import { createLogsRouter } from './api/routes/logs';
 import { createTitleFormatRouter } from './api/routes/title-format';
 import cookiesRouter from './api/routes/cookies';
+import toolProfilesRouter from './api/routes/tool-profiles';
 
 initDb();
 
@@ -145,6 +146,7 @@ app.use('/api/streams', createStreamsRouter());
 app.use('/api/config', createConfigRouter());
 app.use('/api/scheduler', createSchedulerRouter(scheduler));
 app.use('/api/credentials', createCredentialsRouter());
+app.use('/api/tool-profiles', toolProfilesRouter);
 app.use('/api/cookies', cookiesRouter);
 app.use('/api/logs', createLogsRouter());
 app.use('/api', createTitleFormatRouter());
