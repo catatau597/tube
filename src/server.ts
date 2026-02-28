@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import http from 'http';
 import path from 'path';
-import express from 'express';
+import express, { Request } from 'express';
 import session from 'express-session';
 import { WebSocketServer } from 'ws';
 import { initDb } from './core/db';
@@ -71,6 +71,19 @@ app.use(
   }),
 );
 
+/**
+ * Helper: retorna a URL base do TubeWranglerr.
+ * Se TUBEWRANGLERR_URL estiver configurado, usa esse valor.
+ * Caso contrário, monta a URL a partir da requisição atual.
+ */
+export function resolveBaseUrl(req: Request): string {
+  const configured = getConfig('TUBEWRANGLERR_URL')?.trim();
+  if (configured) return configured.replace(/\/$/, '');
+  const proto = req.headers['x-forwarded-proto'] ?? req.protocol;
+  const host = req.headers['x-forwarded-host'] ?? req.headers['host'] ?? 'localhost';
+  return `${String(proto)}://${String(host)}`;
+}
+
 app.use((request, response, next) => {
   const start = Date.now();
   response.on('finish', () => {
@@ -101,6 +114,11 @@ app.get('/', (request, response) => {
   response.sendFile(path.join(publicDir, 'index.html'));
 });
 
+/* Expõe a URL base via API (usada pelo frontend para auto-preencher) */
+app.get('/api/base-url', (request, response) => {
+  response.json({ url: resolveBaseUrl(request) });
+});
+
 app.use('/api/auth', createAuthRouter());
 app.use(createPlaylistsRouter(state));
 app.use('/api', createPlayerRouter());
@@ -113,10 +131,7 @@ app.use('/api', (request, response, next) => {
     request.path.startsWith('/auth/logout') ||
     request.path.startsWith('/stream/') ||
     request.path.startsWith('/thumbnail/')
-  ) {
-    next();
-    return;
-  }
+  ) { next(); return; }
   requireAuth(request, response, next);
 });
 
@@ -133,8 +148,8 @@ app.use('/api/streams', createStreamsRouter());
 app.use('/api/config', createConfigRouter());
 app.use('/api/scheduler', createSchedulerRouter(scheduler));
 app.use('/api/credentials', createCredentialsRouter());
-app.use('/api/cookies', cookiesRouter);
 app.use('/api/tool-profiles', toolProfilesRouter);
+app.use('/api/cookies', cookiesRouter);
 app.use('/api/logs', createLogsRouter());
 app.use('/api', createTitleFormatRouter());
 
