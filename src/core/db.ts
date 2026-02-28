@@ -165,13 +165,29 @@ export function initDb(): Database.Database {
       created_at  TEXT DEFAULT (datetime('now')),
       updated_at  TEXT DEFAULT (datetime('now'))
     );
+
+    CREATE TABLE IF NOT EXISTS tool_profiles (
+      id              INTEGER PRIMARY KEY AUTOINCREMENT,
+      name            TEXT NOT NULL,
+      tool            TEXT NOT NULL CHECK(tool IN ('streamlink', 'yt-dlp')),
+      flags           TEXT NOT NULL DEFAULT '',
+      cookie_platform TEXT,
+      ua_id           INTEGER REFERENCES credentials(id),
+      is_active       INTEGER NOT NULL DEFAULT 0,
+      created_at      TEXT DEFAULT (datetime('now')),
+      updated_at      TEXT DEFAULT (datetime('now'))
+    );
   `);
 
-  // Índice único para garantir apenas um perfil padrão por plataforma
+  // Índices únicos
   db.exec(`
     CREATE UNIQUE INDEX IF NOT EXISTS idx_cookie_platform_default 
     ON cookie_profiles(platform, is_default) 
     WHERE is_default = 1;
+
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_tool_profiles_active
+    ON tool_profiles(tool, is_active)
+    WHERE is_active = 1;
   `);
 
   const envSeed = readSeedEnv();
