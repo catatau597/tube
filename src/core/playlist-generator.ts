@@ -1,5 +1,6 @@
-import { getAllConfig } from './config-manager';
+import { getAllConfig, getConfig } from './config-manager';
 import { Stream } from './state-manager';
+import { TitleFormatter, TitleFormatConfig } from './title-formatter';
 
 function parseMap(raw: string): Record<string, string> {
   const output: Record<string, string> = {};
@@ -18,6 +19,24 @@ const PLACEHOLDER_TITLES: Record<string, string> = {
 };
 
 export class PlaylistGenerator {
+  private titleFormatter: TitleFormatter | null = null;
+
+  constructor() {
+    this.loadTitleFormatter();
+  }
+
+  private loadTitleFormatter() {
+    try {
+      const raw = getConfig('TITLE_FORMAT_CONFIG');
+      if (raw) {
+        const config: TitleFormatConfig = JSON.parse(raw);
+        this.titleFormatter = new TitleFormatter(config);
+      }
+    } catch (error) {
+      console.warn('Failed to load title format config, using legacy format');
+    }
+  }
+
   generateM3U(
     type: 'live' | 'upcoming' | 'vod',
     mode: 'direct' | 'proxy',
@@ -136,17 +155,29 @@ export class PlaylistGenerator {
   }
 
   private displayTitle(stream: Stream, cfg: Record<string, string>): string {
+    // Aplicar filtros de título primeiro
     const titleFilters = (cfg.TITLE_FILTER_EXPRESSIONS || '')
       .split(',')
       .map((value) => value.trim())
       .filter(Boolean);
 
-    let title = stream.titleOriginal;
+    let eventTitle = stream.titleOriginal;
     for (const expression of titleFilters) {
-      title = title.replace(new RegExp(expression, 'ig'), '');
+      eventTitle = eventTitle.replace(new RegExp(expression, 'ig'), '');
     }
-    title = title.replace(/\s+/g, ' ').trim();
+    eventTitle = eventTitle.replace(/\s+/g, ' ').trim();
 
+    // Usar TitleFormatter se disponível
+    if (this.titleFormatter) {
+      const channelMap = parseMap(cfg.CHANNEL_NAME_MAPPINGS || '');
+      const channelDisplay = channelMap[stream.channelName] ?? stream.channelName;
+      
+      // Criar stream temporário com título filtrado
+      const tempStream = { ...stream, titleOriginal: eventTitle };
+      return this.titleFormatter.formatTitle(tempStream, channelDisplay);
+    }
+
+    // Fallback: lógica antiga
     const channelMap = parseMap(cfg.CHANNEL_NAME_MAPPINGS || '');
     const channel = channelMap[stream.channelName] ?? stream.channelName;
     const useBrackets = cfg.TITLE_USE_BRACKETS === 'true';
@@ -166,7 +197,7 @@ export class PlaylistGenerator {
     if (cfg.PREFIX_TITLE_WITH_CHANNEL_NAME === 'true') {
       pieces.push(wrap(channel));
     }
-    pieces.push(title);
+    pieces.push(eventTitle);
     return pieces.join(' ').replace(/\s+/g, ' ').trim();
   }
 
