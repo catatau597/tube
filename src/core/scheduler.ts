@@ -1,4 +1,4 @@
-import { configEvents } from './config-manager';
+import { configEvents, getConfigNumber } from './config-manager';
 import { logger } from './logger';
 import { StateManager } from './state-manager';
 import { YouTubeApi } from './youtube-api';
@@ -15,6 +15,7 @@ interface SchedulerConfig {
   activeEndHour: number;
   usePlaylistItems: boolean;
   localTimezone: string;
+  maxScheduleHours: number;
 }
 
 export class Scheduler {
@@ -96,11 +97,12 @@ export class Scheduler {
     logger.info(`[Scheduler] Sincronização individual do canal ${channelId} (${channel.title}).`);
 
     try {
+      const fetchOptions = { maxScheduleHours: this.config.maxScheduleHours };
       const streams = [];
       if (this.config.usePlaylistItems && channel.uploadsPlaylistId) {
-        streams.push(...(await this.api.fetchByPlaylistItems(channel.uploadsPlaylistId)));
+        streams.push(...(await this.api.fetchByPlaylistItems(channel.uploadsPlaylistId, fetchOptions)));
       } else {
-        streams.push(...(await this.api.fetchBySearch(channel.channelId)));
+        streams.push(...(await this.api.fetchBySearch(channel.channelId, fetchOptions)));
       }
       this.state.updateStreams(streams);
       this.state.saveEpgTexts(this.config.localTimezone);
@@ -198,7 +200,6 @@ export class Scheduler {
     const fullSyncIntervalMs = this.config.fullSyncIntervalHours * 3_600_000;
     const timeForFullSync = now.getTime() - this.lastFullSync.getTime() >= fullSyncIntervalMs;
     const firstRun = this.lastMainRun.getTime() === 0;
-    const publishedAfter = !timeForFullSync && !firstRun ? this.lastMainRun.toISOString() : undefined;
 
     const channels = this.state.getActiveChannels();
     if (channels.length === 0) {
@@ -208,16 +209,19 @@ export class Scheduler {
     }
 
     const allStreams = [];
+    const fetchOptions = { maxScheduleHours: this.config.maxScheduleHours };
+    
     logger.info(
-      `[Scheduler] Iniciando busca principal. Tipo: ${publishedAfter ? 'incremental' : 'full sync'}. publishedAfter: ${publishedAfter ?? 'nenhum'}`,
+      `[Scheduler] Iniciando busca principal. Tipo: ${timeForFullSync || firstRun ? 'full sync' : 'incremental'}. ` +
+      `maxScheduleHours: ${this.config.maxScheduleHours}h`,
     );
 
     for (const channel of channels) {
       try {
         if (this.config.usePlaylistItems && channel.uploadsPlaylistId) {
-          allStreams.push(...(await this.api.fetchByPlaylistItems(channel.uploadsPlaylistId, publishedAfter)));
+          allStreams.push(...(await this.api.fetchByPlaylistItems(channel.uploadsPlaylistId, fetchOptions)));
         } else {
-          allStreams.push(...(await this.api.fetchBySearch(channel.channelId, publishedAfter)));
+          allStreams.push(...(await this.api.fetchBySearch(channel.channelId, fetchOptions)));
         }
       } catch (error) {
         logger.error(`[Scheduler] Erro ao buscar canal ${channel.channelId}: ${String(error)}`);
@@ -227,7 +231,7 @@ export class Scheduler {
     this.state.updateStreams(allStreams);
     this.lastMainRun = now;
     this.state.setMeta('lastMainRun', now);
-    if (!publishedAfter) {
+    if (timeForFullSync || firstRun) {
       this.lastFullSync = now;
       this.state.setMeta('lastFullSync', now);
     }
@@ -344,6 +348,9 @@ export class Scheduler {
         break;
       case 'LOCAL_TIMEZONE':
         this.config.localTimezone = value;
+        break;
+      case 'MAX_SCHEDULE_HOURS':
+        this.config.maxScheduleHours = Number(value);
         break;
       default:
         return;
