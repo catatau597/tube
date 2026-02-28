@@ -52,6 +52,7 @@ const scheduler = new Scheduler(state, youtubeApi, {
   activeEndHour: getConfigNumber('SCHEDULER_ACTIVE_END_HOUR', 22),
   usePlaylistItems: getConfigBool('USE_PLAYLIST_ITEMS'),
   localTimezone: getConfig('LOCAL_TIMEZONE') || 'America/Sao_Paulo',
+  maxScheduleHours: getConfigNumber('MAX_SCHEDULE_HOURS', 72),
 });
 
 configEvents.on('configChanged', (key: string, value: string) => {
