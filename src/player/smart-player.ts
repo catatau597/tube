@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { Request, Response } from 'express';
-import { CredentialsManager } from './credentials-manager';
+import { ToolProfileManager } from './tool-profile-manager';
 import { runFfmpegPlaceholder } from './ffmpeg-runner';
 import { runStreamlink, streamlinkHasPlayableStream } from './streamlink-runner';
 import { runYtDlp } from './ytdlp-runner';
@@ -24,11 +24,13 @@ interface CacheFile {
 export class SmartPlayer {
   private readonly statePath = path.join('/data', 'state_cache.json');
   private readonly textsPath = path.join('/data', 'textos_epg.json');
-  private credentials = new CredentialsManager();
+  private toolProfiles = new ToolProfileManager();
 
   async serveVideo(videoId: string, _request: Request, response: Response): Promise<void> {
-    const platform = 'youtube';
-    const creds = this.credentials.resolveCredentials(platform);
+    const slProfile = this.toolProfiles.resolveProfile('streamlink');
+    const ytProfile = this.toolProfiles.resolveProfile('yt-dlp');
+    const ffProfile = this.toolProfiles.resolveProfile('ffmpeg');
+
     const cache = this.readStateCache();
     const stream = cache.streams[videoId];
 
@@ -42,8 +44,7 @@ export class SmartPlayer {
         response.status(404).json({ error: 'Stream não encontrado e sem placeholder configurado' });
         return;
       }
-      logger.info(`[SmartPlayer] Enviando placeholder para videoId=${videoId}`);
-      await runFfmpegPlaceholder({ imageUrl: placeholder, userAgent: creds.userAgent, response });
+      await runFfmpegPlaceholder({ imageUrl: placeholder, userAgent: ffProfile.userAgent, extraFlags: ffProfile.flags, response });
       return;
     }
 
@@ -51,21 +52,21 @@ export class SmartPlayer {
 
     if (stream.status === 'live' && this.isGenuinelyLive(stream)) {
       logger.info(`[SmartPlayer] Stream está genuinamente ao vivo: videoId=${videoId}`);
-      const playable = await streamlinkHasPlayableStream(stream.watchUrl, creds.userAgent, creds.cookieFile);
+      const playable = await streamlinkHasPlayableStream(stream.watchUrl, slProfile.userAgent, slProfile.cookieFile);
       logger.info(`[SmartPlayer] streamlinkHasPlayableStream=${playable} videoId=${videoId}`);
       if (playable) {
         logger.info(`[SmartPlayer] Usando Streamlink para videoId=${videoId}`);
-        await runStreamlink(stream.watchUrl, creds.userAgent, creds.cookieFile, response);
+        await runStreamlink(stream.watchUrl, slProfile.userAgent, slProfile.cookieFile, slProfile.flags, response);
         return;
       }
       logger.info(`[SmartPlayer] Streamlink não conseguiu, tentando yt-dlp para videoId=${videoId}`);
-      await runYtDlp(stream.watchUrl, creds.userAgent, creds.cookieFile, response);
+      await runYtDlp(stream.watchUrl, ytProfile.userAgent, ytProfile.cookieFile, ytProfile.flags, response);
       return;
     }
 
     if (stream.status === 'none' || stream.status === 'live') {
       logger.info(`[SmartPlayer] Usando yt-dlp para videoId=${videoId} status=${stream.status}`);
-      await runYtDlp(stream.watchUrl, creds.userAgent, creds.cookieFile, response);
+      await runYtDlp(stream.watchUrl, ytProfile.userAgent, ytProfile.cookieFile, ytProfile.flags, response);
       return;
     }
 
@@ -80,7 +81,8 @@ export class SmartPlayer {
     logger.info(`[SmartPlayer] Enviando placeholder com texto para videoId=${videoId}`);
     await runFfmpegPlaceholder({
       imageUrl: image,
-      userAgent: creds.userAgent,
+      userAgent: ffProfile.userAgent,
+      extraFlags: ffProfile.flags,
       response,
       textLine1: texts.line1,
       textLine2: texts.line2,
@@ -103,17 +105,13 @@ export class SmartPlayer {
     try {
       const parsed = JSON.parse(fs.readFileSync(this.statePath, 'utf-8')) as CacheFile;
       return parsed?.streams ? parsed : { streams: {} };
-    } catch {
-      return { streams: {} };
-    }
+    } catch { return { streams: {} }; }
   }
 
   private readTextsCache(): Record<string, { line1: string; line2: string }> {
     if (!fs.existsSync(this.textsPath)) return {};
     try {
       return JSON.parse(fs.readFileSync(this.textsPath, 'utf-8')) as Record<string, { line1: string; line2: string }>;
-    } catch {
-      return {};
-    }
+    } catch { return {}; }
   }
 }

@@ -14,13 +14,9 @@ function escapeFfmpegText(text: string): string {
 function killProcessGroup(proc: ChildProcess, signal: NodeJS.Signals = 'SIGTERM'): void {
   if (!proc.pid) return;
   try {
-    // Mata o grupo de processos inteiro (inclui filhos)
     process.kill(-proc.pid, signal);
-  } catch (err) {
-    // Fallback: mata só o processo principal se group kill falhar
-    try {
-      proc.kill(signal);
-    } catch (killErr) {
+  } catch {
+    try { proc.kill(signal); } catch (killErr) {
       logger.warn(`[ffmpeg-runner] Erro ao matar processo PID=${proc.pid}: ${killErr}`);
     }
   }
@@ -28,22 +24,10 @@ function killProcessGroup(proc: ChildProcess, signal: NodeJS.Signals = 'SIGTERM'
 
 function cleanupProcess(proc: ChildProcess, name: string): void {
   if (!proc || proc.killed) return;
-  
   logger.info(`[ffmpeg-runner] Iniciando cleanup de ${name} (PID=${proc.pid})`);
-  
-  // 1. Unpipe e destroy streams ANTES de matar (força EPIPE imediato)
-  if (proc.stdout) {
-    proc.stdout.unpipe();
-    proc.stdout.destroy();
-  }
-  if (proc.stderr) {
-    proc.stderr.destroy();
-  }
-  
-  // 2. SIGTERM gentil
+  if (proc.stdout) { proc.stdout.unpipe(); proc.stdout.destroy(); }
+  if (proc.stderr) { proc.stderr.destroy(); }
   killProcessGroup(proc, 'SIGTERM');
-  
-  // 3. SIGKILL após 3s se ainda vivo
   setTimeout(() => {
     if (proc && !proc.killed && proc.pid) {
       logger.warn(`[ffmpeg-runner] ${name} (PID=${proc.pid}) não respondeu ao SIGTERM, usando SIGKILL`);
@@ -56,12 +40,13 @@ export async function runFfmpegPlaceholder(params: {
   imageUrl: string;
   userAgent: string;
   response: Response;
+  /** Flags extras do perfil ffmpeg (inseridas antes dos args fixos) */
+  extraFlags?: string[];
   textLine1?: string;
   textLine2?: string;
 }): Promise<void> {
-  const { imageUrl, userAgent, response, textLine1, textLine2 } = params;
+  const { imageUrl, userAgent, response, extraFlags = [], textLine1, textLine2 } = params;
 
-  // Monta filtros drawtext igual ao Python
   const drawtextFilters: string[] = [];
   const fontPath = '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf';
   if (textLine1) {
@@ -74,10 +59,12 @@ export async function runFfmpegPlaceholder(params: {
       `drawtext=fontfile='${fontPath}':text='${escapeFfmpegText(textLine2)}':x=(w-text_w)/2:y=h-50:fontsize=36:fontcolor=white:borderw=2:bordercolor=black@0.8`
     );
   }
-  // Filtro otimizado com loop igual ao Python
-  const filterComplex = `[0:v]scale=854:480,loop=-1:1:0${drawtextFilters.length > 0 ? ',' + drawtextFilters.join(',') : ''}[v]`;
+  const filterComplex = `[0:v]scale=854:480,loop=-1:1:0${
+    drawtextFilters.length > 0 ? ',' + drawtextFilters.join(',') : ''
+  }[v]`;
 
   const args = [
+    ...extraFlags,
     '-loglevel', 'error',
     '-user_agent', userAgent,
     '-i', imageUrl,
@@ -101,27 +88,17 @@ export async function runFfmpegPlaceholder(params: {
     'pipe:1',
   ];
 
-  // Log detalhado do comando ffmpeg e do user agent
-  // eslint-disable-next-line no-console
-  console.log('[ffmpeg-runner] Comando ffmpeg:', 'ffmpeg', args.map(a => `'${a}'`).join(' '));
-  // eslint-disable-next-line no-console
-  console.log('[ffmpeg-runner] User-Agent:', userAgent);
-
-  logger.info(`[ffmpeg-runner] Iniciando ffmpeg placeholder: imageUrl=${imageUrl}`);
+  logger.info(`[ffmpeg-runner] Iniciando ffmpeg placeholder: imageUrl=${imageUrl} extraFlags=[${extraFlags.join(' ')}]`);
   response.setHeader('Content-Type', 'video/mp2t');
-  
-  // Spawna com detached: true para criar process group
-  const proc = spawn('ffmpeg', args, { 
+
+  const proc = spawn('ffmpeg', args, {
     stdio: ['ignore', 'pipe', 'pipe'],
-    detached: true 
+    detached: true,
   });
 
   proc.stdout.pipe(response);
-  proc.stderr.on('data', (data) => {
-    logger.warn(`[ffmpeg-runner][stderr] ${String(data)}`);
-  });
-  
-  // Flag de cleanup idempotente
+  proc.stderr.on('data', (data) => { logger.warn(`[ffmpeg-runner][stderr] ${String(data)}`); });
+
   let cleaned = false;
   const cleanup = (origin: string) => {
     if (cleaned) return;
@@ -131,21 +108,10 @@ export async function runFfmpegPlaceholder(params: {
   };
 
   response.on('close', () => cleanup('response-close'));
-  response.on('error', (err) => {
-    logger.warn(`[ffmpeg-runner] Socket error: ${err.message}`);
-    cleanup('response-error');
-  });
+  response.on('error', (err) => { logger.warn(`[ffmpeg-runner] Socket error: ${err.message}`); cleanup('response-error'); });
 
   await new Promise<void>((resolve) => {
-    proc.on('close', (code) => {
-      logger.info(`[ffmpeg-runner] ffmpeg finalizado com code=${code}`);
-      cleanup('proc-close');
-      resolve();
-    });
-    proc.on('error', (err) => {
-      logger.error(`[ffmpeg-runner] Erro ao iniciar ffmpeg: ${err}`);
-      cleanup('proc-error');
-      resolve();
-    });
+    proc.on('close', (code) => { logger.info(`[ffmpeg-runner] ffmpeg finalizado code=${code}`); cleanup('proc-close'); resolve(); });
+    proc.on('error', (err) => { logger.error(`[ffmpeg-runner] Erro: ${err}`); cleanup('proc-error'); resolve(); });
   });
 }
