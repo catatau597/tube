@@ -28,10 +28,11 @@ export async function streamlinkHasPlayableStream(
   url: string,
   userAgent: string,
   cookieFile: string | null,
+  extraFlags: string[] = [],
 ): Promise<boolean> {
   return new Promise<boolean>((resolve) => {
     logger.info(`[streamlink-runner] Testando streamlinkHasPlayableStream: url=${url}`);
-    const proc = spawn('streamlink', buildArgs(url, userAgent, cookieFile, [], 'simulate'));
+    const proc = spawn('streamlink', buildArgs(url, userAgent, cookieFile, extraFlags, 'simulate'));
     let stderr = '';
     proc.stderr.on('data', (chunk) => {
       stderr += String(chunk);
@@ -84,15 +85,14 @@ export async function runStreamlink(
   logger.info(`[streamlink-runner] Iniciando streamlink: url=${url} extraFlags=[${extraFlags.join(' ')}]`);
   response.setHeader('Content-Type', 'video/mp2t');
 
-  const proc = spawn('streamlink', buildArgs(url, userAgent, cookieFile, extraFlags, 'stream'), {
-    stdio: ['ignore', 'pipe', 'pipe'],
-    detached: true,
-  });
+  const proc = spawn(
+    'streamlink',
+    buildArgs(url, userAgent, cookieFile, extraFlags, 'stream'),
+    { stdio: ['ignore', 'pipe', 'pipe'], detached: true }
+  );
 
   proc.stdout.pipe(response);
-  proc.stderr.on('data', (data) => {
-    logger.warn(`[streamlink-runner][stderr] ${String(data)}`);
-  });
+  proc.stderr.on('data', (data) => { logger.warn(`[streamlink-runner][stderr] ${String(data)}`); });
 
   let cleaned = false;
   const cleanup = (origin: string) => {
@@ -103,10 +103,21 @@ export async function runStreamlink(
   };
 
   response.on('close', () => cleanup('response-close'));
-  response.on('error', (err) => { logger.warn(`[streamlink-runner] Socket error: ${err.message}`); cleanup('response-error'); });
+  response.on('error', (err) => {
+    logger.warn(`[streamlink-runner] Socket error: ${err.message}`);
+    cleanup('response-error');
+  });
 
   await new Promise<void>((resolve) => {
-    proc.on('close', (code) => { logger.info(`[streamlink-runner] finalizado code=${code}`); cleanup('proc-close'); resolve(); });
-    proc.on('error', (err) => { logger.error(`[streamlink-runner] Erro: ${err}`); cleanup('proc-error'); resolve(); });
+    proc.on('close', (code) => {
+      logger.info(`[streamlink-runner] streamlink finalizado com code=${code}`);
+      cleanup('proc-close');
+      resolve();
+    });
+    proc.on('error', (err) => {
+      logger.error(`[streamlink-runner] Erro ao iniciar streamlink: ${err}`);
+      cleanup('proc-error');
+      resolve();
+    });
   });
 }
