@@ -1,5 +1,4 @@
-
-import { spawn } from 'child_process';
+import { spawn, ChildProcess } from 'child_process';
 import { Response } from 'express';
 import { logger } from '../core/logger';
 
@@ -44,6 +43,47 @@ export async function streamlinkHasPlayableStream(
   });
 }
 
+function killProcessGroup(proc: ChildProcess, signal: NodeJS.Signals = 'SIGTERM'): void {
+  if (!proc.pid) return;
+  try {
+    // Mata o grupo de processos inteiro (inclui filhos)
+    process.kill(-proc.pid, signal);
+  } catch (err) {
+    // Fallback: mata só o processo principal se group kill falhar
+    try {
+      proc.kill(signal);
+    } catch (killErr) {
+      logger.warn(`[streamlink-runner] Erro ao matar processo PID=${proc.pid}: ${killErr}`);
+    }
+  }
+}
+
+function cleanupProcess(proc: ChildProcess, name: string): void {
+  if (!proc || proc.killed) return;
+  
+  logger.info(`[streamlink-runner] Iniciando cleanup de ${name} (PID=${proc.pid})`);
+  
+  // 1. Unpipe e destroy streams ANTES de matar (força EPIPE imediato)
+  if (proc.stdout) {
+    proc.stdout.unpipe();
+    proc.stdout.destroy();
+  }
+  if (proc.stderr) {
+    proc.stderr.destroy();
+  }
+  
+  // 2. SIGTERM gentil
+  killProcessGroup(proc, 'SIGTERM');
+  
+  // 3. SIGKILL após 3s se ainda vivo
+  setTimeout(() => {
+    if (proc && !proc.killed && proc.pid) {
+      logger.warn(`[streamlink-runner] ${name} (PID=${proc.pid}) não respondeu ao SIGTERM, usando SIGKILL`);
+      killProcessGroup(proc, 'SIGKILL');
+    }
+  }, 3000);
+}
+
 export async function runStreamlink(
   url: string,
   userAgent: string,
@@ -52,26 +92,42 @@ export async function runStreamlink(
 ): Promise<void> {
   logger.info(`[streamlink-runner] Iniciando streamlink: url=${url}`);
   response.setHeader('Content-Type', 'video/mp2t');
+  
+  // Spawna com detached: true para criar process group
   const proc = spawn('streamlink', buildArgs(url, userAgent, cookieFile, 'stream'), {
     stdio: ['ignore', 'pipe', 'pipe'],
+    detached: true
   });
 
   proc.stdout.pipe(response);
   proc.stderr.on('data', (data) => {
     logger.warn(`[streamlink-runner][stderr] ${String(data)}`);
   });
-  response.on('close', () => {
-    if (!proc.killed) proc.kill('SIGTERM');
-    logger.info(`[streamlink-runner] Resposta fechada, processo streamlink encerrado.`);
+  
+  // Flag de cleanup idempotente
+  let cleaned = false;
+  const cleanup = (origin: string) => {
+    if (cleaned) return;
+    cleaned = true;
+    logger.info(`[streamlink-runner] Iniciando limpeza (origem: ${origin})`);
+    cleanupProcess(proc, 'streamlink');
+  };
+
+  response.on('close', () => cleanup('response-close'));
+  response.on('error', (err) => {
+    logger.warn(`[streamlink-runner] Socket error: ${err.message}`);
+    cleanup('response-error');
   });
 
   await new Promise<void>((resolve) => {
     proc.on('close', (code) => {
       logger.info(`[streamlink-runner] streamlink finalizado com code=${code}`);
+      cleanup('proc-close');
       resolve();
     });
     proc.on('error', (err) => {
       logger.error(`[streamlink-runner] Erro ao iniciar streamlink: ${err}`);
+      cleanup('proc-error');
       resolve();
     });
   });
