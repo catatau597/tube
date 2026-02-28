@@ -548,3 +548,306 @@ frame= 3536 fps= 61 q=-1.0 Lsize=   24141KiB time=00:01:57.83 bitrate=1678.3kbit
 2026-02-21 18:30:01 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 22 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.732x elapsed=0:02:42.57
 2026-02-21 18:30:02 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 22 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.729x elapsed=0:02:43.07
 2026-02-21 18:30:02 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 22 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.727x elapsed=0:02:43.57
+
+LOG de 27/02/26 22h
+
+root@master3:~# sudo docker compose --file /home/user1/docker/docker-compose-master3.yml up -d tube
+[+] Running 1/1
+ ✔ Container tube  Started                                                                                                                                         0.4s
+root@master3:~# docker logs -f tube
+2026-02-27 22:50:53 INFO [StateManager] Cache carregado com 114 streams.
+2026-02-27 22:50:53 INFO [YouTubeApi] Lista de chaves atualizada (1 chave(s)).
+Warning: connect.session() MemoryStore is not
+designed for a production environment, as it will leak
+memory, and will not scale past a single process.
+2026-02-27 22:50:53 INFO Servidor HTTP iniciado em http://0.0.0.0:8888
+2026-02-27 22:50:53 INFO [Scheduler] Iniciado com delay inicial (cache existente detectado).
+2026-02-27 22:50:53 INFO [Scheduler] Loop iniciado. Tick a cada 60s.
+2026-02-27 22:50:53 INFO [Scheduler] 1 stream(s) na janela pré-evento.
+2026-02-27 22:50:53 INFO [Scheduler] 1 stream(s) live em monitoramento.
+2026-02-27 22:50:53 INFO [Scheduler] Verificação alta frequência: 2 stream(s).
+2026-02-27 22:50:53 INFO [Scheduler] Estado: 1 live | 103 upcoming | 10 vod.
+2026-02-27 22:51:09 INFO [HTTP] GET / → 302 (4ms) [anon]
+2026-02-27 22:51:09 INFO [HTTP] GET /login → 200 (18ms) [anon]
+2026-02-27 22:51:10 INFO [HTTP] GET /css/style.css → 200 (8ms) [anon]
+2026-02-27 22:51:10 INFO [HTTP] GET /favicon.ico → 404 (8ms) [anon]
+2026-02-27 22:51:18 INFO [HTTP] POST /api/auth/login → 200 (45ms) [admin]
+2026-02-27 22:51:18 INFO [HTTP] GET / → 200 (1ms) [admin]
+2026-02-27 22:51:18 INFO [HTTP] GET /css/style.css → 304 (6ms) [admin]
+2026-02-27 22:51:18 INFO [HTTP] GET /js/app.js → 200 (9ms) [admin]
+2026-02-27 22:51:18 INFO [HTTP] GET /js/dashboard.js → 200 (19ms) [admin]
+2026-02-27 22:51:18 INFO [HTTP] GET /js/channels.js → 200 (19ms) [admin]
+2026-02-27 22:51:18 INFO [HTTP] GET /js/streams.js → 200 (21ms) [admin]
+2026-02-27 22:51:18 INFO [HTTP] GET /js/settings.js → 200 (11ms) [admin]
+2026-02-27 22:51:18 INFO [HTTP] GET /js/playlists.js → 200 (10ms) [admin]
+2026-02-27 22:51:18 INFO [HTTP] GET /js/logs.js → 200 (9ms) [admin]
+2026-02-27 22:51:18 INFO [HTTP] GET /api/scheduler/status → 200 (7ms) [admin]
+2026-02-27 22:51:18 INFO [HTTP] GET /api/channels → 304 (24ms) [admin]
+2026-02-27 22:51:18 INFO [HTTP] GET /api/config → 304 (2ms) [admin]
+2026-02-27 22:51:18 INFO [HTTP] GET /api/streams → 200 (45ms) [admin]
+2026-02-27 22:51:18 INFO [HTTP] GET /api/scheduler/status → 304 (5ms) [admin]
+2026-02-27 22:51:21 INFO [HTTP] GET /api/scheduler/status → 304 (2ms) [admin]
+2026-02-27 22:51:22 INFO [HTTP] GET /health → 200 (1ms) [anon]
+2026-02-27 22:51:37 INFO [HTTP] GET /live-proxy.m3u → 200 (4ms) [anon]
+2026-02-27 22:51:37 INFO [SmartPlayer] Requisição de stream: videoId=zUGmLLq3An8
+2026-02-27 22:51:37 INFO [SmartPlayer] Stream encontrado: videoId=zUGmLLq3An8 status=live
+2026-02-27 22:51:37 INFO [SmartPlayer] Stream está genuinamente ao vivo: videoId=zUGmLLq3An8
+2026-02-27 22:51:37 INFO [streamlink-runner] Testando streamlinkHasPlayableStream: url=https://www.youtube.com/watch?v=zUGmLLq3An8
+2026-02-27 22:51:39 INFO [streamlink-runner] streamlinkHasPlayableStream finalizado code=1
+2026-02-27 22:51:39 INFO [SmartPlayer] streamlinkHasPlayableStream=true videoId=zUGmLLq3An8
+2026-02-27 22:51:39 INFO [SmartPlayer] Usando Streamlink para videoId=zUGmLLq3An8
+2026-02-27 22:51:39 INFO [streamlink-runner] Iniciando streamlink: url=https://www.youtube.com/watch?v=zUGmLLq3An8
+2026-02-27 22:51:39 WARN [streamlink-runner][stderr] [cli][info] streamlink is running as root! Be careful!
+
+2026-02-27 22:51:39 WARN [streamlink-runner][stderr] [cli][info] Found matching plugin youtube for URL https://www.youtube.com/watch?v=zUGmLLq3An8
+
+2026-02-27 22:51:40 WARN [streamlink-runner][stderr] [cli][info] Available streams: 144p (worst), 240p, 360p, 480p, 720p, 1080p (best)
+
+2026-02-27 22:51:40 WARN [streamlink-runner][stderr] [cli][info] Opening stream: 1080p (hls)
+
+2026-02-27 22:51:48 INFO [streamlink-runner] Cliente desconectou (response), encerrando streamlink pid=26
+2026-02-27 22:51:48 WARN [streamlink-runner][stderr] [cli][info] Stream ended
+Interrupted! Exiting...
+
+2026-02-27 22:51:48 WARN [streamlink-runner][stderr] [cli][info] Closing currently open stream...
+
+2026-02-27 22:51:48 INFO [streamlink-runner] streamlink finalizado com code=130
+2026-02-27 22:51:52 INFO [HTTP] GET /health → 200 (0ms) [anon]
+2026-02-27 22:52:01 INFO [HTTP] GET /upcoming-proxy.m3u → 200 (4ms) [anon]
+2026-02-27 22:52:01 INFO [SmartPlayer] Requisição de stream: videoId=VqrQfozoPAU
+2026-02-27 22:52:01 INFO [SmartPlayer] Stream encontrado: videoId=VqrQfozoPAU status=upcoming
+2026-02-27 22:52:01 INFO [SmartPlayer] Enviando placeholder com texto para videoId=VqrQfozoPAU
+[ffmpeg-runner] Comando ffmpeg: ffmpeg '-loglevel' 'error' '-user_agent' 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.3' '-i' 'https://i.ytimg.com/vi/VqrQfozoPAU/maxresdefault_live.jpg' '-f' 'lavfi' '-i' 'anullsrc=r=44100:cl=mono' '-filter_complex' '[0:v]scale=854:480,loop=-1:1:0,drawtext=fontfile='/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf':text='Ao vivo em 1d 12h':x=(w-text_w)/2:y=h-100:fontsize=48:fontcolor=white:borderw=2:bordercolor=black@0.8,drawtext=fontfile='/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf':text='1 Mar às 10\:55':x=(w-text_w)/2:y=h-50:fontsize=36:fontcolor=white:borderw=2:bordercolor=black@0.8[v]' '-map' '[v]' '-map' '1:a' '-c:v' 'libx264' '-preset' 'ultrafast' '-crf' '45' '-b:v' '150k' '-r' '1' '-g' '120' '-pix_fmt' 'yuv420p' '-c:a' 'aac' '-b:a' '24k' '-ac' '1' '-tune' 'stillimage' '-f' 'mpegts' 'pipe:1'
+[ffmpeg-runner] User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.3
+2026-02-27 22:52:01 INFO [ffmpeg-runner] Iniciando ffmpeg placeholder: imageUrl=https://i.ytimg.com/vi/VqrQfozoPAU/maxresdefault_live.jpg
+2026-02-27 22:52:10 INFO [ffmpeg-runner] Cliente desconectou (response), encerrando ffmpeg pid=37...
+2026-02-27 22:52:22 INFO [HTTP] GET /health → 200 (1ms) [anon]
+2026-02-27 22:52:28 INFO [HTTP] GET /vod-proxy.m3u → 200 (4ms) [anon]
+2026-02-27 22:52:28 INFO [SmartPlayer] Requisição de stream: videoId=HciTwfuweB8
+2026-02-27 22:52:28 INFO [SmartPlayer] Stream encontrado: videoId=HciTwfuweB8 status=none
+2026-02-27 22:52:28 INFO [SmartPlayer] Usando yt-dlp para videoId=HciTwfuweB8 status=none
+2026-02-27 22:52:28 INFO [ytdlp-runner] Iniciando yt-dlp: url=https://www.youtube.com/watch?v=HciTwfuweB8
+2026-02-27 22:52:28 WARN [ytdlp-runner][ffmpeg stderr] ffmpeg version 8.0.1 Copyright (c) 2000-2025 the FFmpeg developers
+  built with gcc 15.2.0 (Alpine 15.2.0)
+  configuration: --prefix=/usr --disable-librtmp --disable-lzma --disable-static --disable-stripping --enable-avfilter --enable-gpl --enable-ladspa --enable-libaom --enable-libass --enable-libbluray --enable-libdav1d --enable-libdrm --enable-libfontconfig --enable-libfreetype --enable-libfribidi --enable-libharfbuzz --enable-libjxl --enable-libmp3lame --enable-libopenmpt --enable-libopus --enable-libplacebo --enable-libpulse --enable-librav1e --enable-librist --enable-libshaderc --enable-libsoxr --enable-libsrt --enable-libssh --enable-libtheora --enable-libv4l2 --enable-libvidstab --enable-libvorbis --enable-libvpx --enable-libwebp --enable-libx264 --enable-libx265 --enable-libxcb --enable-libxml2 --enable-libxvid --enable-libzimg --enable-libzmq --enable-lto=auto --enable-lv2 --enable-openssl --enable-pic --enable-pthreads --enable-shared --enable-vaapi --enable-vdpau --enable-version3 --enable-vulkan --optflags=-O3 --enable-libsvtav1 --enable-libvpl
+  libavutil      60.  8.100 / 60.  8.100
+  libavcodec     62. 11.100 / 62. 11.100
+  libavformat    62.  3.100 / 62.  3.100
+  libavdevice    62.  1.100 / 62.  1.100
+  libavfilter    11.  4.100 / 11.  4.100
+  libswscale      9.  1.100 /  9.  1.100
+  libswresample   6.  1.100 /  6.  1.100
+
+2026-02-27 22:52:28 WARN [ytdlp-runner][yt-dlp stderr] [youtube] Extracting URL: https://www.youtube.com/watch?v=HciTwfuweB8
+
+2026-02-27 22:52:28 WARN [ytdlp-runner][yt-dlp stderr] [youtube] HciTwfuweB8: Downloading webpage
+
+2026-02-27 22:52:29 WARN [ytdlp-runner][yt-dlp stderr] WARNING: [youtube] No supported JavaScript runtime could be found. Only deno is enabled by default; to use another runtime add  --js-runtimes RUNTIME[:PATH]  to your command/config. YouTube extraction without a JS runtime has been deprecated, and some formats may be missing. See  https://github.com/yt-dlp/yt-dlp/wiki/EJS  for details on installing one
+
+2026-02-27 22:52:29 WARN [ytdlp-runner][yt-dlp stderr] [youtube] HciTwfuweB8: Downloading android vr player API JSON
+
+2026-02-27 22:52:29 WARN [ytdlp-runner][yt-dlp stderr] [youtube] HciTwfuweB8: Downloading m3u8 information
+
+2026-02-27 22:52:29 WARN [ytdlp-runner][yt-dlp stderr] [youtube] HciTwfuweB8: Downloading MPD manifest
+
+2026-02-27 22:52:30 WARN [ytdlp-runner][yt-dlp stderr] [info] HciTwfuweB8: Downloading 1 format(s): 137+140
+
+2026-02-27 22:52:30 WARN [ytdlp-runner][yt-dlp stderr] [download] Destination: -
+
+2026-02-27 22:52:33 WARN [ytdlp-runner][yt-dlp stderr] Input #0, dash, from 'https://manifest.googlevideo.com/api/manifest/dash/expire/1772265149/ei/XUqiaeDLF_z11sQPg6rzuQI/ip/177.207.209.234/id/HciTwfuweB8.1/source/yt_live_broadcast/requiressl/yes/xpc/EgVo2aDSNQ%3D%3D/tx/51539831/txs/51539830%2C51539831/as/fmp4_audio_clear%2Cwebm_audio_clear%2Cwebm2_audio_clear%2Cfmp4_sd_hd_clear%2Cwebm2_sd_hd_clear/force_finished/1/sident/1/spc/6dlaFNF98lXB/vprv/1/rqh/2/reg/0/pacing/0/itag_bl/374%2C375%2C407%2C408%2C612%2C613%2C617%2C619%2C623%2C628%2C655%2C656%2C660%2C662%2C666%2C671%2C798%2C799%2C803%2C804%2C834%2C868%2C870%2C872%2C874%2C876%2C880%2C882%2C884%2C886%2C888%2C893%2C897%2C899/keepalive/yes/fexp/51552689%2C51565115%2C51565681%2C51580968%2C51791333/itag/0/playlist_type/DVR/sparams/expire%2Cei%2Cip%2Cid%2Csource%2Crequiressl%2Cxpc%2Ctx%2Ctxs%2Cas%2Cforce_finished%2Csident%2Cspc%2Cvprv%2Crqh%2Creg%2Citag%2Cplaylist_type/sig/AJEij0EwRQIgFwRlTAo0TaiAv3M6LwKHYln15uXqY4Fi66enJiGLU6UCIQCpesBzeRHevuDkNFRhSRUB2c9swz-d82_z2LyQBGhOug%3D%3D':
+  Duration: 01:09:30.00, start: 0.000000, bitrate: 0 kb/s
+  Program 0
+  Stream #0:0: Video: h264 (Main) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 426x240 [SAR 1:1 DAR 71:40], 276 kb/s, 29.97 fps, 29.97 tbr, 90k tbn (default)
+    Metadata:
+      variant_bitrate : 456228
+
+2026-02-27 22:52:33 WARN [ytdlp-runner][yt-dlp stderr]       id              : 133
+  Stream #0:1: Video: h264 (Main) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 640x360 [SAR 1:1 DAR 16:9], 493 kb/s, 29.97 fps, 29.97 tbr, 90k tbn (default)
+    Metadata:
+      variant_bitrate : 1008250
+      id              : 134
+  Stream #0:2: Video: h264 (Main) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 854x480 [SAR 1:1 DAR 427:240], 709 kb/s, 29.97 fps, 29.97 tbr, 90k tbn (default)
+    Metadata:
+      variant_bitrate : 1350025
+      id              : 135
+  Stream #0:3: Video: h264 (Constrained Baseline) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 256x144 [SAR 1:1 DAR 16:9], 124 kb/s, 14.99 fps, 14.99 tbr, 90k tbn (default)
+    Metadata:
+      variant_bitrate : 212465
+      id              : 160
+  Stream #0:4: Video: h264 (Main) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 1280x720 [SAR 1:1 DAR 16:9], 1220 kb/s, 29.97 fps, 29.97 tbr, 90k tbn (default)
+    Metadata:
+      variant_bitrate : 2684050
+      id              : 136
+  Stream #0:5: Video: h264 (High) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 1920x1080 [SAR 1:1 DAR 16:9], 2008 kb/s, 29.97 fps, 29.97 tbr, 90k tbn (default)
+    Metadata:
+      variant_bitrate : 5018593
+      id              : 137
+  Stream #0:6: Audio: aac (HE-AAC) (mp4a / 0x6134706D), 44100 Hz, stereo, fltp, 48 kb/s (default)
+    Metadata:
+      variant_bitrate : 64000
+      id              : 139
+  Stream #0:7: Audio: aac (LC) (mp4a / 0x6134706D), 44100 Hz, stereo, fltp, 128 kb/s (default)
+    Metadata:
+      variant_bitrate : 144000
+      id              : 140
+
+2026-02-27 22:52:37 WARN [ytdlp-runner][yt-dlp stderr] Input #1, dash, from 'https://manifest.googlevideo.com/api/manifest/dash/expire/1772265149/ei/XUqiaeDLF_z11sQPg6rzuQI/ip/177.207.209.234/id/HciTwfuweB8.1/source/yt_live_broadcast/requiressl/yes/xpc/EgVo2aDSNQ%3D%3D/tx/51539831/txs/51539830%2C51539831/as/fmp4_audio_clear%2Cwebm_audio_clear%2Cwebm2_audio_clear%2Cfmp4_sd_hd_clear%2Cwebm2_sd_hd_clear/force_finished/1/sident/1/spc/6dlaFNF98lXB/vprv/1/rqh/2/reg/0/pacing/0/itag_bl/374%2C375%2C407%2C408%2C612%2C613%2C617%2C619%2C623%2C628%2C655%2C656%2C660%2C662%2C666%2C671%2C798%2C799%2C803%2C804%2C834%2C868%2C870%2C872%2C874%2C876%2C880%2C882%2C884%2C886%2C888%2C893%2C897%2C899/keepalive/yes/fexp/51552689%2C51565115%2C51565681%2C51580968%2C51791333/itag/0/playlist_type/DVR/sparams/expire%2Cei%2Cip%2Cid%2Csource%2Crequiressl%2Cxpc%2Ctx%2Ctxs%2Cas%2Cforce_finished%2Csident%2Cspc%2Cvprv%2Crqh%2Creg%2Citag%2Cplaylist_type/sig/AJEij0EwRQIgFwRlTAo0TaiAv3M6LwKHYln15uXqY4Fi66enJiGLU6UCIQCpesBzeRHevuDkNFRhSRUB2c9swz-d82_z2LyQBGhOug%3D%3D':
+  Duration: 01:09:30.00, start: 0.000000, bitrate: 0 kb/s
+  Program 0
+  Stream #1:0: Video: h264 (Main) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 426x240 [SAR 1:1 DAR 71:40], 276 kb/s, 29.97 fps, 29.97 tbr, 90k tbn (default)
+    Metadata:
+      variant_bitrate : 456228
+      id              : 133
+
+2026-02-27 22:52:37 WARN [ytdlp-runner][yt-dlp stderr]   Stream #1:1: Video: h264 (Main) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 640x360 [SAR 1:1 DAR 16:9], 493 kb/s, 29.97 fps, 29.97 tbr, 90k tbn (default)
+    Metadata:
+      variant_bitrate : 1008250
+      id              : 134
+  Stream #1:2: Video: h264 (Main) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 854x480 [SAR 1:1 DAR 427:240], 709 kb/s, 29.97 fps, 29.97 tbr, 90k tbn (default)
+    Metadata:
+      variant_bitrate : 1350025
+      id              : 135
+  Stream #1:3: Video: h264 (Constrained Baseline) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 256x144 [SAR 1:1 DAR 16:9], 124 kb/s, 14.99 fps, 14.99 tbr, 90k tbn (default)
+    Metadata:
+      variant_bitrate : 212465
+      id              : 160
+  Stream #1:4: Video: h264 (Main) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 1280x720 [SAR 1:1 DAR 16:9], 1220 kb/s, 29.97 fps, 29.97 tbr, 90k tbn (default)
+    Metadata:
+      variant_bitrate : 2684050
+      id              : 136
+  Stream #1:5: Video: h264 (High) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 1920x1080 [SAR 1:1 DAR 16:9], 2008 kb/s, 29.97 fps, 29.97 tbr, 90k tbn (default)
+    Metadata:
+      variant_bitrate : 5018593
+      id              : 137
+  Stream #1:6: Audio: aac (HE-AAC) (mp4a / 0x6134706D), 44100 Hz, stereo, fltp, 48 kb/s (default)
+    Metadata:
+      variant_bitrate : 64000
+      id              : 139
+  Stream #1:7: Audio: aac (LC) (mp4a / 0x6134706D), 44100 Hz, stereo, fltp, 128 kb/s (default)
+    Metadata:
+      variant_bitrate : 144000
+      id              : 140
+Stream mapping:
+  Stream #0:7 -> #0:0 (copy)
+2026-02-27 22:52:37 WARN [ytdlp-runner][yt-dlp stderr]
+  Stream #1:1 -> #0:1 (copy)
+Output #0, mpegts, to 'pipe:':
+  Metadata:
+    encoder         : Lavf62.3.100
+  Stream #0:0: Audio: aac (LC) (mp4a / 0x6134706D), 44100 Hz, stereo, fltp, 128 kb/s (default)
+    Metadata:
+      variant_bitrate : 144000
+      id              : 140
+  Stream #0:1: Video: h264 (Main) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 640x360 [SAR 1:1 DAR 16:9], q=2-31, 493 kb/s, 29.97 fps, 29.97 tbr, 90k tbn (default)
+    Metadata:
+      variant_bitrate : 1008250
+      id              : 134
+
+2026-02-27 22:52:37 WARN [ytdlp-runner][yt-dlp stderr] Press [q] to stop, [?] for help
+
+2026-02-27 22:52:37 WARN [ytdlp-runner][yt-dlp stderr] [dash @ 0x7f63d4546280] No longer receiving stream_index 0
+
+2026-02-27 22:52:37 WARN [ytdlp-runner][yt-dlp stderr] [dash @ 0x7f63dbbd0380] No longer receiving stream_index 0
+
+2026-02-27 22:52:37 WARN [ytdlp-runner][yt-dlp stderr] [dash @ 0x7f63d4546280] No longer receiving stream_index 2
+
+2026-02-27 22:52:37 WARN [ytdlp-runner][yt-dlp stderr] [dash @ 0x7f63dbbd0380] No longer receiving stream_index 1
+
+2026-02-27 22:52:37 WARN [ytdlp-runner][yt-dlp stderr] [dash @ 0x7f63d4546280] No longer receiving stream_index 3
+
+2026-02-27 22:52:37 WARN [ytdlp-runner][yt-dlp stderr] [dash @ 0x7f63dbbd0380] No longer receiving stream_index 2
+
+2026-02-27 22:52:37 WARN [ytdlp-runner][yt-dlp stderr] [dash @ 0x7f63d4546280] No longer receiving stream_index 4
+
+2026-02-27 22:52:37 WARN [ytdlp-runner][yt-dlp stderr] [dash @ 0x7f63dbbd0380] No longer receiving stream_index 3
+
+2026-02-27 22:52:37 WARN [ytdlp-runner][yt-dlp stderr] [dash @ 0x7f63d4546280] No longer receiving stream_index 5
+
+2026-02-27 22:52:37 WARN [ytdlp-runner][yt-dlp stderr] [dash @ 0x7f63d4546280] No longer receiving stream_index 6
+
+2026-02-27 22:52:37 WARN [ytdlp-runner][yt-dlp stderr] [dash @ 0x7f63dbbd0380] No longer receiving stream_index 4
+
+2026-02-27 22:52:37 WARN [ytdlp-runner][yt-dlp stderr] [dash @ 0x7f63d4546280] No longer receiving stream_index 7
+
+2026-02-27 22:52:37 WARN [ytdlp-runner][yt-dlp stderr] [dash @ 0x7f63dbbd0380] No longer receiving stream_index 5
+
+2026-02-27 22:52:37 WARN [ytdlp-runner][yt-dlp stderr] [dash @ 0x7f63dbbd0380] No longer receiving stream_index 6
+
+2026-02-27 22:52:37 WARN [ytdlp-runner][ffmpeg stderr] Input #0, mpegts, from 'fd:':
+  Duration: N/A, start: 1.400000, bitrate: N/A
+  Program 1
+    Metadata:
+      service_name    : Service01
+      service_provider: FFmpeg
+  Stream #0:0[0x100]: Audio: aac (LC) ([15][0][0][0] / 0x000F), 44100 Hz, stereo, fltp, 130 kb/s, start 1.400000
+
+2026-02-27 22:52:37 WARN [ytdlp-runner][ffmpeg stderr]   Stream #0:1[0x101]: Video: h264 (Main) ([27][0][0][0] / 0x001B), yuv420p(tv, bt709, progressive), 640x360 [SAR 1:1 DAR 16:9], 29.97 fps, 29.97 tbr, 90k tbn, start 1.400000
+Stream mapping:
+  Stream #0:1 -> #0:0 (copy)
+
+2026-02-27 22:52:37 WARN [ytdlp-runner][ffmpeg stderr]   Stream #0:0 -> #0:1 (copy)
+Output #0, mpegts, to 'pipe:1':
+  Metadata:
+    encoder         : Lavf62.3.100
+  Stream #0:0: Video: h264 (Main) ([27][0][0][0] / 0x001B), yuv420p(tv, bt709, progressive), 640x360 [SAR 1:1 DAR 16:9], q=2-31, 29.97 fps, 29.97 tbr, 90k tbn
+  Stream #0:1: Audio: aac (LC) ([15][0][0][0] / 0x000F), 44100 Hz, stereo, fltp, 130 kb/s
+
+2026-02-27 22:52:37 WARN [ytdlp-runner][yt-dlp stderr] frame=  302 fps=0.0 q=-1.0 size=     868KiB time=00:00:10.07 bitrate= 705.5kbits/s speed=20.1x elapsed=0:00:00.50
+2026-02-27 22:52:37 WARN [ytdlp-runner][ffmpeg stderr] frame=  250 fps=0.0 q=-1.0 size=     717KiB time=00:00:08.38 bitrate= 700.3kbits/s speed=16.8x elapsed=0:00:00.50
+2026-02-27 22:52:38 WARN [ytdlp-runner][yt-dlp stderr] frame=  302 fps=302 q=-1.0 size=     868KiB time=00:00:10.07 bitrate= 705.5kbits/s speed=10.1x elapsed=0:00:01.00
+2026-02-27 22:52:38 WARN [ytdlp-runner][ffmpeg stderr] frame=  300 fps=300 q=-1.0 size=     860KiB time=00:00:10.01 bitrate= 703.8kbits/s speed=  10x elapsed=0:00:01.00
+2026-02-27 22:52:38 WARN [ytdlp-runner][yt-dlp stderr] frame=  302 fps=201 q=-1.0 size=     868KiB time=00:00:10.07 bitrate= 705.5kbits/s speed=6.72x elapsed=0:00:01.50
+2026-02-27 22:52:38 WARN [ytdlp-runner][ffmpeg stderr] frame=  300 fps=200 q=-1.0 size=     860KiB time=00:00:10.01 bitrate= 703.8kbits/s speed=6.67x elapsed=0:00:01.50
+2026-02-27 22:52:39 WARN [ytdlp-runner][yt-dlp stderr] frame=  302 fps=151 q=-1.0 size=     868KiB time=00:00:10.07 bitrate= 705.5kbits/s speed=5.04x elapsed=0:00:02.00
+2026-02-27 22:52:39 WARN [ytdlp-runner][ffmpeg stderr] frame=  300 fps=150 q=-1.0 size=     860KiB time=00:00:10.01 bitrate= 703.8kbits/s speed=   5x elapsed=0:00:02.00
+2026-02-27 22:52:39 WARN [ytdlp-runner][yt-dlp stderr] frame=  302 fps=121 q=-1.0 size=     868KiB time=00:00:10.07 bitrate= 705.5kbits/s speed=4.03x elapsed=0:00:02.50
+2026-02-27 22:52:39 WARN [ytdlp-runner][ffmpeg stderr] frame=  300 fps=120 q=-1.0 size=     860KiB time=00:00:10.01 bitrate= 703.8kbits/s speed=   4x elapsed=0:00:02.50
+2026-02-27 22:52:40 WARN [ytdlp-runner][yt-dlp stderr] frame=  602 fps=201 q=-1.0 size=    1550KiB time=00:00:20.08 bitrate= 631.9kbits/s speed=6.69x elapsed=0:00:03.00
+2026-02-27 22:52:40 WARN [ytdlp-runner][ffmpeg stderr] frame=  750 fps=250 q=-1.0 size=    1927KiB time=00:00:24.98 bitrate= 631.7kbits/s speed=8.32x elapsed=0:00:03.00
+2026-02-27 22:52:40 WARN [ytdlp-runner][yt-dlp stderr] frame=  752 fps=215 q=-1.0 size=    1934KiB time=00:00:25.09 bitrate= 631.3kbits/s speed=7.17x elapsed=0:00:03.50
+2026-02-27 22:52:40 WARN [ytdlp-runner][ffmpeg stderr] frame=  900 fps=257 q=-1.0 size=    2222KiB time=00:00:30.03 bitrate= 606.3kbits/s speed=8.58x elapsed=0:00:03.50
+2026-02-27 22:52:41 WARN [ytdlp-runner][yt-dlp stderr] frame= 1052 fps=263 q=-1.0 size=    2499KiB time=00:00:35.10 bitrate= 583.1kbits/s speed=8.77x elapsed=0:00:04.00
+2026-02-27 22:52:41 WARN [ytdlp-runner][ffmpeg stderr] frame= 1200 fps=300 q=-1.0 size=    2797KiB time=00:00:40.00 bitrate= 572.8kbits/s speed=  10x elapsed=0:00:04.00
+2026-02-27 22:52:41 WARN [ytdlp-runner][yt-dlp stderr] frame= 1352 fps=300 q=-1.0 size=    3090KiB time=00:00:45.11 bitrate= 561.2kbits/s speed=  10x elapsed=0:00:04.50
+2026-02-27 22:52:41 WARN [ytdlp-runner][ffmpeg stderr] frame= 1650 fps=367 q=-1.0 size=    3767KiB time=00:00:54.93 bitrate= 561.7kbits/s speed=12.2x elapsed=0:00:04.50
+2026-02-27 22:52:42 WARN [ytdlp-runner][yt-dlp stderr] frame= 1775 fps=355 q=-1.0 size=    4062KiB time=00:00:59.09 bitrate= 563.1kbits/s speed=11.8x elapsed=0:00:05.00
+2026-02-27 22:52:42 WARN [ytdlp-runner][ffmpeg stderr] frame= 1950 fps=390 q=-1.0 size=    4409KiB time=00:01:05.03 bitrate= 555.4kbits/s speed=  13x elapsed=0:00:05.00
+2026-02-27 22:52:42 WARN [ytdlp-runner][yt-dlp stderr] frame= 2102 fps=382 q=-1.0 size=    4666KiB time=00:01:10.13 bitrate= 545.0kbits/s speed=12.7x elapsed=0:00:05.50
+2026-02-27 22:52:42 WARN [ytdlp-runner][ffmpeg stderr] frame= 2390 fps=434 q=-1.0 size=    5276KiB time=00:01:19.71 bitrate= 542.2kbits/s speed=14.5x elapsed=0:00:05.50
+2026-02-27 22:52:43 WARN [ytdlp-runner][yt-dlp stderr] frame= 2550 fps=425 q=-1.0 size=    5621KiB time=00:01:25.08 bitrate= 541.2kbits/s speed=14.2x elapsed=0:00:06.00
+2026-02-27 22:52:43 WARN [ytdlp-runner][ffmpeg stderr] frame= 2698 fps=450 q=-1.0 size=    6037KiB time=00:01:29.90 bitrate= 550.0kbits/s speed=  15x elapsed=0:00:06.00
+2026-02-27 22:52:43 WARN [ytdlp-runner][yt-dlp stderr] frame= 2850 fps=438 q=-1.0 size=    6393KiB time=00:01:35.09 bitrate= 550.7kbits/s speed=14.6x elapsed=0:00:06.50
+2026-02-27 22:52:43 WARN [ytdlp-runner][ffmpeg stderr] frame= 2848 fps=438 q=-1.0 size=    6386KiB time=00:01:34.92 bitrate= 551.1kbits/s speed=14.6x elapsed=0:00:06.50
+2026-02-27 22:52:44 WARN [ytdlp-runner][yt-dlp stderr] frame= 3150 fps=450 q=-1.0 size=    7176KiB time=00:01:45.10 bitrate= 559.3kbits/s speed=  15x elapsed=0:00:07.00
+2026-02-27 22:52:44 WARN [ytdlp-runner][ffmpeg stderr] frame= 3298 fps=471 q=-1.0 size=    7633KiB time=00:01:50.01 bitrate= 568.3kbits/s speed=15.7x elapsed=0:00:07.00
+2026-02-27 22:52:44 INFO [ytdlp-runner] Iniciando limpeza (origem: response-close)...
+2026-02-27 22:52:44 INFO [ytdlp-runner] Iniciando limpeza (origem: request-close)...
+2026-02-27 22:52:44 WARN [ytdlp-runner][ffmpeg stderr] [aost#0:1/copy @ 0x7f859721c3c0] Error submitting a packet to the muxer: Broken pipe
+    Last message repeated 1 times
+[out#0/mpegts @ 0x7f859d3f77c0] Error muxing a packet
+[out#0/mpegts @ 0x7f859d3f77c0] Task finished with error code: -32 (Broken pipe)
+[out#0/mpegts @ 0x7f859d3f77c0] Terminating thread with return code -32 (Broken pipe)
+[out#0/mpegts @ 0x7f859d3f77c0] Error writing trailer: Broken pipe
+[out#0/mpegts @ 0x7f859d3f77c0] Error closing file: Broken pipe
+[out#0/mpegts @ 0x7f859d3f77c0] video:5060KiB audio:1817KiB subtitle:0KiB other streams:0KiB global headers:0KiB muxing overhead: 15.319588%
+frame= 3424 fps=473 q=-1.0 Lsize=    7931KiB time=00:01:54.28 bitrate= 568.5kbits/s speed=15.8x elapsed=0:00:07.23
+
+2026-02-27 22:52:44 WARN [ytdlp-runner][ffmpeg stderr] Exiting normally, received signal 15.
+
+2026-02-27 22:52:44 WARN [ytdlp-runner][yt-dlp stderr] frame= 3450 fps=460 q=-1.0 size=    7987KiB time=00:01:55.11 bitrate= 568.4kbits/s speed=15.3x elapsed=0:00:07.50
+2026-02-27 22:52:44 INFO [ytdlp-runner] ffmpeg finalizado com code=255
+2026-02-27 22:52:44 WARN [ytdlp-runner][yt-dlp stderr] [vost#0:1/copy @ 0x7f63d0ac4d00] Error submitting a packet to the muxer: Broken pipe
+    Last message repeated 1 times
+[out#0/mpegts @ 0x7f63d2a84600] Error muxing a packet
+[out#0/mpegts @ 0x7f63d2a84600] Task finished with error code: -32 (Broken pipe)
+[out#0/mpegts @ 0x7f63d2a84600] Terminating thread with return code -32 (Broken pipe)
+
+2026-02-27 22:52:44 WARN [ytdlp-runner][yt-dlp stderr] [out#0/mpegts @ 0x7f63d2a84600] Error writing trailer: Broken pipe
+[out#0/mpegts @ 0x7f63d2a84600] Error closing file: Broken pipe
+[out#0/mpegts @ 0x7f63d2a84600] video:5127KiB audio:1800KiB subtitle:0KiB other streams:0KiB global headers:0KiB muxing overhead: 15.295945%
+frame= 3451 fps=459 q=-1.0 Lsize=    7987KiB time=00:01:55.24 bitrate= 567.7kbits/s speed=15.3x elapsed=0:00:07.52
+
+2026-02-27 22:52:44 WARN [ytdlp-runner][yt-dlp stderr] Conversion failed!
+
+2026-02-27 22:52:52 INFO [HTTP] GET /health → 200 (1ms) [anon]
+
