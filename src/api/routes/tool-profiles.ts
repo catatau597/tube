@@ -23,13 +23,13 @@ interface ToolProfileRow {
 
 function defaultProfile(tool: SupportedTool) {
   return {
-    id: null,
-    name: `Padrão (${tool})`,
+    id: 'default',
+    name: 'Default (Sistema)',
     tool,
     flags: '',
     cookie_id: null,
     ua_id: null,
-    is_active: 1,
+    is_active: 0,
     is_default: true,
     cookie_name: null,
     ua_label: null,
@@ -51,9 +51,11 @@ router.get('/', (_req, res) => {
       ORDER BY tp.tool, tp.name
     `).all() as ToolProfileRow[];
 
-    const result: unknown[] = [...rows];
+    // Sempre incluir perfis virtuais para cada ferramenta
+    const result: unknown[] = [];
     for (const tool of SUPPORTED_TOOLS) {
-      if (!rows.some((r) => r.tool === tool)) result.push(defaultProfile(tool));
+      result.push(defaultProfile(tool));
+      result.push(...rows.filter((r) => r.tool === tool));
     }
 
     res.json(result);
