@@ -25,7 +25,7 @@ const sectionMeta = {
   },
   cache: {
     title: 'Cache',
-    hint: 'Gerenciamento de cache de thumbnails e outros recursos.',
+    hint: 'Cache de thumbnails e configuração de TTL.',
   },
   tech: {
     title: 'Técnico',
@@ -35,23 +35,15 @@ const sectionMeta = {
 
 /* ---------- helpers ---------- */
 
-function boolOption(value, current) {
-  return String(current).toLowerCase() === value ? 'selected' : '';
-}
-
 function textFromError(payload, fallback) {
-  if (payload && typeof payload === 'object' && 'error' in payload) {
-    return String(payload.error || fallback);
-  }
+  if (payload && typeof payload === 'object' && 'error' in payload) return String(payload.error || fallback);
   return fallback;
 }
 
 async function requestJson(api, path, options, fallbackError) {
   const response = await api(path, options);
   const payload = await response.json().catch(() => null);
-  if (!response.ok) {
-    throw new Error(textFromError(payload, fallbackError));
-  }
+  if (!response.ok) throw new Error(textFromError(payload, fallbackError));
   return payload;
 }
 
@@ -59,24 +51,26 @@ function escapeAttr(str) {
   return String(str || '').replace(/"/g, '&quot;');
 }
 
+function escapeHtml(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 function toggleSwitch(name, checked) {
   return `
     <label class="toggle-switch">
       <input type="checkbox" name="${name}" ${checked ? 'checked' : ''}>
       <span class="slider"></span>
-    </label>
-  `;
+    </label>`;
 }
 
-/* ---------- IANA timezone dropdown ---------- */
-
 const COMMON_TIMEZONES = [
-  'America/Sao_Paulo', 'America/New_York', 'America/Chicago', 'America/Denver',
-  'America/Los_Angeles', 'America/Manaus', 'America/Bahia', 'America/Fortaleza',
-  'America/Argentina/Buenos_Aires', 'America/Santiago', 'America/Bogota',
-  'America/Mexico_City', 'Europe/London', 'Europe/Paris', 'Europe/Berlin',
-  'Europe/Lisbon', 'Europe/Madrid', 'Europe/Moscow', 'Asia/Tokyo', 'Asia/Shanghai',
-  'Asia/Kolkata', 'Asia/Dubai', 'Australia/Sydney', 'Pacific/Auckland', 'UTC',
+  'America/Sao_Paulo','America/New_York','America/Chicago','America/Denver',
+  'America/Los_Angeles','America/Manaus','America/Bahia','America/Fortaleza',
+  'America/Argentina/Buenos_Aires','America/Santiago','America/Bogota',
+  'America/Mexico_City','Europe/London','Europe/Paris','Europe/Berlin',
+  'Europe/Lisbon','Europe/Madrid','Europe/Moscow','Asia/Tokyo','Asia/Shanghai',
+  'Asia/Kolkata','Asia/Dubai','Australia/Sydney','Pacific/Auckland','UTC',
 ];
 
 function timezoneSelect(current) {
@@ -95,7 +89,7 @@ function configFields(section, config) {
     return `
       <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:1rem">
         ${toggleSwitch('ENABLE_SCHEDULER_ACTIVE_HOURS', activeHoursEnabled)}
-        <label for="ENABLE_SCHEDULER_ACTIVE_HOURS" style="margin:0">Ativar Janela de Horário</label>
+        <label style="margin:0">Ativar Janela de Horário</label>
       </div>
       ${activeHoursEnabled ? `
       <label>Hora Início
@@ -121,16 +115,14 @@ function configFields(section, config) {
       </label>
       <label>TTL Handles (h)
         <input name="RESOLVE_HANDLES_TTL_HOURS" type="number" min="1" max="168" value="${config.RESOLVE_HANDLES_TTL_HOURS || 24}" />
-      </label>
-    `;
+      </label>`;
   }
 
   if (section === 'content') {
     const generateDirect = String(config.PLAYLIST_GENERATE_DIRECT || 'true') === 'true';
-    const generateProxy = String(config.PLAYLIST_GENERATE_PROXY || 'true') === 'true';
-    const filterCategory = String(config.FILTER_BY_CATEGORY || 'false') === 'true';
-    const cleanupDesc = String(config.EPG_DESCRIPTION_CLEANUP || 'true') === 'true';
-
+    const generateProxy  = String(config.PLAYLIST_GENERATE_PROXY  || 'true') === 'true';
+    const filterCategory = String(config.FILTER_BY_CATEGORY       || 'false') === 'true';
+    const cleanupDesc    = String(config.EPG_DESCRIPTION_CLEANUP   || 'true') === 'true';
     return `
       <div style="display:flex;flex-direction:column;gap:0.8rem;margin-bottom:1rem">
         <div style="display:flex;align-items:center;gap:0.5rem">
@@ -164,12 +156,11 @@ function configFields(section, config) {
         <input name="TITLE_FILTER_EXPRESSIONS" value="${escapeAttr(config.TITLE_FILTER_EXPRESSIONS)}" placeholder="shorts,#shorts" />
       </label>
       <label>Mapeamento de Categorias
-        <textarea name="CATEGORY_MAPPINGS" rows="3" placeholder="17=ESPORTES,20=JOGOS">${config.CATEGORY_MAPPINGS || ''}</textarea>
+        <textarea name="CATEGORY_MAPPINGS" rows="3" placeholder="17=ESPORTES,20=JOGOS">${escapeHtml(config.CATEGORY_MAPPINGS || '')}</textarea>
       </label>
       <label>Mapeamento de Nomes de Canal
-        <textarea name="CHANNEL_NAME_MAPPINGS" rows="3">${config.CHANNEL_NAME_MAPPINGS || ''}</textarea>
-      </label>
-    `;
+        <textarea name="CHANNEL_NAME_MAPPINGS" rows="3">${escapeHtml(config.CHANNEL_NAME_MAPPINGS || '')}</textarea>
+      </label>`;
   }
 
   if (section === 'retention') {
@@ -185,11 +176,9 @@ function configFields(section, config) {
       <label>Máx. VODs por Canal
         <input name="MAX_RECORDED_PER_CHANNEL" type="number" min="1" max="10" value="${config.MAX_RECORDED_PER_CHANNEL || 2}" />
       </label>
-      <p style="opacity:0.6;font-size:0.85rem;margin-top:0.6rem">
-        O sistema <strong>não</strong> busca VODs ativamente. O ciclo é: Upcoming → Live → Recorded.
-        Estes controles definem por quanto tempo eventos encerrados são mantidos no cache.
-      </p>
-    `;
+      <p style="opacity:0.6;font-size:0.85rem;margin-top:0.6rem;grid-column:1/-1">
+        O sistema <strong>não</strong> busca VODs ativamente. Ciclo: Upcoming → Live → Recorded.
+      </p>`;
   }
 
   if (section === 'media') {
@@ -203,22 +192,17 @@ function configFields(section, config) {
       <label>URL da Imagem de Placeholder
         <input name="PLACEHOLDER_IMAGE_URL" value="${escapeAttr(imgUrl)}" placeholder="https://exemplo.com/imagem.png" />
       </label>
-      ${imgUrl ? `<div style="margin:0.5rem 0"><img src="${escapeAttr(imgUrl)}" style="max-width:200px;max-height:120px;border-radius:0.4rem;border:1px solid #334155" alt="preview" /></div>` : ''}
-      <p style="opacity:0.6;font-size:0.85rem;margin-top:0.6rem">
-        Quando ativado, a URL do placeholder é inserida como comentário (<code>#http://...</code>),
-        ficando invisível para o player IPTV.
-      </p>
-    `;
+      ${imgUrl ? `<div style="margin:0.5rem 0;grid-column:1/-1"><img src="${escapeAttr(imgUrl)}" style="max-width:200px;max-height:120px;border-radius:0.4rem;border:1px solid #334155" alt="preview" /></div>` : ''}`;
   }
 
   if (section === 'tech') {
-    const usePlaylistItems = String(config.USE_PLAYLIST_ITEMS || 'true') === 'true';
-    const proxyAnalytics = String(config.PROXY_ENABLE_ANALYTICS || 'true') === 'true';
+    const usePlaylistItems = String(config.USE_PLAYLIST_ITEMS       || 'true')  === 'true';
+    const proxyAnalytics   = String(config.PROXY_ENABLE_ANALYTICS   || 'true')  === 'true';
     return `
-      <div style="display:flex;flex-direction:column;gap:0.8rem;margin-bottom:1rem">
+      <div style="display:flex;flex-direction:column;gap:0.8rem;margin-bottom:1rem;grid-column:1/-1">
         <div style="display:flex;align-items:center;gap:0.5rem">
           ${toggleSwitch('USE_PLAYLIST_ITEMS', usePlaylistItems)}
-          <label style="margin:0">Usar Playlist Items (API mais detalhada, consome mais quota)</label>
+          <label style="margin:0">Usar Playlist Items (API mais detalhada — consome mais quota)</label>
         </div>
         <div style="display:flex;align-items:center;gap:0.5rem">
           ${toggleSwitch('PROXY_ENABLE_ANALYTICS', proxyAnalytics)}
@@ -234,236 +218,263 @@ function configFields(section, config) {
       <label>Stale Hours
         <input name="STALE_HOURS" type="number" min="1" max="48" value="${config.STALE_HOURS || 6}" />
       </label>
-      <label>TubeWranglerr URL <small>(se vazio, usa IP da requisição)</small>
-        <input name="TUBEWRANGLERR_URL" value="${escapeAttr(config.TUBEWRANGLERR_URL)}" placeholder="http://localhost:8888" />
-      </label>
-      <label>Cache Thumbnail Proxy (h)
-        <input name="PROXY_THUMBNAIL_CACHE_HOURS" type="number" min="1" max="168" value="${config.PROXY_THUMBNAIL_CACHE_HOURS || 24}" />
+      <label style="grid-column:1/-1">TubeWranglerr URL <small>(deixe vazio para usar o IP da requisição automaticamente)</small>
+        <div style="display:flex;gap:0.4rem">
+          <input id="tubewranglerr-url-input" name="TUBEWRANGLERR_URL" value="${escapeAttr(config.TUBEWRANGLERR_URL)}" placeholder="http://localhost:8888" style="flex:1" />
+          <button type="button" id="detect-base-url" class="action-btn" title="Detectar URL automaticamente">🔍 Detectar</button>
+        </div>
       </label>
       <label>Log Level
         <select name="LOG_LEVEL">
-          <option value="DEBUG" ${String(config.LOG_LEVEL || '').toUpperCase() === 'DEBUG' ? 'selected' : ''}>DEBUG</option>
-          <option value="INFO" ${String(config.LOG_LEVEL || '').toUpperCase() === 'INFO' ? 'selected' : ''}>INFO</option>
-          <option value="WARN" ${String(config.LOG_LEVEL || '').toUpperCase() === 'WARN' ? 'selected' : ''}>WARN</option>
-          <option value="ERROR" ${String(config.LOG_LEVEL || '').toUpperCase() === 'ERROR' ? 'selected' : ''}>ERROR</option>
+          <option value="DEBUG" ${String(config.LOG_LEVEL||'').toUpperCase()==='DEBUG'?'selected':''}>DEBUG</option>
+          <option value="INFO"  ${String(config.LOG_LEVEL||'').toUpperCase()==='INFO' ?'selected':''}>INFO</option>
+          <option value="WARN"  ${String(config.LOG_LEVEL||'').toUpperCase()==='WARN' ?'selected':''}>WARN</option>
+          <option value="ERROR" ${String(config.LOG_LEVEL||'').toUpperCase()==='ERROR'?'selected':''}>ERROR</option>
         </select>
-      </label>
-    `;
+      </label>`;
   }
 
-  /* section === 'api' (default) */
+  /* section === 'api' */
   return `
-    <label>API Keys (separadas por vírgula)
+    <label>API Key YouTube (separadas por vírgula)
       <input name="YOUTUBE_API_KEY" value="${escapeAttr(config.YOUTUBE_API_KEY)}" />
-    </label>
-  `;
+    </label>`;
 }
 
 /* ---------- payload de salvamento por seção ---------- */
 
 function settingsPayloadBySection(section, formData) {
-  const pick = (key, fallback = '') => String(formData.get(key) || fallback).trim();
-  const bool = (key, fallback = 'false') => formData.get(key) === 'on' ? 'true' : (formData.get(key) || fallback);
+  /* FIX: checkbox desmarcado não aparece no FormData → tratar como 'false' */
+  const bool = (key) => formData.get(key) === 'on' ? 'true' : 'false';
+  const pick = (key, fallback = '') => String(formData.get(key) ?? fallback).trim();
 
   if (section === 'scheduler') {
     return {
-      ENABLE_SCHEDULER_ACTIVE_HOURS: bool('ENABLE_SCHEDULER_ACTIVE_HOURS', 'false'),
-      SCHEDULER_ACTIVE_START_HOUR: pick('SCHEDULER_ACTIVE_START_HOUR', '7'),
-      SCHEDULER_ACTIVE_END_HOUR: pick('SCHEDULER_ACTIVE_END_HOUR', '22'),
-      SCHEDULER_MAIN_INTERVAL_HOURS: pick('SCHEDULER_MAIN_INTERVAL_HOURS', '4'),
-      SCHEDULER_PRE_EVENT_WINDOW_HOURS: pick('SCHEDULER_PRE_EVENT_WINDOW_HOURS', '2'),
+      ENABLE_SCHEDULER_ACTIVE_HOURS:        bool('ENABLE_SCHEDULER_ACTIVE_HOURS'),
+      SCHEDULER_ACTIVE_START_HOUR:          pick('SCHEDULER_ACTIVE_START_HOUR',   '7'),
+      SCHEDULER_ACTIVE_END_HOUR:            pick('SCHEDULER_ACTIVE_END_HOUR',     '22'),
+      SCHEDULER_MAIN_INTERVAL_HOURS:        pick('SCHEDULER_MAIN_INTERVAL_HOURS', '4'),
+      SCHEDULER_PRE_EVENT_WINDOW_HOURS:     pick('SCHEDULER_PRE_EVENT_WINDOW_HOURS', '2'),
       SCHEDULER_PRE_EVENT_INTERVAL_MINUTES: pick('SCHEDULER_PRE_EVENT_INTERVAL_MINUTES', '5'),
-      SCHEDULER_POST_EVENT_INTERVAL_MINUTES: pick('SCHEDULER_POST_EVENT_INTERVAL_MINUTES', '5'),
-      FULL_SYNC_INTERVAL_HOURS: pick('FULL_SYNC_INTERVAL_HOURS', '48'),
-      RESOLVE_HANDLES_TTL_HOURS: pick('RESOLVE_HANDLES_TTL_HOURS', '24'),
+      SCHEDULER_POST_EVENT_INTERVAL_MINUTES:pick('SCHEDULER_POST_EVENT_INTERVAL_MINUTES','5'),
+      FULL_SYNC_INTERVAL_HOURS:             pick('FULL_SYNC_INTERVAL_HOURS',  '48'),
+      RESOLVE_HANDLES_TTL_HOURS:            pick('RESOLVE_HANDLES_TTL_HOURS', '24'),
     };
   }
-
   if (section === 'content') {
     return {
-      PLAYLIST_GENERATE_DIRECT: bool('PLAYLIST_GENERATE_DIRECT', 'true'),
-      PLAYLIST_GENERATE_PROXY: bool('PLAYLIST_GENERATE_PROXY', 'true'),
-      FILTER_BY_CATEGORY: bool('FILTER_BY_CATEGORY', 'false'),
-      EPG_DESCRIPTION_CLEANUP: bool('EPG_DESCRIPTION_CLEANUP', 'true'),
-      MAX_SCHEDULE_HOURS: pick('MAX_SCHEDULE_HOURS', '72'),
-      MAX_UPCOMING_PER_CHANNEL: pick('MAX_UPCOMING_PER_CHANNEL', '6'),
-      ALLOWED_CATEGORY_IDS: pick('ALLOWED_CATEGORY_IDS', ''),
-      TITLE_FILTER_EXPRESSIONS: pick('TITLE_FILTER_EXPRESSIONS', ''),
-      CATEGORY_MAPPINGS: pick('CATEGORY_MAPPINGS', ''),
-      CHANNEL_NAME_MAPPINGS: pick('CHANNEL_NAME_MAPPINGS', ''),
+      PLAYLIST_GENERATE_DIRECT:  bool('PLAYLIST_GENERATE_DIRECT'),
+      PLAYLIST_GENERATE_PROXY:   bool('PLAYLIST_GENERATE_PROXY'),
+      FILTER_BY_CATEGORY:        bool('FILTER_BY_CATEGORY'),
+      EPG_DESCRIPTION_CLEANUP:   bool('EPG_DESCRIPTION_CLEANUP'),
+      MAX_SCHEDULE_HOURS:        pick('MAX_SCHEDULE_HOURS',          '72'),
+      MAX_UPCOMING_PER_CHANNEL:  pick('MAX_UPCOMING_PER_CHANNEL',   '6'),
+      ALLOWED_CATEGORY_IDS:      pick('ALLOWED_CATEGORY_IDS',        ''),
+      TITLE_FILTER_EXPRESSIONS:  pick('TITLE_FILTER_EXPRESSIONS',    ''),
+      CATEGORY_MAPPINGS:         pick('CATEGORY_MAPPINGS',           ''),
+      CHANNEL_NAME_MAPPINGS:     pick('CHANNEL_NAME_MAPPINGS',       ''),
     };
   }
-
   if (section === 'retention') {
     return {
-      KEEP_RECORDED_STREAMS: bool('KEEP_RECORDED_STREAMS', 'true'),
-      RECORDED_RETENTION_DAYS: pick('RECORDED_RETENTION_DAYS', '2'),
-      MAX_RECORDED_PER_CHANNEL: pick('MAX_RECORDED_PER_CHANNEL', '2'),
+      KEEP_RECORDED_STREAMS:      bool('KEEP_RECORDED_STREAMS'),
+      RECORDED_RETENTION_DAYS:    pick('RECORDED_RETENTION_DAYS',    '2'),
+      MAX_RECORDED_PER_CHANNEL:   pick('MAX_RECORDED_PER_CHANNEL',   '2'),
     };
   }
-
   if (section === 'media') {
     return {
-      USE_INVISIBLE_PLACEHOLDER: bool('USE_INVISIBLE_PLACEHOLDER', 'true'),
-      PLACEHOLDER_IMAGE_URL: pick('PLACEHOLDER_IMAGE_URL', ''),
+      USE_INVISIBLE_PLACEHOLDER: bool('USE_INVISIBLE_PLACEHOLDER'),
+      PLACEHOLDER_IMAGE_URL:     pick('PLACEHOLDER_IMAGE_URL', ''),
     };
   }
-
   if (section === 'tech') {
     return {
-      USE_PLAYLIST_ITEMS: bool('USE_PLAYLIST_ITEMS', 'true'),
-      PROXY_ENABLE_ANALYTICS: bool('PROXY_ENABLE_ANALYTICS', 'true'),
-      HTTP_PORT: pick('HTTP_PORT', '8888'),
-      LOCAL_TIMEZONE: pick('LOCAL_TIMEZONE', 'America/Sao_Paulo'),
-      STALE_HOURS: pick('STALE_HOURS', '6'),
-      TUBEWRANGLERR_URL: pick('TUBEWRANGLERR_URL', ''),
-      PROXY_THUMBNAIL_CACHE_HOURS: pick('PROXY_THUMBNAIL_CACHE_HOURS', '24'),
-      LOG_LEVEL: pick('LOG_LEVEL', 'INFO'),
+      USE_PLAYLIST_ITEMS:     bool('USE_PLAYLIST_ITEMS'),
+      PROXY_ENABLE_ANALYTICS: bool('PROXY_ENABLE_ANALYTICS'),
+      HTTP_PORT:              pick('HTTP_PORT',      '8888'),
+      LOCAL_TIMEZONE:         pick('LOCAL_TIMEZONE', 'America/Sao_Paulo'),
+      STALE_HOURS:            pick('STALE_HOURS',    '6'),
+      TUBEWRANGLERR_URL:      pick('TUBEWRANGLERR_URL', ''),
+      LOG_LEVEL:              pick('LOG_LEVEL',      'INFO'),
     };
   }
-
+  if (section === 'cache') {
+    return {
+      PROXY_THUMBNAIL_CACHE_HOURS: pick('PROXY_THUMBNAIL_CACHE_HOURS', '24'),
+    };
+  }
   /* api */
   return { YOUTUBE_API_KEY: pick('YOUTUBE_API_KEY', '') };
 }
 
 /* ---------- API section cards (cookies, UAs, tool profiles) ---------- */
 
-function apiCards(credentials, toolProfiles) {
-  const platforms = ['youtube', 'dailymotion', 'soultv'];
-  const cookiesByPlatform = new Map(
-    credentials
-      .filter((item) => item.type === 'cookie')
-      .map((item) => [String(item.platform).toLowerCase(), item]),
-  );
-  const userAgents = credentials.filter((item) => item.type === 'user-agent');
+function apiCards(config, cookies, userAgents, toolProfiles) {
+  const cookieOptions = cookies.map(
+    (c) => `<option value="${c.id}">${escapeHtml(c.name)} (${escapeHtml(c.provider)})</option>`,
+  ).join('');
+  const uaOptions = userAgents.map(
+    (ua) => `<option value="${ua.id}">${escapeHtml(ua.label || ua.value.slice(0, 40))}</option>`,
+  ).join('');
 
   return `
+    <!-- API Key inline -->
     <div class="card">
-      <h3>Cookies por Plataforma</h3>
+      <h3>API Key YouTube</h3>
+      <div style="display:flex;gap:0.5rem">
+        <input id="api-key-input" value="${escapeAttr(config.YOUTUBE_API_KEY)}" placeholder="Chave(s) separadas por vírgula" style="flex:1" />
+        <button id="api-key-save" class="action-btn">💾 Salvar</button>
+      </div>
+    </div>
+
+    <!-- Cookies -->
+    <div class="card">
+      <h3>🍪 Cookies</h3>
+      <form id="cookie-upload-form" class="toolbar" style="flex-wrap:wrap;gap:0.5rem;margin-bottom:1rem">
+        <input name="name" placeholder="Nome (ex: YouTube Premium)" required />
+        <input name="provider" placeholder="Provider (ex: youtube)" />
+        <input type="file" name="file" accept=".txt" required />
+        <button type="submit" class="action-btn">📤 Upload</button>
+      </form>
       <table>
-        <thead><tr><th>Plataforma</th><th>Arquivo</th><th>Status</th><th>Ações</th></tr></thead>
+        <thead><tr><th>Nome</th><th>Provider</th><th>Arquivo</th><th>Status</th><th>Ações</th></tr></thead>
         <tbody>
-          ${platforms.map((platform) => {
-            const row = cookiesByPlatform.get(platform);
-            const fileLabel = row?.label || (row?.value ? String(row.value).split('/').pop() : '(não configurado)');
-            const active = row?.active === 1 ? '🟢 ativo' : '🔴 inativo';
-            return `
+          ${cookies.length === 0
+            ? '<tr><td colspan="5" style="opacity:0.5;text-align:center">Nenhum cookie cadastrado</td></tr>'
+            : cookies.map((c) => `
               <tr>
-                <td>${platform}</td>
-                <td>${fileLabel || '(não configurado)'}</td>
-                <td>${active}</td>
+                <td>${escapeHtml(c.name)}</td>
+                <td>${escapeHtml(c.provider)}</td>
+                <td style="font-size:0.8rem;opacity:0.7">${escapeHtml(String(c.file_path).split('/').pop() || '-')}</td>
+                <td>${c.active === 1 ? '🟢 ativo' : '🔴 inativo'}</td>
                 <td>
-                  <form class="inline" data-cookie-upload="${platform}">
-                    <input type="file" name="file" accept=".txt" required style="max-width:160px" />
-                    <button type="submit" class="action-btn">Upload</button>
-                  </form>
-                  <button data-cookie-toggle="${platform}" class="action-btn" ${row ? '' : 'disabled'}>Ativar/Inativar</button>
-                  <button data-cookie-del="${platform}" class="action-btn danger-btn" ${row ? '' : 'disabled'}>Excluir</button>
+                  <button data-cookie-toggle="${c.id}" class="action-btn">${c.active === 1 ? 'Inativar' : 'Ativar'}</button>
+                  <button data-cookie-del="${c.id}" class="action-btn danger-btn">🗑️</button>
                 </td>
-              </tr>
-            `;
-          }).join('')}
+              </tr>`).join('')
+          }
         </tbody>
       </table>
     </div>
 
+    <!-- User-Agents -->
     <div class="card">
-      <h3>User-Agents</h3>
-      <form id="ua-form" class="toolbar">
+      <h3>🌐 User-Agents</h3>
+      <form id="ua-form" class="toolbar" style="flex-wrap:wrap;gap:0.5rem;margin-bottom:1rem">
         <input name="label" placeholder="Nome (opcional)" />
-        <input name="userAgent" placeholder="User-Agent" required style="flex:1;min-width:200px" />
+        <input name="userAgent" placeholder="User-Agent string" required style="flex:1;min-width:200px" />
         <button type="submit" class="action-btn">Adicionar</button>
       </form>
       <table>
         <thead><tr><th>Nome</th><th>UA</th><th>Padrão</th><th>Ações</th></tr></thead>
         <tbody>
-          ${userAgents.map((cred) => `
-            <tr>
-              <td>${cred.label || '-'}</td>
-              <td style="word-break:break-all;max-width:260px">${cred.value || '-'}</td>
-              <td>${cred.is_default === 1 ? '⭐' : '-'}</td>
-              <td>
-                <button data-ua-default="${cred.id}" class="action-btn">⭐ Padrão</button>
-                <button data-ua-del="${cred.id}" class="action-btn danger-btn">🗑️ Remover</button>
-              </td>
-            </tr>
-          `).join('')}
+          ${userAgents.length === 0
+            ? '<tr><td colspan="4" style="opacity:0.5;text-align:center">Nenhum UA cadastrado</td></tr>'
+            : userAgents.map((ua) => `
+              <tr>
+                <td>${escapeHtml(ua.label || '-')}</td>
+                <td style="word-break:break-all;max-width:260px;font-size:0.8rem">${escapeHtml(ua.value || '-')}</td>
+                <td style="text-align:center">${ua.is_default === 1 ? '⭐' : '-'}</td>
+                <td>
+                  <button data-ua-default="${ua.id}" class="action-btn" ${ua.is_default===1?'disabled':''}>⭐</button>
+                  <button data-ua-del="${ua.id}" class="action-btn danger-btn">🗑️</button>
+                </td>
+              </tr>`).join('')
+          }
         </tbody>
       </table>
     </div>
 
+    <!-- Perfis de Ferramenta -->
     <div class="card">
-      <h3>Perfis de Ferramenta (streamlink / yt-dlp)</h3>
-      <form id="tool-profile-form" class="toolbar" style="flex-wrap:wrap;gap:0.5rem">
+      <h3>⚙️ Perfis de Ferramenta</h3>
+      <form id="tool-profile-form" class="toolbar" style="flex-wrap:wrap;gap:0.5rem;margin-bottom:1rem">
         <input name="name" placeholder="Nome do perfil" required />
         <select name="tool" required>
           <option value="streamlink">streamlink</option>
           <option value="yt-dlp">yt-dlp</option>
+          <option value="ffmpeg">ffmpeg</option>
         </select>
-        <input name="flags" placeholder="Flags (ex: --retry-streams 5)" style="flex:1;min-width:200px" />
-        <select name="cookie_platform">
+        <input name="flags" placeholder="Flags extras (ex: --retry-streams 5)" style="flex:1;min-width:180px" />
+        <select name="cookie_id">
           <option value="">(sem cookie)</option>
-          ${platforms.map((p) => `<option value="${p}">${p}</option>`).join('')}
+          ${cookieOptions}
         </select>
         <select name="ua_id">
           <option value="">(sem UA)</option>
-          ${userAgents.map((ua) => `<option value="${ua.id}">${ua.label || ua.value.slice(0, 30)}</option>`).join('')}
+          ${uaOptions}
         </select>
-        <button type="submit" class="action-btn">Adicionar Perfil</button>
+        <button type="submit" class="action-btn">➕ Adicionar</button>
       </form>
       <table>
         <thead><tr><th>Nome</th><th>Ferramenta</th><th>Flags</th><th>Cookie</th><th>UA</th><th>Ativo</th><th>Ações</th></tr></thead>
         <tbody>
-          ${toolProfiles.map((prof) => {
-            const uaName = userAgents.find((u) => u.id === prof.ua_id)?.label || '-';
+          ${toolProfiles.map((p) => {
+            const isDefault = p.is_default === true;
             return `
-              <tr>
-                <td>${prof.name}</td>
-                <td>${prof.tool}</td>
-                <td style="max-width:180px;word-break:break-all">${prof.flags || '-'}</td>
-                <td>${prof.cookie_platform || '-'}</td>
-                <td>${uaName}</td>
-                <td>${prof.is_active === 1 ? '✅' : '-'}</td>
+              <tr ${isDefault ? 'style="opacity:0.65"' : ''}>
+                <td>${escapeHtml(p.name)}</td>
+                <td><code>${escapeHtml(p.tool)}</code></td>
+                <td style="font-size:0.8rem;max-width:160px;word-break:break-all">${escapeHtml(p.flags || '-')}</td>
+                <td style="font-size:0.8rem">${escapeHtml(p.cookie_name || '-')}</td>
+                <td style="font-size:0.8rem">${escapeHtml(p.ua_label || '-')}</td>
+                <td style="text-align:center">${p.is_active === 1 ? '✅' : '-'}</td>
                 <td>
-                  <button data-tool-activate="${prof.id}" class="action-btn">✅ Ativar</button>
-                  <button data-tool-del="${prof.id}" class="action-btn danger-btn">🗑️ Remover</button>
+                  ${!isDefault && p.is_active !== 1
+                    ? `<button data-tool-activate="${p.id}" class="action-btn">✅ Ativar</button>`
+                    : ''}
+                  ${!isDefault
+                    ? `<button data-tool-del="${p.id}" class="action-btn danger-btn">🗑️</button>`
+                    : '<span style="opacity:0.4;font-size:0.8rem">padrão</span>'}
                 </td>
-              </tr>
-            `;
+              </tr>`;
           }).join('')}
         </tbody>
       </table>
-    </div>
-  `;
+      <p style="font-size:0.8rem;opacity:0.55;margin-top:0.5rem">
+        Perfis virtuais (padrão) são usados quando nenhum perfil real está cadastrado para a ferramenta.
+        Eles não podem ser removidos e usam o UA padrão + cookie ativo.
+      </p>
+    </div>`;
 }
 
 /* ---------- Cache cards ---------- */
 
-async function cacheCards(api) {
+async function cacheCards(api, config) {
   let stats = { total: 0, expired: 0, sizeMB: '0.00' };
   try {
-    stats = await requestJson(api, '/api/thumbnail-cache/stats', undefined, 'Falha ao carregar stats.');
-  } catch {
-    /* Ignora erro (cache pode não estar disponível) */
-  }
+    stats = await requestJson(api, '/api/thumbnail-cache/stats', undefined, '');
+  } catch { /* ignora */ }
 
   return `
+    <div class="card">
+      <h3>Configuração de TTL</h3>
+      <form id="cache-config-form" class="settings-grid">
+        <label>Cache Thumbnail Proxy (h)
+          <input name="PROXY_THUMBNAIL_CACHE_HOURS" type="number" min="1" max="168"
+            value="${config.PROXY_THUMBNAIL_CACHE_HOURS || 24}" />
+        </label>
+        <div style="display:flex;align-items:flex-end">
+          <button type="submit" class="action-btn">💾 Salvar</button>
+        </div>
+      </form>
+    </div>
     <div class="card">
       <h3>Estatísticas do Cache de Thumbnails</h3>
       <table>
         <tbody>
           <tr><th>Total de thumbnails</th><td id="cache-total">${stats.total}</td></tr>
-          <tr><th>Thumbnails expirados</th><td id="cache-expired">${stats.expired}</td></tr>
+          <tr><th>Expirados</th><td id="cache-expired">${stats.expired}</td></tr>
           <tr><th>Tamanho em disco</th><td id="cache-size">${stats.sizeMB} MB</td></tr>
         </tbody>
       </table>
       <div class="toolbar" style="margin-top:1rem">
         <button id="cache-refresh" class="action-btn">🔄 Atualizar</button>
-        <button id="cache-prune" class="action-btn">🧹 Limpar Expirados</button>
-        <button id="cache-clear" class="danger-btn">🗑️ Limpar Tudo</button>
+        <button id="cache-prune"   class="action-btn">🧹 Limpar Expirados</button>
+        <button id="cache-clear"   class="danger-btn">🗑️ Limpar Tudo</button>
       </div>
-    </div>
-  `;
+    </div>`;
 }
 
 /* ======================================================================
@@ -476,25 +487,33 @@ export async function renderSettings(root, api, hash = '/settings') {
   let notice = { type: '', text: '' };
 
   async function load() {
-    const hasApiSection = section === 'api';
-    const hasCacheSection = section === 'cache';
-    const hasForm = !hasCacheSection;
+    const isApi   = section === 'api';
+    const isCache = section === 'cache';
+    const hasForm = !isApi && !isCache;
 
     let config = {};
-    let credentials = [];
+    let cookies = [];
+    let userAgents = [];
     let toolProfiles = [];
     let cacheHTML = '';
 
-    if (hasApiSection) {
-      [config, credentials, toolProfiles] = await Promise.all([
-        requestJson(api, '/api/config', undefined, 'Falha ao carregar configurações.'),
-        requestJson(api, '/api/credentials', undefined, 'Falha ao carregar credenciais.'),
-        requestJson(api, '/api/tool-profiles', undefined, 'Falha ao carregar perfis de ferramenta.'),
-      ]);
-    } else if (hasCacheSection) {
-      cacheHTML = await cacheCards(api);
-    } else {
-      config = await requestJson(api, '/api/config', undefined, 'Falha ao carregar configurações.');
+    try {
+      if (isApi) {
+        [config, cookies, userAgents, toolProfiles] = await Promise.all([
+          requestJson(api, '/api/config',        undefined, 'Falha ao carregar config.'),
+          requestJson(api, '/api/cookies',        undefined, 'Falha ao carregar cookies.'),
+          requestJson(api, '/api/credentials',    undefined, 'Falha ao carregar UAs.'),
+          requestJson(api, '/api/tool-profiles',  undefined, 'Falha ao carregar perfis.'),
+        ]);
+      } else if (isCache) {
+        config   = await requestJson(api, '/api/config', undefined, 'Falha ao carregar config.');
+        cacheHTML = await cacheCards(api, config);
+      } else {
+        config = await requestJson(api, '/api/config', undefined, 'Falha ao carregar configurações.');
+      }
+    } catch (err) {
+      root.innerHTML = `<div class="card"><p style="color:#fca5a5">${err instanceof Error ? err.message : 'Erro ao carregar.'}</p></div>`;
+      return;
     }
 
     root.innerHTML = `
@@ -502,38 +521,38 @@ export async function renderSettings(root, api, hash = '/settings') {
         <h3>${sectionMeta[section].title}</h3>
         <p style="opacity:0.6;font-size:0.85rem">${sectionMeta[section].hint}</p>
         <p id="settings-message" class="form-msg ${notice.type} ${notice.text ? 'show' : ''}">${notice.text || ''}</p>
-        ${hasForm && !hasApiSection ? `
-        <form id="settings-form" class="settings-grid">
-          ${configFields(section, config)}
-          <div style="grid-column:1/-1;margin-top:0.5rem">
-            <button type="submit" class="action-btn" style="min-width:140px">💾 Salvar</button>
-          </div>
-        </form>` : ''}
-        ${hasApiSection ? `<div class="settings-grid">${configFields(section, config)}</div>` : ''}
+        ${hasForm ? `
+          <form id="settings-form" class="settings-grid">
+            ${configFields(section, config)}
+            <div style="grid-column:1/-1;margin-top:0.5rem">
+              <button type="submit" class="action-btn">💾 Salvar</button>
+            </div>
+          </form>` : ''}
+        ${isApi ? `<div class="settings-grid">${configFields(section, config)}</div>` : ''}
       </div>
-      ${section === 'api' ? apiCards(credentials, toolProfiles) : ''}
-      ${section === 'cache' ? cacheHTML : ''}
+      ${isApi   ? apiCards(config, cookies, userAgents, toolProfiles) : ''}
+      ${isCache ? cacheHTML : ''}
       ${section === 'tech' ? `
-      <div class="card">
-        <h3>Ações de Configuração</h3>
-        <div class="toolbar">
-          <button id="export-config" type="button" class="action-btn">📥 Exportar JSON</button>
-          <input id="import-file" type="file" accept="application/json" />
-          <button id="import-config" type="button" class="action-btn">📤 Importar JSON</button>
-          <button id="reset-config" type="button" class="danger-btn">🗑️ Resetar padrão</button>
-        </div>
-      </div>` : ''}
-    `;
+        <div class="card">
+          <h3>Ações de Configuração</h3>
+          <div class="toolbar">
+            <button id="export-config" type="button" class="action-btn">📥 Exportar JSON</button>
+            <input  id="import-file" type="file" accept="application/json" />
+            <button id="import-config" type="button" class="action-btn">📤 Importar JSON</button>
+            <button id="reset-config"  type="button" class="danger-btn">🗑️ Resetar padrão</button>
+          </div>
+        </div>` : ''}`;
 
     const messageNode = document.getElementById('settings-message');
     const setNotice = (type, text) => {
       notice = { type, text };
+      if (!messageNode) return;
       messageNode.className = `form-msg ${type} ${text ? 'show' : ''}`;
       messageNode.textContent = text;
     };
 
-    /* Form submit genérico */
-    if (hasForm && !hasApiSection) {
+    /* ---- Generic form submit ---- */
+    if (hasForm) {
       document.getElementById('settings-form').addEventListener('submit', async (event) => {
         event.preventDefault();
         const formData = new FormData(event.target);
@@ -545,260 +564,229 @@ export async function renderSettings(root, api, hash = '/settings') {
           }, 'Falha ao salvar configurações.');
           setNotice('success', 'Configurações salvas com sucesso.');
           await load();
-        } catch (error) {
-          setNotice('error', error instanceof Error ? error.message : 'Falha ao salvar configurações.');
+        } catch (err) {
+          setNotice('error', err instanceof Error ? err.message : 'Falha ao salvar.');
         }
       });
     }
 
-    /* API section: salvar API keys diretamente */
-    if (hasApiSection) {
-      const keyInput = root.querySelector('input[name="YOUTUBE_API_KEY"]');
-      if (keyInput) {
-        keyInput.addEventListener('blur', async () => {
-          try {
-            await requestJson(api, '/api/config', {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ YOUTUBE_API_KEY: keyInput.value.trim() }),
-            }, 'Falha ao salvar API Key.');
-            setNotice('success', 'API Key salva.');
-          } catch (error) {
-            setNotice('error', error instanceof Error ? error.message : 'Falha ao salvar API Key.');
-          }
-        });
-      }
+    /* ---- Tech section ---- */
+    if (section === 'tech') {
+      /* Detectar URL */
+      document.getElementById('detect-base-url')?.addEventListener('click', async () => {
+        try {
+          const result = await requestJson(api, '/api/base-url', undefined, 'Falha ao detectar URL.');
+          const input = document.getElementById('tubewranglerr-url-input');
+          if (input && result?.url) input.value = result.url;
+          setNotice('success', `URL detectada: ${result?.url}`);
+        } catch (err) {
+          setNotice('error', err instanceof Error ? err.message : 'Falha ao detectar URL.');
+        }
+      });
+
+      document.getElementById('export-config')?.addEventListener('click', async () => {
+        try {
+          const payload = await requestJson(api, '/api/config/export', { method: 'POST' }, 'Falha ao exportar.');
+          const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+          const a = Object.assign(document.createElement('a'), {
+            href: URL.createObjectURL(blob), download: 'tubewranglerr-config.json',
+          });
+          document.body.appendChild(a); a.click(); a.remove();
+          URL.revokeObjectURL(a.href);
+          setNotice('success', 'Configuração exportada.');
+        } catch (err) { setNotice('error', err instanceof Error ? err.message : 'Falha ao exportar.'); }
+      });
+
+      document.getElementById('import-config')?.addEventListener('click', async () => {
+        const file = document.getElementById('import-file')?.files?.[0];
+        if (!file) { setNotice('error', 'Selecione um arquivo JSON.'); return; }
+        try {
+          const parsed = JSON.parse(await file.text());
+          await requestJson(api, '/api/config/import', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(parsed),
+          }, 'Falha ao importar.');
+          setNotice('success', 'Configuração importada.'); await load();
+        } catch (err) { setNotice('error', err instanceof Error ? err.message : 'Falha ao importar.'); }
+      });
+
+      document.getElementById('reset-config')?.addEventListener('click', async () => {
+        if (!confirm('Resetar todas as configurações para o padrão?')) return;
+        try {
+          await requestJson(api, '/api/config/reset', { method: 'POST' }, 'Falha ao resetar.');
+          setNotice('success', 'Configuração resetada.'); await load();
+        } catch (err) { setNotice('error', err instanceof Error ? err.message : 'Falha ao resetar.'); }
+      });
     }
 
-    /* Cache: refresh, prune, clear */
-    if (section === 'cache') {
+    /* ---- Cache section ---- */
+    if (isCache) {
       async function refreshCacheStats() {
-        try {
-          const stats = await requestJson(api, '/api/thumbnail-cache/stats', undefined, 'Falha ao carregar stats.');
-          document.getElementById('cache-total').textContent = String(stats.total);
-          document.getElementById('cache-expired').textContent = String(stats.expired);
-          document.getElementById('cache-size').textContent = `${stats.sizeMB} MB`;
-        } catch (error) {
-          setNotice('error', error instanceof Error ? error.message : 'Falha ao carregar stats.');
-        }
+        const stats = await requestJson(api, '/api/thumbnail-cache/stats', undefined, '').catch(() => null);
+        if (!stats) return;
+        const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = String(val); };
+        set('cache-total',   stats.total);
+        set('cache-expired', stats.expired);
+        set('cache-size',   `${stats.sizeMB} MB`);
       }
 
-      document.getElementById('cache-refresh').addEventListener('click', async () => {
-        await refreshCacheStats();
-        setNotice('success', 'Stats atualizadas.');
-      });
-
-      document.getElementById('cache-prune').addEventListener('click', async () => {
+      document.getElementById('cache-config-form')?.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const formData = new FormData(event.target);
         try {
-          const result = await requestJson(api, '/api/thumbnail-cache/prune', { method: 'POST' }, 'Falha ao limpar expirados.');
-          setNotice('success', `${result.removed} thumbnail(s) expirado(s) removido(s).`);
-          await refreshCacheStats();
-        } catch (error) {
-          setNotice('error', error instanceof Error ? error.message : 'Falha ao limpar expirados.');
-        }
+          await requestJson(api, '/api/config', {
+            method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(settingsPayloadBySection('cache', formData)),
+          }, 'Falha ao salvar.');
+          setNotice('success', 'TTL de cache salvo.'); await load();
+        } catch (err) { setNotice('error', err instanceof Error ? err.message : 'Falha ao salvar.'); }
       });
 
-      document.getElementById('cache-clear').addEventListener('click', async () => {
+      document.getElementById('cache-refresh')?.addEventListener('click', async () => {
+        await refreshCacheStats(); setNotice('success', 'Stats atualizadas.');
+      });
+
+      document.getElementById('cache-prune')?.addEventListener('click', async () => {
+        try {
+          const r = await requestJson(api, '/api/thumbnail-cache/prune', { method: 'POST' }, 'Falha.');
+          setNotice('success', `${r.removed} item(s) expirado(s) removido(s).`);
+          await refreshCacheStats();
+        } catch (err) { setNotice('error', err instanceof Error ? err.message : 'Falha.'); }
+      });
+
+      document.getElementById('cache-clear')?.addEventListener('click', async () => {
         if (!confirm('Limpar TODO o cache de thumbnails?')) return;
         try {
-          await requestJson(api, '/api/thumbnail-cache/clear', { method: 'POST' }, 'Falha ao limpar cache.');
-          setNotice('success', 'Cache limpo com sucesso.');
-          await refreshCacheStats();
-        } catch (error) {
-          setNotice('error', error instanceof Error ? error.message : 'Falha ao limpar cache.');
-        }
+          await requestJson(api, '/api/thumbnail-cache/clear', { method: 'POST' }, 'Falha.');
+          setNotice('success', 'Cache limpo.'); await refreshCacheStats();
+        } catch (err) { setNotice('error', err instanceof Error ? err.message : 'Falha.'); }
       });
     }
 
-    /* API section: cookies, UAs, tool profiles */
-    if (section === 'api') {
-      root.querySelectorAll('[data-cookie-upload]').forEach((form) => {
-        form.addEventListener('submit', async (event) => {
-          event.preventDefault();
-          const platform = form.getAttribute('data-cookie-upload');
-          const payload = new FormData(form);
-          const response = await api(`/api/credentials/cookie/${platform}`, { method: 'POST', body: payload });
-          if (!response.ok) {
-            const body = await response.json().catch(() => ({}));
-            setNotice('error', textFromError(body, 'Falha no upload de cookie.'));
-            return;
-          }
-          setNotice('success', `Cookie atualizado para ${platform}.`);
-          await load();
-        });
+    /* ---- API section ---- */
+    if (isApi) {
+      /* API Key save */
+      document.getElementById('api-key-save')?.addEventListener('click', async () => {
+        const val = document.getElementById('api-key-input')?.value.trim() || '';
+        try {
+          await requestJson(api, '/api/config', {
+            method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ YOUTUBE_API_KEY: val }),
+          }, 'Falha ao salvar API Key.');
+          setNotice('success', 'API Key salva.');
+        } catch (err) { setNotice('error', err instanceof Error ? err.message : 'Falha.'); }
       });
 
-      root.querySelectorAll('[data-cookie-toggle]').forEach((button) => {
-        button.addEventListener('click', async () => {
-          const platform = button.getAttribute('data-cookie-toggle');
-          try {
-            await requestJson(api, `/api/credentials/cookie/${platform}/toggle`, { method: 'PATCH' }, 'Falha ao alterar status do cookie.');
-            setNotice('success', `Status de cookie alterado para ${platform}.`);
-            await load();
-          } catch (error) {
-            setNotice('error', error instanceof Error ? error.message : 'Falha ao alterar status do cookie.');
-          }
-        });
-      });
-
-      root.querySelectorAll('[data-cookie-del]').forEach((button) => {
-        button.addEventListener('click', async () => {
-          const platform = button.getAttribute('data-cookie-del');
-          if (!confirm(`Remover cookie de ${platform}?`)) return;
-          try {
-            await requestJson(api, `/api/credentials/cookie/${platform}`, { method: 'DELETE' }, 'Falha ao remover cookie.');
-            setNotice('success', `Cookie removido para ${platform}.`);
-            await load();
-          } catch (error) {
-            setNotice('error', error instanceof Error ? error.message : 'Falha ao remover cookie.');
-          }
-        });
-      });
-
-      document.getElementById('ua-form').addEventListener('submit', async (event) => {
+      /* Cookie upload */
+      document.getElementById('cookie-upload-form')?.addEventListener('submit', async (event) => {
         event.preventDefault();
-        const formData = new FormData(event.target);
+        const fd = new FormData(event.target);
+        const resp = await api('/api/cookies', { method: 'POST', body: fd });
+        const body = await resp.json().catch(() => ({}));
+        if (!resp.ok) { setNotice('error', textFromError(body, 'Falha no upload.')); return; }
+        setNotice('success', 'Cookie adicionado.'); await load();
+      });
+
+      /* Cookie toggle */
+      root.querySelectorAll('[data-cookie-toggle]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const id = btn.getAttribute('data-cookie-toggle');
+          try {
+            await requestJson(api, `/api/cookies/${id}/toggle`, { method: 'PATCH' }, 'Falha ao alternar.');
+            setNotice('success', 'Status do cookie alterado.'); await load();
+          } catch (err) { setNotice('error', err instanceof Error ? err.message : 'Falha.'); }
+        });
+      });
+
+      /* Cookie delete */
+      root.querySelectorAll('[data-cookie-del]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const id = btn.getAttribute('data-cookie-del');
+          if (!confirm('Remover este cookie?')) return;
+          try {
+            await requestJson(api, `/api/cookies/${id}`, { method: 'DELETE' }, 'Falha ao remover.');
+            setNotice('success', 'Cookie removido.'); await load();
+          } catch (err) { setNotice('error', err instanceof Error ? err.message : 'Falha.'); }
+        });
+      });
+
+      /* UA add */
+      document.getElementById('ua-form')?.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const fd = new FormData(event.target);
         try {
           await requestJson(api, '/api/credentials/ua', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              label: String(formData.get('label') || '').trim(),
-              userAgent: String(formData.get('userAgent') || '').trim(),
-              platform: 'youtube',
+              label:     String(fd.get('label')     || '').trim(),
+              userAgent: String(fd.get('userAgent') || '').trim(),
             }),
-          }, 'Falha ao adicionar user-agent.');
-          setNotice('success', 'User-Agent adicionado.');
-          await load();
-        } catch (error) {
-          setNotice('error', error instanceof Error ? error.message : 'Falha ao adicionar user-agent.');
-        }
+          }, 'Falha ao adicionar UA.');
+          setNotice('success', 'User-Agent adicionado.'); await load();
+        } catch (err) { setNotice('error', err instanceof Error ? err.message : 'Falha.'); }
       });
 
-      root.querySelectorAll('[data-ua-del]').forEach((button) => {
-        button.addEventListener('click', async () => {
-          const id = button.getAttribute('data-ua-del');
+      /* UA default */
+      root.querySelectorAll('[data-ua-default]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const id = btn.getAttribute('data-ua-default');
           try {
-            await requestJson(api, `/api/credentials/ua/${id}`, { method: 'DELETE' }, 'Falha ao remover user-agent.');
-            setNotice('success', 'User-Agent removido.');
-            await load();
-          } catch (error) {
-            setNotice('error', error instanceof Error ? error.message : 'Falha ao remover user-agent.');
-          }
+            await requestJson(api, `/api/credentials/ua/${id}/default`, { method: 'PATCH' }, 'Falha.');
+            setNotice('success', 'UA padrão definido.'); await load();
+          } catch (err) { setNotice('error', err instanceof Error ? err.message : 'Falha.'); }
         });
       });
 
-      root.querySelectorAll('[data-ua-default]').forEach((button) => {
-        button.addEventListener('click', async () => {
-          const id = button.getAttribute('data-ua-default');
+      /* UA delete */
+      root.querySelectorAll('[data-ua-del]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const id = btn.getAttribute('data-ua-del');
           try {
-            await requestJson(api, `/api/credentials/ua/${id}/default`, { method: 'PATCH' }, 'Falha ao definir user-agent padrão.');
-            setNotice('success', 'User-Agent padrão atualizado.');
-            await load();
-          } catch (error) {
-            setNotice('error', error instanceof Error ? error.message : 'Falha ao definir user-agent padrão.');
-          }
+            await requestJson(api, `/api/credentials/ua/${id}`, { method: 'DELETE' }, 'Falha.');
+            setNotice('success', 'UA removido.'); await load();
+          } catch (err) { setNotice('error', err instanceof Error ? err.message : 'Falha.'); }
         });
       });
 
-      document.getElementById('tool-profile-form').addEventListener('submit', async (event) => {
+      /* Tool profile add */
+      document.getElementById('tool-profile-form')?.addEventListener('submit', async (event) => {
         event.preventDefault();
-        const formData = new FormData(event.target);
+        const fd = new FormData(event.target);
         try {
           await requestJson(api, '/api/tool-profiles', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              name: String(formData.get('name') || '').trim(),
-              tool: String(formData.get('tool') || '').trim(),
-              flags: String(formData.get('flags') || '').trim(),
-              cookie_platform: String(formData.get('cookie_platform') || '').trim() || null,
-              ua_id: Number(formData.get('ua_id')) || null,
+              name:      String(fd.get('name')      || '').trim(),
+              tool:      String(fd.get('tool')      || '').trim(),
+              flags:     String(fd.get('flags')     || '').trim(),
+              cookie_id: Number(fd.get('cookie_id')) || null,
+              ua_id:     Number(fd.get('ua_id'))     || null,
             }),
-          }, 'Falha ao adicionar perfil de ferramenta.');
-          setNotice('success', 'Perfil de ferramenta adicionado.');
-          await load();
-        } catch (error) {
-          setNotice('error', error instanceof Error ? error.message : 'Falha ao adicionar perfil.');
-        }
+          }, 'Falha ao adicionar perfil.');
+          setNotice('success', 'Perfil adicionado.'); await load();
+        } catch (err) { setNotice('error', err instanceof Error ? err.message : 'Falha.'); }
       });
 
-      root.querySelectorAll('[data-tool-activate]').forEach((button) => {
-        button.addEventListener('click', async () => {
-          const id = button.getAttribute('data-tool-activate');
+      /* Tool profile activate */
+      root.querySelectorAll('[data-tool-activate]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const id = btn.getAttribute('data-tool-activate');
           try {
-            await requestJson(api, `/api/tool-profiles/${id}/activate`, { method: 'PATCH' }, 'Falha ao ativar perfil.');
-            setNotice('success', 'Perfil ativado.');
-            await load();
-          } catch (error) {
-            setNotice('error', error instanceof Error ? error.message : 'Falha ao ativar perfil.');
-          }
+            await requestJson(api, `/api/tool-profiles/${id}/activate`, { method: 'PATCH' }, 'Falha.');
+            setNotice('success', 'Perfil ativado.'); await load();
+          } catch (err) { setNotice('error', err instanceof Error ? err.message : 'Falha.'); }
         });
       });
 
-      root.querySelectorAll('[data-tool-del]').forEach((button) => {
-        button.addEventListener('click', async () => {
-          const id = button.getAttribute('data-tool-del');
+      /* Tool profile delete */
+      root.querySelectorAll('[data-tool-del]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const id = btn.getAttribute('data-tool-del');
           if (!confirm('Remover este perfil de ferramenta?')) return;
           try {
-            await requestJson(api, `/api/tool-profiles/${id}`, { method: 'DELETE' }, 'Falha ao remover perfil.');
-            setNotice('success', 'Perfil removido.');
-            await load();
-          } catch (error) {
-            setNotice('error', error instanceof Error ? error.message : 'Falha ao remover perfil.');
-          }
+            await requestJson(api, `/api/tool-profiles/${id}`, { method: 'DELETE' }, 'Falha.');
+            setNotice('success', 'Perfil removido.'); await load();
+          } catch (err) { setNotice('error', err instanceof Error ? err.message : 'Falha.'); }
         });
-      });
-    }
-
-    /* Técnico: export / import / reset */
-    if (section === 'tech') {
-      document.getElementById('export-config').addEventListener('click', async () => {
-        try {
-          const payload = await requestJson(api, '/api/config/export', { method: 'POST' }, 'Falha ao exportar configuração.');
-          const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-          const href = URL.createObjectURL(blob);
-          const anchor = document.createElement('a');
-          anchor.href = href;
-          anchor.download = 'tubewranglerr-config.json';
-          document.body.appendChild(anchor);
-          anchor.click();
-          anchor.remove();
-          URL.revokeObjectURL(href);
-          setNotice('success', 'Configuração exportada.');
-        } catch (error) {
-          setNotice('error', error instanceof Error ? error.message : 'Falha ao exportar configuração.');
-        }
-      });
-
-      document.getElementById('import-config').addEventListener('click', async () => {
-        const fileInput = document.getElementById('import-file');
-        const file = fileInput.files?.[0];
-        if (!file) { setNotice('error', 'Selecione um arquivo JSON para importar.'); return; }
-        try {
-          const text = await file.text();
-          const parsed = JSON.parse(text);
-          await requestJson(api, '/api/config/import', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(parsed),
-          }, 'Falha ao importar configuração.');
-          setNotice('success', 'Configuração importada.');
-          await load();
-        } catch (error) {
-          setNotice('error', error instanceof Error ? error.message : 'Falha ao importar configuração.');
-        }
-      });
-
-      document.getElementById('reset-config').addEventListener('click', async () => {
-        if (!confirm('Resetar todas as configurações para os valores padrão?')) return;
-        try {
-          await requestJson(api, '/api/config/reset', { method: 'POST' }, 'Falha ao resetar configuração.');
-          setNotice('success', 'Configuração resetada para o padrão.');
-          await load();
-        } catch (error) {
-          setNotice('error', error instanceof Error ? error.message : 'Falha ao resetar configuração.');
-        }
       });
     }
   }
