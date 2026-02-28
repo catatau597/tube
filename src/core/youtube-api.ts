@@ -220,8 +220,9 @@ export class YouTubeApi {
     const now = new Date();
     const maxFuture = options.maxScheduleHours ? new Date(now.getTime() + options.maxScheduleHours * 3_600_000) : null;
 
-    // publishedAfter: buscar apenas vídeos dos últimos 7 dias (evita buscar histórico gigante)
-    const publishedAfter = new Date(now.getTime() - 7 * 24 * 3_600_000).toISOString();
+    // publishedAfter: usar AGORA para evitar buscar vídeos que já passaram
+    // Subtraindo 1 hora como margem de segurança (caso o relógio do servidor esteja ligeiramente adiantado)
+    const publishedAfter = new Date(now.getTime() - 3_600_000).toISOString();
 
     const ids = new Set<string>();
     let nextPageToken: string | undefined;
