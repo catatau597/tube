@@ -28,6 +28,7 @@ const routes = {
 	'/settings/titles': renderSettings,
 	'/settings/retention': renderSettings,
 	'/settings/media': renderSettings,
+	'/settings/cache': renderSettings,
 	'/settings/player': renderSettings,
 	'/settings/tech': renderSettings,
 	'/settings/cookies': renderCookies,
