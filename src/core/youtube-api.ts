@@ -19,6 +19,11 @@ export interface ResolvedChannel {
   uploadsPlaylistId: string;
 }
 
+export interface FetchOptions {
+  /** Hora máxima no futuro para upcoming (em horas). Se undefined, não filtra. */
+  maxScheduleHours?: number;
+}
+
 /**
  * Gerencia rotação de API keys com rastreamento de quota esgotada
  * e reset automático à meia-noite UTC.
@@ -142,13 +147,16 @@ export class YouTubeApi {
     return false;
   }
 
-  async fetchByPlaylistItems(playlistId: string, publishedAfter?: string): Promise<Stream[]> {
+  async fetchByPlaylistItems(playlistId: string, options: FetchOptions = {}): Promise<Stream[]> {
     if (!playlistId) return [];
+
+    const now = new Date();
+    const maxFuture = options.maxScheduleHours ? new Date(now.getTime() + options.maxScheduleHours * 3_600_000) : null;
 
     const videoIds = new Set<string>();
     let nextPageToken: string | undefined;
     let pageCount = 0;
-    let shouldStop = false;
+    let consecutiveOutOfWindow = 0;
 
     do {
       const response = await this._call((yt) =>
@@ -160,18 +168,39 @@ export class YouTubeApi {
         })
       );
 
+      let foundAnyValidInPage = false;
+
       for (const item of response.data.items ?? []) {
         const publishedAt = item.snippet?.publishedAt;
-        if (publishedAfter && publishedAt && new Date(publishedAt) <= new Date(publishedAfter)) {
-          // Playlist em ordem cronológica decrescente — parada antecipada
-          shouldStop = true;
-          break;
+        
+        // Parada antecipada: playlist em ordem decrescente, se publishedAt for muito antigo, para
+        if (publishedAt) {
+          const publishedDate = new Date(publishedAt);
+          // Se publicado mais de 30 dias atrás, provavelmente são vídeos antigos demais
+          const oldThreshold = new Date(now.getTime() - 30 * 24 * 3_600_000);
+          if (publishedDate < oldThreshold) {
+            consecutiveOutOfWindow++;
+            if (consecutiveOutOfWindow >= 50) {
+              logger.info('[YouTubeApi] fetchByPlaylistItems: 50 vídeos consecutivos antigos demais, parando busca.');
+              nextPageToken = undefined;
+              break;
+            }
+            continue;
+          }
         }
+
         const videoId = item.contentDetails?.videoId;
-        if (videoId) videoIds.add(videoId);
+        if (videoId) {
+          videoIds.add(videoId);
+          foundAnyValidInPage = true;
+          consecutiveOutOfWindow = 0;
+        }
       }
 
-      if (shouldStop) break;
+      if (!foundAnyValidInPage && pageCount > 0) {
+        logger.info('[YouTubeApi] fetchByPlaylistItems: nenhum vídeo válido na página, parando busca.');
+        break;
+      }
 
       nextPageToken = response.data.nextPageToken ?? undefined;
       pageCount++;
@@ -181,14 +210,23 @@ export class YouTubeApi {
       logger.warn(`[YouTubeApi] fetchByPlaylistItems atingiu limite de ${YouTubeApi.MAX_PAGES} páginas.`);
     }
 
-    return this.fetchStreamsByIds(Array.from(videoIds));
+    const streams = await this.fetchStreamsByIds(Array.from(videoIds));
+    return this.filterByTimeWindow(streams, now, maxFuture);
   }
 
-  async fetchBySearch(channelId: string, publishedAfter?: string): Promise<Stream[]> {
+  async fetchBySearch(channelId: string, options: FetchOptions = {}): Promise<Stream[]> {
     if (!channelId) return [];
+
+    const now = new Date();
+    const maxFuture = options.maxScheduleHours ? new Date(now.getTime() + options.maxScheduleHours * 3_600_000) : null;
+
+    // publishedAfter: buscar apenas vídeos dos últimos 7 dias (evita buscar histórico gigante)
+    const publishedAfter = new Date(now.getTime() - 7 * 24 * 3_600_000).toISOString();
 
     const ids = new Set<string>();
     let nextPageToken: string | undefined;
+    let pageCount = 0;
+
     do {
       const response = await this._call((yt) =>
         yt.search.list({
@@ -201,14 +239,24 @@ export class YouTubeApi {
           pageToken: nextPageToken,
         })
       );
+
       for (const item of response.data.items ?? []) {
         const id = item.id?.videoId;
         if (id) ids.add(id);
       }
+
       nextPageToken = response.data.nextPageToken ?? undefined;
+      pageCount++;
+
+      // Limite de páginas para evitar busca infinita
+      if (pageCount >= 5) {
+        logger.info('[YouTubeApi] fetchBySearch: limite de 5 páginas atingido.');
+        break;
+      }
     } while (nextPageToken);
 
-    return this.fetchStreamsByIds(Array.from(ids));
+    const streams = await this.fetchStreamsByIds(Array.from(ids));
+    return this.filterByTimeWindow(streams, now, maxFuture);
   }
 
   async fetchStreamsByIds(videoIds: string[]): Promise<Stream[]> {
@@ -229,6 +277,77 @@ export class YouTubeApi {
     }
 
     return output;
+  }
+
+  /**
+   * Filtra streams pela janela de tempo válida:
+   * - Lives ativas: SEMPRE incluir
+   * - Upcoming: apenas se scheduledStart estiver entre now e maxFuture
+   * - VOD (status=none ou actualEnd existe): NUNCA incluir
+   */
+  private filterByTimeWindow(streams: Stream[], now: Date, maxFuture: Date | null): Stream[] {
+    const filtered: Stream[] = [];
+    let countLive = 0;
+    let countUpcoming = 0;
+    let countRejectedVod = 0;
+    let countRejectedFuture = 0;
+    let countRejectedPast = 0;
+
+    for (const stream of streams) {
+      // Regra 1: VOD (tem actualEnd ou status=none) → NUNCA incluir
+      if (stream.actualEnd || stream.status === 'none') {
+        countRejectedVod++;
+        continue;
+      }
+
+      // Regra 2: Live ativa (status=live + actualStart existe + sem actualEnd) → SEMPRE incluir
+      if (stream.status === 'live' && stream.actualStart && !stream.actualEnd) {
+        filtered.push(stream);
+        countLive++;
+        continue;
+      }
+
+      // Regra 3: Upcoming → validar scheduledStart
+      if (stream.status === 'upcoming') {
+        const scheduledStart = stream.scheduledStart;
+        
+        if (!scheduledStart) {
+          // Upcoming sem scheduledStart é inválido, ignorar
+          countRejectedPast++;
+          continue;
+        }
+
+        // Se scheduledStart for no passado (mais de 1h atrás), provavelmente é uma live que já começou
+        // mas a API ainda não atualizou o status. Vamos incluir mesmo assim para o scheduler atualizar depois.
+        const oneHourAgo = new Date(now.getTime() - 3_600_000);
+        if (scheduledStart < oneHourAgo) {
+          countRejectedPast++;
+          continue;
+        }
+
+        // Se maxFuture estiver definido, validar limite superior
+        if (maxFuture && scheduledStart > maxFuture) {
+          countRejectedFuture++;
+          continue;
+        }
+
+        filtered.push(stream);
+        countUpcoming++;
+        continue;
+      }
+
+      // Qualquer outro status é rejeitado
+      countRejectedVod++;
+    }
+
+    if (countRejectedVod > 0 || countRejectedFuture > 0 || countRejectedPast > 0) {
+      logger.info(
+        `[YouTubeApi] Filtro de janela: ${filtered.length} válidos (${countLive} live, ${countUpcoming} upcoming) | ` +
+        `Rejeitados: ${countRejectedVod} VOD, ${countRejectedFuture} futuro demais, ${countRejectedPast} passado`,
+      );
+    }
+
+    return filtered;
   }
 
   async resolveChannelByInput(input: string): Promise<ResolvedChannel | null> {
