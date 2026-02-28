@@ -71,7 +71,6 @@ app.use(
   }),
 );
 
-// Log every HTTP request for debugging
 app.use((request, response, next) => {
   const start = Date.now();
   response.on('finish', () => {
@@ -91,26 +90,14 @@ app.get('/login', (_request, response) => {
 });
 
 app.get('/setup', (request, response) => {
-  if (!request.session.user) {
-    response.redirect('/login');
-    return;
-  }
-  if (!request.session.user.mustChangePassword) {
-    response.redirect('/');
-    return;
-  }
+  if (!request.session.user) { response.redirect('/login'); return; }
+  if (!request.session.user.mustChangePassword) { response.redirect('/'); return; }
   response.sendFile(path.join(publicDir, 'setup.html'));
 });
 
 app.get('/', (request, response) => {
-  if (!request.session.user) {
-    response.redirect('/login');
-    return;
-  }
-  if (request.session.user.mustChangePassword) {
-    response.redirect('/setup');
-    return;
-  }
+  if (!request.session.user) { response.redirect('/login'); return; }
+  if (request.session.user.mustChangePassword) { response.redirect('/setup'); return; }
   response.sendFile(path.join(publicDir, 'index.html'));
 });
 
@@ -146,8 +133,8 @@ app.use('/api/streams', createStreamsRouter());
 app.use('/api/config', createConfigRouter());
 app.use('/api/scheduler', createSchedulerRouter(scheduler));
 app.use('/api/credentials', createCredentialsRouter());
-app.use('/api/tool-profiles', toolProfilesRouter);
 app.use('/api/cookies', cookiesRouter);
+app.use('/api/tool-profiles', toolProfilesRouter);
 app.use('/api/logs', createLogsRouter());
 app.use('/api', createTitleFormatRouter());
 
@@ -163,27 +150,15 @@ app.use((request, response, next) => {
     request.path.endsWith('.xml') ||
     request.path.startsWith('/ws/');
 
-  if (isPublicPath || request.path.startsWith('/api')) {
-    next();
-    return;
-  }
-
-  if (!request.session.user) {
-    response.status(401).send('Unauthorized');
-    return;
-  }
-
+  if (isPublicPath || request.path.startsWith('/api')) { next(); return; }
+  if (!request.session.user) { response.status(401).send('Unauthorized'); return; }
   next();
 });
 
 app.use(express.static(publicDir));
 
 wss.on('connection', (socket, request) => {
-  if (request.url !== '/ws/logs') {
-    socket.close(1008, 'Unknown path');
-    return;
-  }
-
+  if (request.url !== '/ws/logs') { socket.close(1008, 'Unknown path'); return; }
   wsLogHub.addClient(socket);
   socket.on('close', () => wsLogHub.removeClient(socket));
 });
