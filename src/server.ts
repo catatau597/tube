@@ -25,6 +25,7 @@ import { createSchedulerRouter } from './api/routes/scheduler';
 import { createCredentialsRouter } from './api/routes/credentials';
 import { createPlayerRouter } from './api/routes/player';
 import { createLogsRouter } from './api/routes/logs';
+import { createTitleFormatRouter } from './api/routes/title-format';
 import cookiesRouter from './api/routes/cookies';
 
 initDb();
@@ -146,6 +147,7 @@ app.use('/api/scheduler', createSchedulerRouter(scheduler));
 app.use('/api/credentials', createCredentialsRouter());
 app.use('/api/cookies', cookiesRouter);
 app.use('/api/logs', createLogsRouter());
+app.use('/api', createTitleFormatRouter());
 
 app.use((request, response, next) => {
   const isPublicPath =
