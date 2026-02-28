@@ -25,6 +25,7 @@ import { createSchedulerRouter } from './api/routes/scheduler';
 import { createCredentialsRouter } from './api/routes/credentials';
 import { createPlayerRouter } from './api/routes/player';
 import { createLogsRouter } from './api/routes/logs';
+import cookiesRouter from './api/routes/cookies';
 
 initDb();
 
@@ -142,6 +143,7 @@ app.use('/api/streams', createStreamsRouter());
 app.use('/api/config', createConfigRouter());
 app.use('/api/scheduler', createSchedulerRouter(scheduler));
 app.use('/api/credentials', createCredentialsRouter());
+app.use('/api/cookies', cookiesRouter);
 app.use('/api/logs', createLogsRouter());
 
 app.use((request, response, next) => {
