@@ -279,10 +279,12 @@ export class StateManager {
     const recordedRetentionDays = getConfigNumber('RECORDED_RETENTION_DAYS', 2);
     const staleHours = getConfigNumber('STALE_HOURS', 6);
     const mainHours = getConfigNumber('SCHEDULER_MAIN_INTERVAL_HOURS', 4);
+    const maxScheduleHours = getConfigNumber('MAX_SCHEDULE_HOURS', 72);
 
     const now = new Date();
     const staleCutoff = new Date(now.getTime() - Math.max(staleHours * 2, mainHours * 2) * 3600_000);
     const recordedCutoff = new Date(now.getTime() - recordedRetentionDays * 24 * 3600_000);
+    const maxFutureCutoff = new Date(now.getTime() + maxScheduleHours * 3600_000);
 
     // Coletar IDs para deletar em um Set primeiro (evita mutação durante iteração)
     const toDelete = new Set<string>();
@@ -296,11 +298,22 @@ export class StateManager {
     }
 
     for (const stream of this.streams.values()) {
+      // Remover upcoming que ficaram stale (não foram atualizados há muito tempo)
       if ((stream.status === 'live' || stream.status === 'upcoming') && stream.fetchTime < staleCutoff) {
         toDelete.add(stream.videoId);
       }
+      
+      // Remover VODs se KEEP_RECORDED_STREAMS for false
       if (!keepRecorded && stream.status === 'none') {
         toDelete.add(stream.videoId);
+      }
+
+      // NOVO: Remover upcoming fora da janela MAX_SCHEDULE_HOURS
+      if (stream.status === 'upcoming' && stream.scheduledStart) {
+        if (stream.scheduledStart > maxFutureCutoff) {
+          toDelete.add(stream.videoId);
+          logger.debug(`[StateManager] Upcoming ${stream.videoId} removido: scheduledStart fora da janela (${stream.scheduledStart.toISOString()}).`);
+        }
       }
     }
 
