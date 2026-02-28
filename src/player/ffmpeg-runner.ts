@@ -1,6 +1,5 @@
-
 import { Response } from 'express';
-import { spawn } from 'child_process';
+import { spawn, ChildProcess } from 'child_process';
 import { logger } from '../core/logger';
 
 function escapeFfmpegText(text: string): string {
@@ -10,6 +9,47 @@ function escapeFfmpegText(text: string): string {
     .replace(/:/g, '\\:')
     .replace(/%/g, '%%')
     .replace(/,/g, '\\,');
+}
+
+function killProcessGroup(proc: ChildProcess, signal: NodeJS.Signals = 'SIGTERM'): void {
+  if (!proc.pid) return;
+  try {
+    // Mata o grupo de processos inteiro (inclui filhos)
+    process.kill(-proc.pid, signal);
+  } catch (err) {
+    // Fallback: mata só o processo principal se group kill falhar
+    try {
+      proc.kill(signal);
+    } catch (killErr) {
+      logger.warn(`[ffmpeg-runner] Erro ao matar processo PID=${proc.pid}: ${killErr}`);
+    }
+  }
+}
+
+function cleanupProcess(proc: ChildProcess, name: string): void {
+  if (!proc || proc.killed) return;
+  
+  logger.info(`[ffmpeg-runner] Iniciando cleanup de ${name} (PID=${proc.pid})`);
+  
+  // 1. Unpipe e destroy streams ANTES de matar (força EPIPE imediato)
+  if (proc.stdout) {
+    proc.stdout.unpipe();
+    proc.stdout.destroy();
+  }
+  if (proc.stderr) {
+    proc.stderr.destroy();
+  }
+  
+  // 2. SIGTERM gentil
+  killProcessGroup(proc, 'SIGTERM');
+  
+  // 3. SIGKILL após 3s se ainda vivo
+  setTimeout(() => {
+    if (proc && !proc.killed && proc.pid) {
+      logger.warn(`[ffmpeg-runner] ${name} (PID=${proc.pid}) não respondeu ao SIGTERM, usando SIGKILL`);
+      killProcessGroup(proc, 'SIGKILL');
+    }
+  }, 3000);
 }
 
 export async function runFfmpegPlaceholder(params: {
@@ -69,24 +109,42 @@ export async function runFfmpegPlaceholder(params: {
 
   logger.info(`[ffmpeg-runner] Iniciando ffmpeg placeholder: imageUrl=${imageUrl}`);
   response.setHeader('Content-Type', 'video/mp2t');
-  const proc = spawn('ffmpeg', args, { stdio: ['ignore', 'pipe', 'pipe'] });
+  
+  // Spawna com detached: true para criar process group
+  const proc = spawn('ffmpeg', args, { 
+    stdio: ['ignore', 'pipe', 'pipe'],
+    detached: true 
+  });
 
   proc.stdout.pipe(response);
   proc.stderr.on('data', (data) => {
     logger.warn(`[ffmpeg-runner][stderr] ${String(data)}`);
   });
-  response.on('close', () => {
-    if (!proc.killed) proc.kill('SIGTERM');
-    logger.info(`[ffmpeg-runner] Resposta fechada, processo ffmpeg encerrado.`);
+  
+  // Flag de cleanup idempotente
+  let cleaned = false;
+  const cleanup = (origin: string) => {
+    if (cleaned) return;
+    cleaned = true;
+    logger.info(`[ffmpeg-runner] Iniciando limpeza (origem: ${origin})`);
+    cleanupProcess(proc, 'ffmpeg');
+  };
+
+  response.on('close', () => cleanup('response-close'));
+  response.on('error', (err) => {
+    logger.warn(`[ffmpeg-runner] Socket error: ${err.message}`);
+    cleanup('response-error');
   });
 
   await new Promise<void>((resolve) => {
     proc.on('close', (code) => {
       logger.info(`[ffmpeg-runner] ffmpeg finalizado com code=${code}`);
+      cleanup('proc-close');
       resolve();
     });
     proc.on('error', (err) => {
       logger.error(`[ffmpeg-runner] Erro ao iniciar ffmpeg: ${err}`);
+      cleanup('proc-error');
       resolve();
     });
   });
