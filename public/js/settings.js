@@ -1,5 +1,5 @@
 /* ======================================================================
- *  Settings — 8 sub-páginas conforme especificação
+ *  Settings — 9 sub-páginas conforme especificação
  * ====================================================================== */
 
 const sectionMeta = {
@@ -26,6 +26,10 @@ const sectionMeta = {
   media: {
     title: 'Mídia & Placeholders',
     hint: 'Imagem e comportamento de placeholder quando não há stream ativo.',
+  },
+  cache: {
+    title: 'Cache',
+    hint: 'Gerenciamento de cache de thumbnails e outros recursos.',
   },
   player: {
     title: 'Smart Player',
@@ -149,9 +153,6 @@ function configFields(section, config) {
       </label>
       <label>TTL Handles (h)
         <input name="RESOLVE_HANDLES_TTL_HOURS" type="number" min="1" max="168" value="${config.RESOLVE_HANDLES_TTL_HOURS || 24}" />
-      </label>
-      <label>Sync Inicial (dias)
-        <input name="INITIAL_SYNC_DAYS" type="number" min="0" max="30" value="${config.INITIAL_SYNC_DAYS || 2}" />
       </label>
     `;
   }
@@ -351,7 +352,6 @@ function settingsPayloadBySection(section, formData) {
       SCHEDULER_POST_EVENT_INTERVAL_MINUTES: pick('SCHEDULER_POST_EVENT_INTERVAL_MINUTES', '5'),
       FULL_SYNC_INTERVAL_HOURS: pick('FULL_SYNC_INTERVAL_HOURS', '48'),
       RESOLVE_HANDLES_TTL_HOURS: pick('RESOLVE_HANDLES_TTL_HOURS', '24'),
-      INITIAL_SYNC_DAYS: pick('INITIAL_SYNC_DAYS', '2'),
     };
   }
 
@@ -497,6 +497,35 @@ function playerCards(credentials) {
   `;
 }
 
+/* ---------- Cache cards ---------- */
+
+async function cacheCards(api) {
+  let stats = { total: 0, expired: 0, sizeMB: '0.00' };
+  try {
+    stats = await requestJson(api, '/api/thumbnail-cache/stats', undefined, 'Falha ao carregar stats.');
+  } catch {
+    /* Ignora erro (cache pode não estar disponível) */
+  }
+
+  return `
+    <div class="card">
+      <h3>Estatísticas do Cache de Thumbnails</h3>
+      <table>
+        <tbody>
+          <tr><th>Total de thumbnails</th><td id="cache-total">${stats.total}</td></tr>
+          <tr><th>Thumbnails expirados</th><td id="cache-expired">${stats.expired}</td></tr>
+          <tr><th>Tamanho em disco</th><td id="cache-size">${stats.sizeMB} MB</td></tr>
+        </tbody>
+      </table>
+      <div class="toolbar" style="margin-top:1rem">
+        <button id="cache-refresh" class="action-btn">🔄 Atualizar</button>
+        <button id="cache-prune" class="action-btn">🧹 Limpar Expirados</button>
+        <button id="cache-clear" class="danger-btn">🗑️ Limpar Tudo</button>
+      </div>
+    </div>
+  `;
+}
+
 /* ---------- Drag-and-drop para componentes de título ---------- */
 
 function setupTitleDragDrop(config, setNotice) {
@@ -551,12 +580,24 @@ export async function renderSettings(root, api, hash = '/settings') {
   let notice = { type: '', text: '' };
 
   async function load() {
-    const [config, credentials] = await Promise.all([
-      requestJson(api, '/api/config', undefined, 'Falha ao carregar configurações.'),
-      requestJson(api, '/api/credentials', undefined, 'Falha ao carregar credenciais.'),
-    ]);
+    const hasPlayerSection = section === 'player';
+    const hasCacheSection = section === 'cache';
+    const hasForm = !hasPlayerSection && !hasCacheSection;
 
-    const hasForm = section !== 'player';
+    let config = {};
+    let credentials = [];
+    let cacheHTML = '';
+
+    if (hasPlayerSection) {
+      [config, credentials] = await Promise.all([
+        requestJson(api, '/api/config', undefined, 'Falha ao carregar configurações.'),
+        requestJson(api, '/api/credentials', undefined, 'Falha ao carregar credenciais.'),
+      ]);
+    } else if (hasCacheSection) {
+      cacheHTML = await cacheCards(api);
+    } else {
+      config = await requestJson(api, '/api/config', undefined, 'Falha ao carregar configurações.');
+    }
 
     root.innerHTML = `
       <div class="card">
@@ -572,6 +613,7 @@ export async function renderSettings(root, api, hash = '/settings') {
         </form>` : ''}
       </div>
       ${section === 'player' ? playerCards(credentials) : ''}
+      ${section === 'cache' ? cacheHTML : ''}
       ${section === 'tech' ? `
       <div class="card">
         <h3>Ações de Configuração</h3>
@@ -613,6 +655,46 @@ export async function renderSettings(root, api, hash = '/settings') {
     /* Drag-and-drop para títulos */
     if (section === 'titles') {
       setupTitleDragDrop(config, setNotice);
+    }
+
+    /* Cache: refresh, prune, clear */
+    if (section === 'cache') {
+      async function refreshCacheStats() {
+        try {
+          const stats = await requestJson(api, '/api/thumbnail-cache/stats', undefined, 'Falha ao carregar stats.');
+          document.getElementById('cache-total').textContent = String(stats.total);
+          document.getElementById('cache-expired').textContent = String(stats.expired);
+          document.getElementById('cache-size').textContent = `${stats.sizeMB} MB`;
+        } catch (error) {
+          setNotice('error', error instanceof Error ? error.message : 'Falha ao carregar stats.');
+        }
+      }
+
+      document.getElementById('cache-refresh').addEventListener('click', async () => {
+        await refreshCacheStats();
+        setNotice('success', 'Stats atualizadas.');
+      });
+
+      document.getElementById('cache-prune').addEventListener('click', async () => {
+        try {
+          const result = await requestJson(api, '/api/thumbnail-cache/prune', { method: 'POST' }, 'Falha ao limpar expirados.');
+          setNotice('success', `${result.removed} thumbnail(s) expirado(s) removido(s).`);
+          await refreshCacheStats();
+        } catch (error) {
+          setNotice('error', error instanceof Error ? error.message : 'Falha ao limpar expirados.');
+        }
+      });
+
+      document.getElementById('cache-clear').addEventListener('click', async () => {
+        if (!confirm('Limpar TODO o cache de thumbnails?')) return;
+        try {
+          await requestJson(api, '/api/thumbnail-cache/clear', { method: 'POST' }, 'Falha ao limpar cache.');
+          setNotice('success', 'Cache limpo com sucesso.');
+          await refreshCacheStats();
+        } catch (error) {
+          setNotice('error', error instanceof Error ? error.message : 'Falha ao limpar cache.');
+        }
+      });
     }
 
     /* Player: cookies, UAs, teste */
