@@ -3,6 +3,7 @@ import { renderChannels } from './channels.js';
 import { renderStreams } from './streams.js';
 import { renderPlaylists } from './playlists.js';
 import { renderSettings } from './settings.js';
+import { renderCookies } from './cookies.js';
 import { renderLogs } from './logs.js';
 
 console.log('[app] Module loaded OK');
@@ -29,6 +30,7 @@ const routes = {
 	'/settings/media': renderSettings,
 	'/settings/player': renderSettings,
 	'/settings/tech': renderSettings,
+	'/settings/cookies': renderCookies,
 	'/logs': renderLogs,
 };
 
