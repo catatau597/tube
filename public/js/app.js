@@ -3,7 +3,6 @@ import { renderChannels } from './channels.js';
 import { renderStreams } from './streams.js';
 import { renderPlaylists } from './playlists.js';
 import { renderSettings } from './settings.js';
-import { renderCookies } from './cookies.js';
 import { renderLogs } from './logs.js';
 import { renderTitleFormat } from './title-format.js';
 
@@ -26,14 +25,11 @@ const routes = {
 	'/settings/api': renderSettings,
 	'/settings/scheduler': renderSettings,
 	'/settings/content': renderSettings,
-	'/settings/titles': renderSettings,
 	'/settings/title-format': renderTitleFormat,
 	'/settings/retention': renderSettings,
 	'/settings/media': renderSettings,
 	'/settings/cache': renderSettings,
-	'/settings/player': renderSettings,
 	'/settings/tech': renderSettings,
-	'/settings/cookies': renderCookies,
 	'/logs': renderLogs,
 };
 
