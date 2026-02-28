@@ -154,6 +154,25 @@ export function initDb(): Database.Database {
       created_at           TEXT DEFAULT (datetime('now')),
       updated_at           TEXT DEFAULT (datetime('now'))
     );
+
+    CREATE TABLE IF NOT EXISTS cookie_profiles (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      name        TEXT NOT NULL,
+      platform    TEXT NOT NULL,
+      file_path   TEXT NOT NULL,
+      user_agent  TEXT,
+      is_default  INTEGER NOT NULL DEFAULT 0,
+      active      INTEGER NOT NULL DEFAULT 1,
+      created_at  TEXT DEFAULT (datetime('now')),
+      updated_at  TEXT DEFAULT (datetime('now'))
+    );
+  `);
+
+  // Índice único para garantir apenas um perfil padrão por plataforma
+  db.exec(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_cookie_platform_default 
+    ON cookie_profiles(platform, is_default) 
+    WHERE is_default = 1;
   `);
 
   const envSeed = readSeedEnv();
