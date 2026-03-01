@@ -124,19 +124,19 @@ export class SmartPlayer {
   }
 
   // ─── Private: spawn helpers ───────────────────────────────────────────────
+  //
+  // Safe deferred-proc pattern (fixes race condition from review):
+  //
+  //   1. Create a procPromise that will resolve to the ManagedProcess.
+  //   2. Register the session with a killFn that awaits procPromise before
+  //      calling kill() — this ensures killFn always targets a real process
+  //      even if kill() is triggered before the sync spawn assignment below.
+  //   3. Subscribe firstClient.
+  //   4. Spawn synchronously and resolve procPromise.
+  //
+  // Because step 4 is synchronous (spawn helpers are sync), procPromise
+  // resolves in the same tick, but the pattern is safe even if they were async.
 
-  /**
-   * Registers the session and first client.
-   *
-   * Pattern used by all spawn helpers:
-   *   1. streamRegistry.create(key, killFn)   — killFn is a closure over `proc`
-   *   2. subscribeClient(key, firstClient)    — adds client to session
-   *   3. spawn the process                    — assigns `proc` in the closure
-   *
-   * The closure captures `proc` by reference. Because killFn is only ever
-   * called asynchronously (on client disconnect or watchdog), `proc` is
-   * guaranteed to be assigned before killFn executes.
-   */
   private spawnPlaceholder(
     key: string,
     imageUrl: string,
@@ -145,11 +145,17 @@ export class SmartPlayer {
     textLine2: string | undefined,
     firstClient: Response,
   ): void {
-    let proc: ManagedProcess;
-    streamRegistry.create(key, async () => { if (proc) await proc.kill(); });
-    this.subscribeClient(key, firstClient);
+    let resolveProc!: (p: ManagedProcess) => void;
+    const procPromise = new Promise<ManagedProcess>(r => { resolveProc = r; });
 
-    proc = startFfmpegPlaceholder({
+    streamRegistry.create(key, async () => {
+      const proc = await procPromise;
+      await proc.kill();
+    });
+
+    if (!this.subscribeClient(key, firstClient)) return; // session already killed
+
+    const proc = startFfmpegPlaceholder({
       imageUrl,
       userAgent:  ff.userAgent,
       extraFlags: ff.flags,
@@ -158,6 +164,7 @@ export class SmartPlayer {
       onData: (chunk) => streamRegistry.broadcast(key, chunk),
       onExit: ()      => void streamRegistry.kill(key),
     });
+    resolveProc(proc);
     logger.info(`[SmartPlayer] Placeholder iniciado: key=${key} PID=${proc.pid}`);
   }
 
@@ -167,11 +174,17 @@ export class SmartPlayer {
     sl: ResolvedToolProfile,
     firstClient: Response,
   ): void {
-    let proc: ManagedProcess;
-    streamRegistry.create(key, async () => { if (proc) await proc.kill(); });
-    this.subscribeClient(key, firstClient);
+    let resolveProc!: (p: ManagedProcess) => void;
+    const procPromise = new Promise<ManagedProcess>(r => { resolveProc = r; });
 
-    proc = startStreamlink({
+    streamRegistry.create(key, async () => {
+      const proc = await procPromise;
+      await proc.kill();
+    });
+
+    if (!this.subscribeClient(key, firstClient)) return; // session already killed
+
+    const proc = startStreamlink({
       url,
       userAgent:  sl.userAgent,
       cookieFile: sl.cookieFile,
@@ -179,6 +192,7 @@ export class SmartPlayer {
       onData: (chunk) => streamRegistry.broadcast(key, chunk),
       onExit: ()      => void streamRegistry.kill(key),
     });
+    resolveProc(proc);
     logger.info(`[SmartPlayer] Streamlink iniciado: key=${key} PID=${proc.pid}`);
   }
 
@@ -200,28 +214,46 @@ export class SmartPlayer {
       return;
     }
 
-    let proc: ManagedProcess;
-    streamRegistry.create(key, async () => { if (proc) await proc.kill(); });
-    this.subscribeClient(key, firstClient);
+    let resolveProc!: (p: ManagedProcess) => void;
+    const procPromise = new Promise<ManagedProcess>(r => { resolveProc = r; });
 
-    proc = startYtDlpFfmpeg({
+    streamRegistry.create(key, async () => {
+      const proc = await procPromise;
+      await proc.kill();
+    });
+
+    if (!this.subscribeClient(key, firstClient)) return; // session already killed
+
+    const proc = startYtDlpFfmpeg({
       urls,
-      userAgent:       yt.userAgent,
+      userAgent:        yt.userAgent,
       extraFfmpegFlags: ff.flags,
       onData: (chunk) => streamRegistry.broadcast(key, chunk),
       onExit: ()      => void streamRegistry.kill(key),
     });
+    resolveProc(proc);
     logger.info(`[SmartPlayer] yt-dlp→ffmpeg iniciado: key=${key} PID=${proc.pid}`);
   }
 
   // ─── Private: subscribe helper ────────────────────────────────────────────
 
-  private subscribeClient(key: string, res: Response): void {
+  /**
+   * Adds res to the stream session and wires disconnect listeners.
+   * Returns false if the session no longer exists (was killed between
+   * create() and subscribeClient()), so callers can abort.
+   */
+  private subscribeClient(key: string, res: Response): boolean {
     res.setHeader('Content-Type', 'video/mp2t');
-    streamRegistry.addClient(key, res);
+    const added = streamRegistry.addClient(key, res);
+    if (!added) {
+      logger.warn(`[SmartPlayer] Sessão não encontrada ao subscrever cliente: key=${key}`);
+      if (!res.writableEnded) res.status(503).end();
+      return false;
+    }
     const unsub = () => streamRegistry.removeClient(key, res);
     res.on('close', unsub);
     res.on('error', unsub);
+    return true;
   }
 
   // ─── Private: cache readers ───────────────────────────────────────────────

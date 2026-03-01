@@ -11,10 +11,19 @@ import { logger } from '../core/logger';
  *  - SIGTERM → wait → SIGKILL pattern with a real Promise.race timeout.
  *  - Destroys all pipes before signalling to prevent SIGPIPE stalls and
  *    backpressure blocking the process from exiting.
+ *  - exitPromise is created in the constructor so it resolves even if the
+ *    process exits before kill() is called (avoids hang on double-kill).
  */
 export class ManagedProcess {
   private readonly proc: ChildProcess;
-  private _done = false;
+
+  /** Resolves as soon as the child emits 'close' or 'exit', for any reason. */
+  private readonly exitPromise: Promise<void>;
+
+  /** True once the child has already exited (exitCode or signalCode set). */
+  private get alreadyExited(): boolean {
+    return this.proc.exitCode !== null || this.proc.signalCode !== null;
+  }
 
   constructor(
     private readonly tag: string,
@@ -25,6 +34,13 @@ export class ManagedProcess {
     // Explicitly set detached:false (it is the default, but we make it explicit
     // to document the intent and guard against accidental inheritance).
     this.proc = spawn(command, args, { ...options, detached: false });
+
+    // Build exitPromise eagerly so it resolves even if the process exits
+    // before kill() is ever called.
+    this.exitPromise = new Promise<void>(resolve => {
+      this.proc.once('close', resolve);
+      this.proc.once('exit',  resolve);
+    });
   }
 
   get pid(): number | undefined { return this.proc.pid; }
@@ -47,10 +63,16 @@ export class ManagedProcess {
    *  1. Destroy all pipes (unblocks pending reads/writes, prevents SIGPIPE stalls)
    *  2. SIGTERM — wait up to timeoutMs
    *  3. SIGKILL if still alive
+   *
+   * Safe to call multiple times (idempotent) and safe to call after the
+   * process has already exited (exitPromise resolves immediately in that case).
    */
   async kill(timeoutMs = 3000): Promise<void> {
-    if (this._done) return;
-    this._done = true;
+    // If already exited, exitPromise has already resolved — nothing to do.
+    if (this.alreadyExited) {
+      logger.info(`[${this.tag}] PID ${this.proc.pid} já encerrado, skip kill`);
+      return;
+    }
 
     // Destroy pipes first so the child process isn't blocked waiting for I/O
     try {
@@ -66,23 +88,18 @@ export class ManagedProcess {
       if (this.proc.stderr && !this.proc.stderr.destroyed) this.proc.stderr.destroy();
     } catch { /* */ }
 
-    const exited = new Promise<void>(resolve => {
-      this.proc.once('close', resolve);
-      this.proc.once('exit',  resolve);
-    });
-
     logger.info(`[${this.tag}] SIGTERM → PID ${this.proc.pid}`);
     try { this.proc.kill('SIGTERM'); } catch { /* already dead */ }
 
     const died = await Promise.race([
-      exited.then(() => true  as const),
+      this.exitPromise.then(() => true  as const),
       new Promise<false>(r => setTimeout(() => r(false), timeoutMs)),
     ]);
 
     if (!died) {
       logger.warn(`[${this.tag}] SIGTERM timeout (${timeoutMs}ms) → SIGKILL PID ${this.proc.pid}`);
       try { this.proc.kill('SIGKILL'); } catch { /* */ }
-      await exited;
+      await this.exitPromise;
     }
 
     logger.info(`[${this.tag}] PID ${this.proc.pid} encerrado`);

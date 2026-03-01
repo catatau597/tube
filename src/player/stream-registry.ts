@@ -8,6 +8,7 @@ interface StreamSession {
   clients: Set<Response>;
   killFn: () => Promise<void>;
   watchdogTimer: ReturnType<typeof setTimeout> | null;
+  killed: boolean;
 }
 
 /**
@@ -18,6 +19,9 @@ interface StreamSession {
  *  - Auto-kill: when the last client disconnects, the process is terminated.
  *  - Watchdog: if no data is broadcast for WATCHDOG_MS, the stream is killed
  *    (handles network-drop clients that never close the socket cleanly).
+ *  - Backpressure: slow clients that cannot keep up are dropped immediately
+ *    to prevent unbounded memory growth (each write returning false means the
+ *    socket buffer is full; we end the response rather than buffer forever).
  */
 class StreamRegistry {
   private readonly sessions = new Map<string, StreamSession>();
@@ -30,20 +34,23 @@ class StreamRegistry {
    * Register a new stream session.
    * Must be called before addClient() or broadcast().
    *
+   * IMPORTANT: killFn may be invoked as part of kill(), which can be
+   * triggered immediately (for example when the last client is removed),
+   * so callers must not rely on it being deferred to a later event loop tick.
+   * See SmartPlayer spawn helpers for the safe deferred-proc pattern.
+   *
    * @param killFn  Async callback that terminates the underlying process.
-   *                May reference a variable assigned after create() via closure —
-   *                this is safe because killFn is always called asynchronously.
    */
   create(key: string, killFn: () => Promise<void>): void {
     if (this.sessions.has(key)) return; // guard against double-create
-    this.sessions.set(key, { clients: new Set(), killFn, watchdogTimer: null });
+    this.sessions.set(key, { clients: new Set(), killFn, watchdogTimer: null, killed: false });
     this.resetWatchdog(key);
     logger.info(`[stream-registry] Sessão criada: key=${key}`);
   }
 
   addClient(key: string, res: Response): boolean {
     const s = this.sessions.get(key);
-    if (!s) return false;
+    if (!s || s.killed) return false;
     s.clients.add(res);
     this.resetWatchdog(key);
     logger.info(`[stream-registry] +cliente key=${key} total=${s.clients.size}`);
@@ -60,7 +67,13 @@ class StreamRegistry {
 
   /**
    * Fan-out: write chunk to every live client.
-   * Dead/closed clients are removed automatically.
+   *
+   * Backpressure handling: if res.write() returns false, the client's socket
+   * buffer is full and cannot keep up with the stream. We drop that client
+   * immediately (res.end()) to prevent unbounded memory buffering that would
+   * affect all other clients sharing the same process.
+   *
+   * Dead/closed clients are also removed automatically.
    */
   broadcast(key: string, chunk: Buffer): void {
     const s = this.sessions.get(key);
@@ -71,7 +84,17 @@ class StreamRegistry {
 
     for (const res of s.clients) {
       if (res.writableEnded || res.destroyed) { dead.push(res); continue; }
-      try { res.write(chunk); } catch { dead.push(res); }
+      try {
+        const ok = res.write(chunk);
+        if (!ok) {
+          // Backpressure: client cannot keep up — drop it
+          logger.warn(`[stream-registry] Backpressure: encerrando cliente lento key=${key}`);
+          dead.push(res);
+          try { res.end(); } catch { /* */ }
+        }
+      } catch {
+        dead.push(res);
+      }
     }
 
     for (const res of dead) s.clients.delete(res);
@@ -85,7 +108,8 @@ class StreamRegistry {
   /** Tear down the session: cancel watchdog, end all clients, invoke killFn. */
   async kill(key: string): Promise<void> {
     const s = this.sessions.get(key);
-    if (!s) return;
+    if (!s || s.killed) return; // idempotent
+    s.killed = true;
 
     if (s.watchdogTimer) { clearTimeout(s.watchdogTimer); s.watchdogTimer = null; }
 
