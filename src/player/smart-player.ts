@@ -87,16 +87,6 @@ export class SmartPlayer {
     const stream = cache.streams[videoId];
     logger.info(`[SmartPlayer] Init: key=${key} status=${stream?.status ?? 'não encontrado'}`);
 
-  private async initStream(key: string, videoId: string, firstClient: Response): Promise<void> {
-    const slProfile = this.toolProfiles.resolveProfile('streamlink');
-    const ytProfile = this.toolProfiles.resolveProfile('yt-dlp');
-    const ffProfile = this.toolProfiles.resolveProfile('ffmpeg');
-
-    const cache  = this.readStateCache();
-    const stream = cache.streams[videoId];
-    logger.info(`[SmartPlayer] Init: key=${key} status=${stream?.status ?? 'não encontrado'}`);
-
-    // ── No stream found → generic placeholder ────────────────────────────────
     if (!stream) {
       const placeholder = getConfig('PLACEHOLDER_IMAGE_URL');
       if (!placeholder) {
@@ -118,7 +108,6 @@ export class SmartPlayer {
       return;
     }
 
-    // ── Live → try streamlink first, fallback to yt-dlp ─────────────────────
     if (stream.status === 'live' && this.isGenuinelyLive(stream)) {
       logger.info(`[SmartPlayer] Testando streamlink: key=${key}`);
       const playable = await streamlinkHasPlayableStream(
@@ -240,18 +229,16 @@ export class SmartPlayer {
   // ─── Private: subscribe helper ────────────────────────────────────────────
 
   /**
-   * Wires all disconnect listeners for a client response and registers it
-   * with the stream session.
+   * Wires all disconnect listeners and registers the client with the session.
    *
-   * Three complementary disconnect signals are used because no single event
-   * fires reliably across all clients and network conditions:
+   * Three complementary signals — no single one fires reliably in all cases:
+   *  1. res.on('close')  — Express finalizes the response
+   *  2. res.on('error')  — EPIPE / ECONNRESET on write
+   *  3. req.on('close')  — HTTP connection dropped (most reliable for VLC
+   *                         which doesn’t send TCP FIN on stop)
    *
-   *  1. res.on('close')   — fires when Express finishes the response
-   *  2. res.on('error')   — fires on EPIPE / ECONNRESET writes
-   *  3. req.on('close')   — fires when the HTTP request connection is dropped
-   *                         (most reliable for VLC which doesn't send TCP FIN)
-   *
-   * Returns false if the session no longer exists, so callers can abort.
+   * Returns false if the session no longer exists (killed between
+   * create() and subscribeClient()), so callers can abort.
    */
   private subscribeClient(key: string, req: Request, res: Response): boolean {
     res.setHeader('Content-Type', 'video/mp2t');
