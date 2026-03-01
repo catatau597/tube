@@ -2,11 +2,11 @@ import { Response } from 'express';
 import { logger } from '../core/logger';
 
 /**
- * Kill the stream after this many ms if all clients are draining (not actually
- * reading data). This protects against VLC bug where it doesn't send TCP FIN
- * when closing, leaving a phantom connection open forever.
+ * Kill idle clients (and the stream if all are idle) after this many ms.
+ * This protects against VLC bug where it doesn't send TCP FIN when closing,
+ * leaving phantom connections that never trigger 'close' event.
  */
-const IDLE_CLIENT_WATCHDOG_MS = 30_000;
+const IDLE_CLIENT_TIMEOUT_MS = 30_000;
 
 /**
  * How many consecutive backpressure events a client may trigger before being
@@ -39,9 +39,9 @@ interface StreamSession {
  * Features:
  *  - Fan-out / tee: multiple HTTP clients share a single child process.
  *  - Auto-kill: when the last client disconnects, the process is terminated.
- *  - Idle watchdog: if ALL clients are draining (not reading) for
- *    IDLE_CLIENT_WATCHDOG_MS, the stream is killed. This handles VLC's bug
- *    where it doesn't send TCP FIN when closing, leaving phantom connections.
+ *  - Idle watchdog: periodically removes clients that haven't read data for
+ *    IDLE_CLIENT_TIMEOUT_MS. If all clients are removed, the stream is killed.
+ *    This handles VLC's bug where it doesn't send TCP FIN when closing.
  *  - Backpressure: when res.write() returns false the chunk is skipped for
  *    that client and we wait for 'drain'. After BACKPRESSURE_DROP_THRESHOLD
  *    consecutive misses the client is dropped to protect memory.
@@ -177,12 +177,11 @@ class StreamRegistry {
   }
 
   /**
-   * Watchdog timer: checks every IDLE_CLIENT_WATCHDOG_MS if ALL clients are
-   * idle (not reading). If all clients have not read data for that duration,
-   * the session is killed.
+   * Idle watchdog: checks every IDLE_CLIENT_TIMEOUT_MS for clients that
+   * haven't successfully read data in that time window. Those clients are
+   * forcibly removed (VLC phantom connections that never sent TCP FIN).
    *
-   * This handles VLC's bug where it doesn't send TCP FIN when closing,
-   * leaving a phantom connection that never triggers 'close' event.
+   * If all clients are removed by this process, the stream is killed.
    */
   private startIdleWatchdog(key: string): void {
     const s = this.sessions.get(key);
@@ -192,27 +191,37 @@ class StreamRegistry {
       if (s.killed) return;
 
       const now = Date.now();
-      let allIdle = true;
+      const toRemove: Response[] = [];
 
-      for (const state of s.clients.values()) {
-        if (now - state.lastSuccessfulWrite < IDLE_CLIENT_WATCHDOG_MS) {
-          allIdle = false;
-          break;
+      // Find all idle clients (haven't read in IDLE_CLIENT_TIMEOUT_MS)
+      for (const [res, state] of s.clients) {
+        if (now - state.lastSuccessfulWrite >= IDLE_CLIENT_TIMEOUT_MS) {
+          logger.warn(
+            `[stream-registry] Cliente idle por ${IDLE_CLIENT_TIMEOUT_MS / 1000}s, removendo: key=${key}`,
+          );
+          toRemove.push(res);
+          try { res.end(); } catch { /* */ }
         }
       }
 
-      if (allIdle && s.clients.size > 0) {
-        logger.warn(
-          `[stream-registry] Todos os clientes idle por ${IDLE_CLIENT_WATCHDOG_MS / 1000}s, encerrando: key=${key}`,
+      // Remove all idle clients
+      for (const res of toRemove) {
+        s.clients.delete(res);
+      }
+
+      // If no clients remain, kill the stream
+      if (s.clients.size === 0 && toRemove.length > 0) {
+        logger.info(
+          `[stream-registry] Todos os clientes removidos por idle, encerrando: key=${key}`,
         );
         void this.kill(key);
       } else {
         // Re-schedule check
-        s.idleWatchdogTimer = setTimeout(check, IDLE_CLIENT_WATCHDOG_MS);
+        s.idleWatchdogTimer = setTimeout(check, IDLE_CLIENT_TIMEOUT_MS);
       }
     };
 
-    s.idleWatchdogTimer = setTimeout(check, IDLE_CLIENT_WATCHDOG_MS);
+    s.idleWatchdogTimer = setTimeout(check, IDLE_CLIENT_TIMEOUT_MS);
   }
 }
 
