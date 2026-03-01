@@ -49,7 +49,6 @@ class ApiKeyRotator {
       throw new Error('YOUTUBE_API_KEY não configurada no banco.');
     }
 
-    // Tenta encontrar uma key não esgotada
     for (let i = 0; i < this.keys.length; i++) {
       const idx = (this.currentIndex + i) % this.keys.length;
       if (!this.exhausted.has(idx)) {
@@ -86,7 +85,6 @@ class ApiKeyRotator {
       this._scheduleMidnightReset();
     }, msUntilMidnight);
 
-    // Não impedir o processo de fechar por causa do timer
     if (this.midnightTimer.unref) this.midnightTimer.unref();
   }
 }
@@ -140,7 +138,6 @@ export class YouTubeApi {
       if (err.code === 403 || err.status === 403) return true;
       const message = String(err.message ?? '');
       if (message.includes('quotaExceeded') || message.includes('dailyLimitExceeded')) return true;
-      // googleapis wraps errors
       const response = err.response as Record<string, unknown> | undefined;
       if (response?.status === 403) return true;
     }
@@ -172,11 +169,9 @@ export class YouTubeApi {
 
       for (const item of response.data.items ?? []) {
         const publishedAt = item.snippet?.publishedAt;
-        
-        // Parada antecipada: playlist em ordem decrescente, se publishedAt for muito antigo, para
+
         if (publishedAt) {
           const publishedDate = new Date(publishedAt);
-          // Se publicado mais de 30 dias atrás, provavelmente são vídeos antigos demais
           const oldThreshold = new Date(now.getTime() - 30 * 24 * 3_600_000);
           if (publishedDate < oldThreshold) {
             consecutiveOutOfWindow++;
@@ -220,11 +215,35 @@ export class YouTubeApi {
     const now = new Date();
     const maxFuture = options.maxScheduleHours ? new Date(now.getTime() + options.maxScheduleHours * 3_600_000) : null;
 
-    // publishedAfter: usar AGORA para evitar buscar vídeos que já passaram
-    // Subtraindo 1 hora como margem de segurança (caso o relógio do servidor esteja ligeiramente adiantado)
-    const publishedAfter = new Date(now.getTime() - 3_600_000).toISOString();
-
     const ids = new Set<string>();
+
+    // Passo 1: busca direta por eventType — captura lives e upcoming independente
+    // de quando foram publicadas (streams recorrentes podem ter publishedAt antigo).
+    for (const eventType of ['live', 'upcoming'] as const) {
+      try {
+        const response = await this._call((yt) =>
+          yt.search.list({
+            part: ['snippet'],
+            channelId,
+            maxResults: 50,
+            type: ['video'],
+            eventType,
+          })
+        );
+        for (const item of response.data.items ?? []) {
+          const id = item.id?.videoId;
+          if (id) ids.add(id);
+        }
+        logger.info(`[YouTubeApi] fetchBySearch eventType=${eventType}: ${ids.size} id(s) encontrado(s) até agora`);
+      } catch (err) {
+        logger.warn(`[YouTubeApi] fetchBySearch eventType=${eventType} falhou: ${err}`);
+      }
+    }
+
+    // Passo 2: busca geral por vídeos publicados recentemente (janela de 30h).
+    // Complementa o eventType para capturar streams reciém-publicadas.
+    const publishedAfter = new Date(now.getTime() - 30 * 3_600_000).toISOString();
+
     let nextPageToken: string | undefined;
     let pageCount = 0;
 
@@ -249,7 +268,6 @@ export class YouTubeApi {
       nextPageToken = response.data.nextPageToken ?? undefined;
       pageCount++;
 
-      // Limite de páginas para evitar busca infinita
       if (pageCount >= 5) {
         logger.info('[YouTubeApi] fetchBySearch: limite de 5 páginas atingido.');
         break;
@@ -311,22 +329,18 @@ export class YouTubeApi {
       // Regra 3: Upcoming → validar scheduledStart
       if (stream.status === 'upcoming') {
         const scheduledStart = stream.scheduledStart;
-        
+
         if (!scheduledStart) {
-          // Upcoming sem scheduledStart é inválido, ignorar
           countRejectedPast++;
           continue;
         }
 
-        // Se scheduledStart for no passado (mais de 1h atrás), provavelmente é uma live que já começou
-        // mas a API ainda não atualizou o status. Vamos incluir mesmo assim para o scheduler atualizar depois.
         const oneHourAgo = new Date(now.getTime() - 3_600_000);
         if (scheduledStart < oneHourAgo) {
           countRejectedPast++;
           continue;
         }
 
-        // Se maxFuture estiver definido, validar limite superior
         if (maxFuture && scheduledStart > maxFuture) {
           countRejectedFuture++;
           continue;
@@ -337,7 +351,6 @@ export class YouTubeApi {
         continue;
       }
 
-      // Qualquer outro status é rejeitado
       countRejectedVod++;
     }
 
