@@ -27,6 +27,9 @@ function buildArgs(
     '--no-plugin-sideloading',
     // Bypass SSL verification: alguns ISPs/firewalls causam problemas
     '--http-no-ssl-verify',
+    // Desabilita DNS-over-HTTPS: pode triggerar code path antigo do YouTube
+    // que usa API key expirada em vez de web embed extraction
+    '--http-disable-doh',
     // Forca loglevel info (nao trace, muito verboso)
     '--loglevel', 'info',
     '--stdout',

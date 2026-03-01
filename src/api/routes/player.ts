@@ -16,8 +16,22 @@ export function createPlayerRouter(): Router {
   const router = Router();
   const player = new SmartPlayer();
 
-  router.get('/stream/:videoId', async (request, response) => {
-    await player.serveVideo(request.params.videoId, request, response);
+  /**
+   * IMPORTANTE: serveVideo() e fire-and-forget.
+   *
+   * Nao usar await aqui — serveVideo() sobe o processo filho, subscreve o
+   * cliente via res.write(), e so finaliza quando o stream morre. Se aguardarmos
+   * a Promise, Express trava o handler por 30-60s.
+   *
+   * serveVideo() cuida de:
+   * - Setar headers (Content-Type, etc)
+   * - Conectar stdout do processo filho ao res via broadcast()
+   * - Fechar res quando stream morre
+   *
+   * Express nao precisa fazer nada apos chamar serveVideo().
+   */
+  router.get('/stream/:videoId', (request, response) => {
+    void player.serveVideo(request.params.videoId, request, response);
   });
 
   router.get('/thumbnail/:videoId', async (request, response) => {
@@ -36,10 +50,10 @@ export function createPlayerRouter(): Router {
       return;
     }
 
-    // Não está em cache - fazer fetch
+    // Nao esta em cache - fazer fetch
     const imageUrl = player.getThumbnailUrl(videoId);
     if (!imageUrl) {
-      response.status(404).json({ error: 'Thumbnail não encontrada' });
+      response.status(404).json({ error: 'Thumbnail nao encontrada' });
       return;
     }
 
@@ -69,7 +83,7 @@ export function createPlayerRouter(): Router {
     }
   });
 
-  // Endpoint para estatísticas do cache
+  // Endpoint para estatisticas do cache
   router.get('/thumbnail-cache/stats', (_request, response) => {
     const stats = thumbnailCache.getStats();
     response.json({
