@@ -94,12 +94,10 @@ router.delete('/:id', (req, res) => {
       return res.status(404).json({ error: 'Cookie não encontrado.' });
     }
 
-    /* Remove arquivo do disco se existir */
     if (row.file_path && fs.existsSync(row.file_path)) {
       try { fs.unlinkSync(row.file_path); } catch { /* continua mesmo se falhar */ }
     }
 
-    /* Remove referências em perfis antes de excluir */
     getDb().prepare('UPDATE tool_profiles SET cookie_id = NULL WHERE cookie_id = ?').run(id);
     getDb().prepare('DELETE FROM cookies WHERE id = ?').run(id);
 
