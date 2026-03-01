@@ -2,9 +2,8 @@ import { Response } from 'express';
 import { logger } from '../core/logger';
 
 /**
- * Kill idle clients (and the stream if all are idle) after this many ms.
- * This protects against VLC bug where it doesn't send TCP FIN when closing,
- * leaving phantom connections that never trigger 'close' event.
+ * Kill idle clients (no successful drain) after this many ms.
+ * This protects against VLC bug where it doesn't send TCP FIN when closing.
  */
 const IDLE_CLIENT_TIMEOUT_MS = 30_000;
 
@@ -22,8 +21,10 @@ interface ClientState {
   backpressureCount: number;
   /** True while waiting for the 'drain' event. */
   draining: boolean;
-  /** Timestamp (Date.now()) of the last successful write to this client. */
-  lastSuccessfulWrite: number;
+  /** Timestamp (Date.now()) of the last successful drain event (or connection start). */
+  lastDrainTimestamp: number;
+  /** True if this client should be removed (error detected or manual removal). */
+  markedForRemoval: boolean;
 }
 
 interface StreamSession {
@@ -39,9 +40,8 @@ interface StreamSession {
  * Features:
  *  - Fan-out / tee: multiple HTTP clients share a single child process.
  *  - Auto-kill: when the last client disconnects, the process is terminated.
- *  - Idle watchdog: periodically removes clients that haven't read data for
- *    IDLE_CLIENT_TIMEOUT_MS. If all clients are removed, the stream is killed.
- *    This handles VLC's bug where it doesn't send TCP FIN when closing.
+ *  - Idle watchdog: removes clients that haven't drained (res.writableNeedDrain === true)
+ *    for IDLE_CLIENT_TIMEOUT_MS. Handles VLC's bug where it doesn't send TCP FIN.
  *  - Backpressure: when res.write() returns false the chunk is skipped for
  *    that client and we wait for 'drain'. After BACKPRESSURE_DROP_THRESHOLD
  *    consecutive misses the client is dropped to protect memory.
@@ -78,9 +78,16 @@ class StreamRegistry {
       res,
       backpressureCount: 0,
       draining: false,
-      lastSuccessfulWrite: Date.now(),
+      lastDrainTimestamp: Date.now(),
+      markedForRemoval: false,
     };
     s.clients.set(res, state);
+
+    // Attach error handler to detect closed sockets that don't fire 'close'
+    res.on('error', () => {
+      state.markedForRemoval = true;
+    });
+
     logger.info(`[stream-registry] +cliente key=${key} total=${s.clients.size}`);
     return true;
   }
@@ -103,7 +110,7 @@ class StreamRegistry {
    *    dropped — it is genuinely too slow to keep up.
    *  - Draining clients simply skip the chunk (no drop, no error).
    *
-   * Dead/closed clients are removed automatically.
+   * Dead/closed clients and clients marked for removal are removed automatically.
    */
   broadcast(key: string, chunk: Buffer): void {
     const s = this.sessions.get(key);
@@ -112,7 +119,11 @@ class StreamRegistry {
     const dead: Response[] = [];
 
     for (const [res, state] of s.clients) {
-      if (res.writableEnded || res.destroyed) { dead.push(res); continue; }
+      // Remove if marked, destroyed, or ended
+      if (state.markedForRemoval || res.writableEnded || res.destroyed) {
+        dead.push(res);
+        continue;
+      }
 
       // While draining, skip this chunk (do not count as backpressure hit)
       if (state.draining) continue;
@@ -120,9 +131,8 @@ class StreamRegistry {
       try {
         const ok = res.write(chunk);
         if (ok) {
-          // Write succeeded — reset backpressure counter and update timestamp
+          // Write succeeded — reset backpressure counter
           state.backpressureCount = 0;
-          state.lastSuccessfulWrite = Date.now();
         } else {
           // Buffer full — start draining
           state.backpressureCount++;
@@ -138,11 +148,12 @@ class StreamRegistry {
             res.once('drain', () => {
               state.draining = false;
               state.backpressureCount = 0;
-              state.lastSuccessfulWrite = Date.now();
+              state.lastDrainTimestamp = Date.now();
             });
           }
         }
       } catch {
+        // Write error — mark for removal
         dead.push(res);
       }
     }
@@ -178,8 +189,8 @@ class StreamRegistry {
 
   /**
    * Idle watchdog: checks every IDLE_CLIENT_TIMEOUT_MS for clients that
-   * haven't successfully read data in that time window. Those clients are
-   * forcibly removed (VLC phantom connections that never sent TCP FIN).
+   * are draining (writableNeedDrain === true) without a recent drain event.
+   * Those clients are forcibly removed (VLC phantom connections).
    *
    * If all clients are removed by this process, the stream is killed.
    */
@@ -193,18 +204,28 @@ class StreamRegistry {
       const now = Date.now();
       const toRemove: Response[] = [];
 
-      // Find all idle clients (haven't read in IDLE_CLIENT_TIMEOUT_MS)
+      logger.info(`[stream-registry][watchdog] Checando ${s.clients.size} clientes: key=${key}`);
+
+      // Find clients that are stuck draining (haven't drained in IDLE_CLIENT_TIMEOUT_MS)
       for (const [res, state] of s.clients) {
-        if (now - state.lastSuccessfulWrite >= IDLE_CLIENT_TIMEOUT_MS) {
+        const idleMs = now - state.lastDrainTimestamp;
+        const isDraining = res.writableNeedDrain ?? false;
+
+        logger.info(
+          `[stream-registry][watchdog] Cliente: draining=${isDraining} idleMs=${idleMs} markedForRemoval=${state.markedForRemoval} key=${key}`,
+        );
+
+        // Remove if: (1) marked for removal, (2) been draining for too long without drain event
+        if (state.markedForRemoval || (isDraining && idleMs >= IDLE_CLIENT_TIMEOUT_MS)) {
           logger.warn(
-            `[stream-registry] Cliente idle por ${IDLE_CLIENT_TIMEOUT_MS / 1000}s, removendo: key=${key}`,
+            `[stream-registry] Cliente idle/stuck (draining=${isDraining}, idle=${idleMs}ms), removendo: key=${key}`,
           );
           toRemove.push(res);
           try { res.end(); } catch { /* */ }
         }
       }
 
-      // Remove all idle clients
+      // Remove all stuck clients
       for (const res of toRemove) {
         s.clients.delete(res);
       }
