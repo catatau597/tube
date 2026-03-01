@@ -1,124 +1,108 @@
-
 import { spawn } from 'child_process';
-import { Request, Response } from 'express';
+import { ManagedProcess } from './process-manager';
 import { logger } from '../core/logger';
 
-function buildArgs(url: string, userAgent: string, cookieFile: string | null, simulate: boolean): string[] {
-  // Para streaming MPEG-TS, force vídeo H.264 (avc1) e áudio AAC
-  const args = ['-f', "bestvideo[ext=mp4][vcodec^=avc1]+bestaudio[ext=m4a]", '--user-agent', userAgent];
-  if (cookieFile) args.push('--cookies', cookieFile);
-  if (simulate) {
-    args.push('--simulate', '--print', 'title');
-  } else {
-    args.push('-o', '-', url);
-  }
-  if (simulate) args.push(url);
-  return args;
-}
+const URL_RESOLVE_TIMEOUT_MS = 30_000;
 
-export async function testYtDlp(url: string, userAgent: string, cookieFile: string | null): Promise<{ ok: boolean; output: string }> {
-  return new Promise((resolve) => {
-    logger.info(`[ytdlp-runner] Testando yt-dlp: url=${url}`);
-    const proc = spawn('yt-dlp', buildArgs(url, userAgent, cookieFile, true));
-    let out = '';
-    let err = '';
-    proc.stdout.on('data', (chunk) => {
-      out += String(chunk);
-    });
-    proc.stderr.on('data', (chunk) => {
-      err += String(chunk);
-      logger.warn(`[ytdlp-runner][stderr] ${String(chunk)}`);
-    });
-    proc.on('close', (code) => {
-      logger.info(`[ytdlp-runner] yt-dlp finalizado code=${code}`);
-      resolve({ ok: code === 0, output: `${out}${err}`.trim() });
-    });
-    proc.on('error', (error) => {
-      logger.error(`[ytdlp-runner] Erro ao iniciar yt-dlp: ${error}`);
-      resolve({ ok: false, output: String(error) });
-    });
-  });
-}
-
-export async function runYtDlp(
+export async function resolveYtDlpUrls(
   url: string,
   userAgent: string,
   cookieFile: string | null,
-  response: Response,
-  request: Request,
-): Promise<void> {
-    response.on('error', (err) => {
-      logger.warn(`[ytdlp-runner] Socket error: ${err.message}`);
+  extraFlags: string[] = [],
+): Promise<string[]> {
+  return new Promise((resolve, reject) => {
+    const args = [
+      '-f', 'bestvideo[vcodec^=avc1]+bestaudio[ext=m4a]/best[ext=mp4]/best',
+      '--user-agent', userAgent,
+      '--extractor-args', 'youtube:player_client=android',
+      '--no-playlist',
+      '--get-url',
+      ...extraFlags,
+    ];
+    if (cookieFile) args.push('--cookies', cookieFile);
+    args.push(url);
+
+    logger.info(`[ytdlp-runner] Resolvendo URL: ${url}`);
+    const proc = spawn('yt-dlp', args, { stdio: ['ignore', 'pipe', 'pipe'] });
+
+    let stdout = '';
+    let stderr = '';
+
+    const timer = setTimeout(() => {
+      logger.warn('[ytdlp-runner] Timeout na resolução de URL — matando yt-dlp');
+      try { proc.kill('SIGKILL'); } catch { /* */ }
+      reject(new Error('yt-dlp URL resolution timeout'));
+    }, URL_RESOLVE_TIMEOUT_MS);
+
+    proc.stdout?.on('data', (chunk: Buffer) => { stdout += chunk.toString(); });
+    proc.stderr?.on('data', (chunk: Buffer) => {
+      stderr += chunk.toString();
+      logger.debug(`[ytdlp-runner][resolve] ${chunk.toString().trim()}`);
     });
-  logger.info(`[ytdlp-runner] Iniciando yt-dlp: url=${url}`);
-  response.setHeader('Content-Type', 'video/mp2t');
-  // yt-dlp pipe para ffmpeg para garantir streaming MPEG-TS
-  const ytDlpArgs = buildArgs(url, userAgent, cookieFile, false);
-  const ffmpegArgs = ['-i', '-', '-c', 'copy', '-f', 'mpegts', 'pipe:1'];
-  const ytDlpProc = spawn('yt-dlp', ytDlpArgs, { stdio: ['ignore', 'pipe', 'pipe'] });
-  const ffmpegProc = spawn('ffmpeg', ffmpegArgs, { stdio: ['pipe', 'pipe', 'pipe'] });
 
-  ytDlpProc.stdout.pipe(ffmpegProc.stdin);
-  ffmpegProc.stdout.pipe(response);
-
-  ytDlpProc.stderr.on('data', (data: Buffer) => {
-    logger.warn(`[ytdlp-runner][yt-dlp stderr] ${String(data)}`);
-  });
-  ffmpegProc.stderr.on('data', (data: Buffer) => {
-    logger.warn(`[ytdlp-runner][ffmpeg stderr] ${String(data)}`);
-  });
-
-  // Função de limpeza robusta e segura contra crashes
-  const cleanup = (origin: string) => {
-    logger.info(`[ytdlp-runner] Iniciando limpeza (origem: ${origin})...`);
-    
-    // 1. Desconectar pipes para evitar EPIPE no processo pai
-    try {
-        ytDlpProc.stdout.unpipe(ffmpegProc.stdin);
-        ffmpegProc.stdout.unpipe(response);
-    } catch (e) { /* ignore */ }
-
-    // 2. Destruir streams
-    try {
-        if (!ytDlpProc.stdout.destroyed) ytDlpProc.stdout.destroy();
-        if (!ffmpegProc.stdin.destroyed) ffmpegProc.stdin.destroy();
-        if (!ffmpegProc.stdout.destroyed) ffmpegProc.stdout.destroy();
-    } catch (e) { /* ignore */ }
-
-    // 3. Matar processos
-    if (!ytDlpProc.killed) ytDlpProc.kill('SIGTERM');
-    if (!ffmpegProc.killed) ffmpegProc.kill('SIGTERM');
-
-    // 4. Garantia final (watchdog de limpeza)
-    setTimeout(() => {
-        if (!ytDlpProc.killed) {
-            logger.warn('[ytdlp-runner] Forçando SIGKILL em yt-dlp');
-            try { ytDlpProc.kill('SIGKILL'); } catch(e) {}
-        }
-        if (!ffmpegProc.killed) {
-             try { ffmpegProc.kill('SIGKILL'); } catch(e) {}
-        }
-    }, 2000);
-  };
-  
-  response.on('close', () => cleanup('response-close'));
-  request.on('close', () => cleanup('request-close'));
-  
-  // Tratar erros de pipe silenciosamente para evitar crash
-  const noop = () => {};
-  response.on('error', noop);
-  ytDlpProc.stdout.on('error', noop);
-  ffmpegProc.stdin.on('error', noop);
-  ffmpegProc.stdout.on('error', noop);
-
-  await new Promise<void>((resolve) => {
-    ffmpegProc.on('close', (code) => {
-      logger.info(`[ytdlp-runner] ffmpeg finalizado com code=${code}`);
-      resolve();
+    proc.on('close', (code) => {
+      clearTimeout(timer);
+      if (code !== 0) {
+        logger.warn(`[ytdlp-runner] Resolução falhou code=${code} stderr=${stderr.slice(0, 300)}`);
+        reject(new Error(`yt-dlp exited ${code}`));
+        return;
+      }
+      const urls = stdout.trim().split('\n').map(u => u.trim()).filter(Boolean);
+      if (urls.length === 0) {
+        reject(new Error('yt-dlp: nenhuma URL retornada'));
+        return;
+      }
+      logger.info(`[ytdlp-runner] ${urls.length} URL(s) resolvida(s)`);
+      resolve(urls);
     });
-    ffmpegProc.on('error', (err) => {
-      logger.error(`[ytdlp-runner] Erro ao iniciar ffmpeg: ${err}`);
-      resolve();
-    });
+
+    proc.on('error', (err) => { clearTimeout(timer); reject(err); });
   });
+}
+
+export interface YtDlpFfmpegParams {
+  urls: string[];
+  userAgent: string;
+  extraFfmpegFlags: string[];
+  onData: (chunk: Buffer) => void;
+  onExit: (code: number | null) => void;
+}
+
+export function startYtDlpFfmpeg(params: YtDlpFfmpegParams): ManagedProcess {
+  const { urls, userAgent, extraFfmpegFlags, onData, onExit } = params;
+
+  const args: string[] = [
+    ...extraFfmpegFlags,
+    '-loglevel', 'error',
+    '-user_agent', userAgent,
+  ];
+
+  if (urls.length >= 2) {
+    args.push('-i', urls[0], '-i', urls[1]);
+  } else {
+    args.push('-i', urls[0]);
+  }
+
+  args.push('-c', 'copy', '-f', 'mpegts', 'pipe:1');
+
+  logger.info(`[ytdlp-runner] Iniciando ffmpeg (${urls.length} URL${urls.length > 1 ? 's' : ''})`);
+
+  const proc = new ManagedProcess('ytdlp-ffmpeg', 'ffmpeg', args, {
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+
+  proc.stdout?.on('data', (chunk: Buffer) => onData(chunk));
+  proc.stderr?.on('data', (chunk: Buffer) =>
+    logger.warn(`[ytdlp-runner][ffmpeg stderr] ${chunk.toString().trim()}`),
+  );
+  proc.onClose((code) => {
+    logger.info(`[ytdlp-runner] ffmpeg finalizado code=${code}`);
+    onExit(code);
+  });
+  proc.onError((err) => {
+    logger.error(`[ytdlp-runner] Erro ffmpeg: ${err}`);
+    onExit(null);
+  });
+
+  return proc;
 }

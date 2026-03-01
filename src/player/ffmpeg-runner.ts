@@ -1,6 +1,4 @@
-
-import { Request, Response } from 'express';
-import { spawn } from 'child_process';
+import { ManagedProcess } from './process-manager';
 import { logger } from '../core/logger';
 
 function escapeFfmpegText(text: string): string {
@@ -12,88 +10,72 @@ function escapeFfmpegText(text: string): string {
     .replace(/,/g, '\\,');
 }
 
-export async function runFfmpegPlaceholder(params: {
-  imageUrl: string;
-  userAgent: string;
-  response: Response;
-  request: Request;
+export interface FfmpegPlaceholderParams {
+  imageUrl:   string;
+  userAgent:  string;
+  extraFlags?: string[];
   textLine1?: string;
   textLine2?: string;
-}): Promise<void> {
-  const { imageUrl, userAgent, response, request, textLine1, textLine2 } = params;
+  onData: (chunk: Buffer) => void;
+  onExit: (code: number | null) => void;
+}
 
-  // Monta filtros drawtext igual ao Python
-  const drawtextFilters: string[] = [];
+export function startFfmpegPlaceholder(params: FfmpegPlaceholderParams): ManagedProcess {
+  const { imageUrl, userAgent, extraFlags = [], textLine1, textLine2, onData, onExit } = params;
+
   const fontPath = '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf';
+  const drawtext: string[] = [];
+
   if (textLine1) {
-    drawtextFilters.push(
-      `drawtext=fontfile='${fontPath}':text='${escapeFfmpegText(textLine1)}':x=(w-text_w)/2:y=h-100:fontsize=48:fontcolor=white:borderw=2:bordercolor=black@0.8`
+    drawtext.push(
+      `drawtext=fontfile='${fontPath}':text='${escapeFfmpegText(textLine1)}':x=(w-text_w)/2:y=h-100:fontsize=48:fontcolor=white:borderw=2:bordercolor=black@0.8`,
     );
   }
   if (textLine2) {
-    drawtextFilters.push(
-      `drawtext=fontfile='${fontPath}':text='${escapeFfmpegText(textLine2)}':x=(w-text_w)/2:y=h-50:fontsize=36:fontcolor=white:borderw=2:bordercolor=black@0.8`
+    drawtext.push(
+      `drawtext=fontfile='${fontPath}':text='${escapeFfmpegText(textLine2)}':x=(w-text_w)/2:y=h-50:fontsize=36:fontcolor=white:borderw=2:bordercolor=black@0.8`,
     );
   }
-  // Filtro otimizado com loop igual ao Python
-  const filterComplex = `[0:v]scale=854:480,loop=-1:1:0${drawtextFilters.length > 0 ? ',' + drawtextFilters.join(',') : ''}[v]`;
 
-  const args = [
+  const filterComplex =
+    `[0:v]scale=854:480,loop=-1:1:0${drawtext.length ? ',' + drawtext.join(',') : ''}[v]`;
+
+  const args: string[] = [
+    ...extraFlags,
     '-loglevel', 'error',
     '-user_agent', userAgent,
     '-i', imageUrl,
-    '-f', 'lavfi',
-    '-i', 'anullsrc=r=44100:cl=mono',
+    '-f', 'lavfi', '-i', 'anullsrc=r=44100:cl=mono',
     '-filter_complex', filterComplex,
-    '-map', '[v]',
-    '-map', '1:a',
-    '-c:v', 'libx264',
-    '-preset', 'ultrafast',
-    '-crf', '45',
+    '-map', '[v]', '-map', '1:a',
+    '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '45',
     '-b:v', '150k',
     '-r', '1',
-    '-g', '120',
+    '-g', '2',           // GOP=2 → keyframe a cada 2s, novo cliente vê imagem em ≤2s
     '-pix_fmt', 'yuv420p',
-    '-c:a', 'aac',
-    '-b:a', '24k',
-    '-ac', '1',
     '-tune', 'stillimage',
-    '-f', 'mpegts',
-    'pipe:1',
+    '-c:a', 'aac', '-b:a', '24k', '-ac', '1',
+    '-f', 'mpegts', 'pipe:1',
   ];
 
-  // Log detalhado do comando ffmpeg e do user agent
-  // eslint-disable-next-line no-console
-  console.log('[ffmpeg-runner] Comando ffmpeg:', 'ffmpeg', args.map(a => `'${a}'`).join(' '));
-  // eslint-disable-next-line no-console
-  console.log('[ffmpeg-runner] User-Agent:', userAgent);
+  logger.info(`[ffmpeg-runner] Iniciando placeholder: imageUrl=${imageUrl}`);
 
-  logger.info(`[ffmpeg-runner] Iniciando ffmpeg placeholder: imageUrl=${imageUrl}`);
-  response.setHeader('Content-Type', 'video/mp2t');
-  const proc = spawn('ffmpeg', args, { stdio: ['ignore', 'pipe', 'pipe'] });
-
-  proc.stdout.pipe(response);
-  proc.stderr.on('data', (data: Buffer) => {
-    logger.warn(`[ffmpeg-runner][stderr] ${data.toString()}`);
+  const proc = new ManagedProcess('ffmpeg-placeholder', 'ffmpeg', args, {
+    stdio: ['ignore', 'pipe', 'pipe'],
   });
-  const killFfmpeg = (origin: string) => {
-    if (!proc.killed) {
-      logger.info(`[ffmpeg-runner] Cliente desconectou (${origin}), encerrando ffmpeg pid=${proc.pid}...`);
-      proc.kill('SIGTERM');
-    }
-  };
-  
-  response.on('close', () => killFfmpeg('response'));
-  request.on('close', () => killFfmpeg('request'));
 
-  await new Promise<void>((resolve) => {
-    proc.on('close', (code: number) => {
-      logger.info(`[ffmpeg-runner] ffmpeg finalizado com code=${code}`);
-      resolve();
-    });
-    proc.on('error', (err: Error) => {
-      logger.error(`[ffmpeg-runner] Erro ao iniciar ffmpeg: ${err}`);
-      resolve();
-    });
+  proc.stdout?.on('data', (chunk: Buffer) => onData(chunk));
+  proc.stderr?.on('data', (chunk: Buffer) =>
+    logger.warn(`[ffmpeg-runner][stderr] ${chunk.toString().trim()}`),
+  );
+  proc.onClose((code) => {
+    logger.info(`[ffmpeg-runner] Placeholder finalizado code=${code}`);
+    onExit(code);
   });
+  proc.onError((err) => {
+    logger.error(`[ffmpeg-runner] Erro: ${err}`);
+    onExit(null);
+  });
+
+  return proc;
 }
