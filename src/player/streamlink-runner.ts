@@ -1,5 +1,5 @@
-import { spawn, ChildProcess } from 'child_process';
-import { Response } from 'express';
+import { spawn } from 'child_process';
+import { ManagedProcess } from './process-manager';
 import { logger } from '../core/logger';
 
 function buildArgs(
@@ -7,7 +7,7 @@ function buildArgs(
   userAgent: string,
   cookieFile: string | null,
   extraFlags: string[],
-  mode: 'stream' | 'url' | 'simulate'
+  mode: 'stream' | 'simulate',
 ): string[] {
   const args = [
     ...extraFlags,
@@ -16,14 +16,11 @@ function buildArgs(
     '--no-plugin-sideloading',
   ];
   if (cookieFile) args.push('--http-cookie-jar', cookieFile);
-  if (mode === 'stream') {
-    args.push('--stdout', url, 'best');
-  } else {
-    args.push('--stream-url', url, 'best');
-  }
+  args.push(mode === 'stream' ? '--stdout' : '--stream-url', url, 'best');
   return args;
 }
 
+/** Quick probe: does streamlink find a playable stream at this URL? */
 export async function streamlinkHasPlayableStream(
   url: string,
   userAgent: string,
@@ -31,93 +28,68 @@ export async function streamlinkHasPlayableStream(
   extraFlags: string[] = [],
 ): Promise<boolean> {
   return new Promise<boolean>((resolve) => {
-    logger.info(`[streamlink-runner] Testando streamlinkHasPlayableStream: url=${url}`);
-    const proc = spawn('streamlink', buildArgs(url, userAgent, cookieFile, extraFlags, 'simulate'));
+    logger.info(`[streamlink-runner] Testando stream: url=${url}`);
+    // Use plain spawn (short-lived, no need for ManagedProcess)
+    const proc = spawn(
+      'streamlink',
+      buildArgs(url, userAgent, cookieFile, extraFlags, 'simulate'),
+      { stdio: ['ignore', 'pipe', 'pipe'] },
+    );
     let stderr = '';
-    proc.stderr.on('data', (chunk) => {
-      stderr += String(chunk);
-      logger.warn(`[streamlink-runner][stderr] ${String(chunk)}`);
+    proc.stderr?.on('data', (chunk: Buffer) => {
+      stderr += chunk.toString();
+      logger.debug(`[streamlink-runner][probe] ${chunk.toString().trim()}`);
     });
     proc.on('close', (code) => {
-      logger.info(`[streamlink-runner] streamlinkHasPlayableStream finalizado code=${code}`);
+      logger.info(`[streamlink-runner] Probe finalizado code=${code}`);
       if (code === 0) { resolve(true); return; }
       resolve(!/No playable streams found/i.test(stderr));
     });
     proc.on('error', (err) => {
-      logger.error(`[streamlink-runner] Erro ao iniciar streamlink: ${err}`);
+      logger.error(`[streamlink-runner] Erro no probe: ${err}`);
       resolve(false);
     });
   });
 }
 
-function killProcessGroup(proc: ChildProcess, signal: NodeJS.Signals = 'SIGTERM'): void {
-  if (!proc.pid) return;
-  try {
-    process.kill(-proc.pid, signal);
-  } catch {
-    try { proc.kill(signal); } catch (killErr) {
-      logger.warn(`[streamlink-runner] Erro ao matar processo PID=${proc.pid}: ${killErr}`);
-    }
-  }
+export interface StreamlinkParams {
+  url:        string;
+  userAgent:  string;
+  cookieFile: string | null;
+  extraFlags: string[];
+  /** Called for every chunk of mpegts output. */
+  onData: (chunk: Buffer) => void;
+  /** Called when streamlink exits. */
+  onExit: (code: number | null) => void;
 }
 
-function cleanupProcess(proc: ChildProcess, name: string): void {
-  if (!proc || proc.killed) return;
-  logger.info(`[streamlink-runner] Iniciando cleanup de ${name} (PID=${proc.pid})`);
-  if (proc.stdout) { proc.stdout.unpipe(); proc.stdout.destroy(); }
-  if (proc.stderr) { proc.stderr.destroy(); }
-  killProcessGroup(proc, 'SIGTERM');
-  setTimeout(() => {
-    if (proc && !proc.killed && proc.pid) {
-      logger.warn(`[streamlink-runner] ${name} (PID=${proc.pid}) não respondeu ao SIGTERM, usando SIGKILL`);
-      killProcessGroup(proc, 'SIGKILL');
-    }
-  }, 3000);
-}
+/**
+ * Start a streamlink process piping its stdout to onData callbacks.
+ * Returns a ManagedProcess — the caller is responsible for killing it.
+ */
+export function startStreamlink(params: StreamlinkParams): ManagedProcess {
+  const { url, userAgent, cookieFile, extraFlags, onData, onExit } = params;
+  logger.info(`[streamlink-runner] Iniciando stream: url=${url}`);
 
-export async function runStreamlink(
-  url: string,
-  userAgent: string,
-  cookieFile: string | null,
-  extraFlags: string[],
-  response: Response,
-): Promise<void> {
-  logger.info(`[streamlink-runner] Iniciando streamlink: url=${url} extraFlags=[${extraFlags.join(' ')}]`);
-  response.setHeader('Content-Type', 'video/mp2t');
-
-  const proc = spawn(
+  const proc = new ManagedProcess(
+    'streamlink',
     'streamlink',
     buildArgs(url, userAgent, cookieFile, extraFlags, 'stream'),
-    { stdio: ['ignore', 'pipe', 'pipe'], detached: true }
+    { stdio: ['ignore', 'pipe', 'pipe'] },
   );
 
-  proc.stdout.pipe(response);
-  proc.stderr.on('data', (data) => { logger.warn(`[streamlink-runner][stderr] ${String(data)}`); });
-
-  let cleaned = false;
-  const cleanup = (origin: string) => {
-    if (cleaned) return;
-    cleaned = true;
-    logger.info(`[streamlink-runner] Iniciando limpeza (origem: ${origin})`);
-    cleanupProcess(proc, 'streamlink');
-  };
-
-  response.on('close', () => cleanup('response-close'));
-  response.on('error', (err) => {
-    logger.warn(`[streamlink-runner] Socket error: ${err.message}`);
-    cleanup('response-error');
+  proc.stdout?.on('data', (chunk: Buffer) => onData(chunk));
+  proc.stderr?.on('data', (chunk: Buffer) =>
+    logger.warn(`[streamlink-runner][stderr] ${chunk.toString().trim()}`),
+  );
+  proc.onClose((code) => {
+    logger.info(`[streamlink-runner] Processo finalizado code=${code}`);
+    onExit(code);
+  });
+  proc.onError((err) => {
+    logger.error(`[streamlink-runner] Erro: ${err}`);
+    onExit(null);
   });
 
-  await new Promise<void>((resolve) => {
-    proc.on('close', (code) => {
-      logger.info(`[streamlink-runner] streamlink finalizado com code=${code}`);
-      cleanup('proc-close');
-      resolve();
-    });
-    proc.on('error', (err) => {
-      logger.error(`[streamlink-runner] Erro ao iniciar streamlink: ${err}`);
-      cleanup('proc-error');
-      resolve();
-    });
-  });
+  return proc;
 }
