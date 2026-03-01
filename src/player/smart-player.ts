@@ -4,7 +4,7 @@ import { Request, Response } from 'express';
 import { ToolProfileManager, ResolvedToolProfile } from './tool-profile-manager';
 import { streamRegistry } from './stream-registry';
 import { startFfmpegPlaceholder } from './ffmpeg-runner';
-import { streamlinkHasPlayableStream, startStreamlink } from './streamlink-runner';
+import { startStreamlink } from './streamlink-runner';
 import { resolveYtDlpUrls, startYtDlpFfmpeg } from './ytdlp-runner';
 import { ManagedProcess } from './process-manager';
 import { getConfig } from '../core/config-manager';
@@ -26,7 +26,7 @@ interface CacheFile {
 /**
  * Tempo máximo (ms) após o início do streamlink para considerar uma saída
  * com erro como "fast fail" e acionar o fallback para yt-dlp.
- * Erros como 400 Bad Request / youtubei retornam em ~1s.
+ * Erros 400 Bad Request do youtubei retornam em ~1s.
  */
 const STREAMLINK_FAST_FAIL_MS = 8_000;
 
@@ -109,16 +109,12 @@ export class SmartPlayer {
     }
 
     if (stream.status === 'live' && this.isGenuinelyLive(stream)) {
-      logger.info(`[SmartPlayer] Testando streamlink: key=${key}`);
-      const playable = await streamlinkHasPlayableStream(
-        stream.watchUrl, slProfile.userAgent, slProfile.cookieFile, slProfile.flags,
-      );
-      if (playable) {
-        // Passa ytProfile e ffProfile para permitir fallback automático
-        this.spawnStreamlink(key, stream.watchUrl, slProfile, ytProfile, ffProfile, req, firstClient);
-        return;
-      }
-      logger.info(`[SmartPlayer] Streamlink indisponível no probe, usando yt-dlp: key=${key}`);
+      // Sem probe: a probe usa --stream-url que tem comportamento diferente do
+      // --stdout real, gerando falsos positivos e negativos. O fast-fail
+      // (STREAMLINK_FAST_FAIL_MS) cuida do fallback automaticamente.
+      logger.info(`[SmartPlayer] Iniciando streamlink diretamente: key=${key}`);
+      this.spawnStreamlink(key, stream.watchUrl, slProfile, ytProfile, ffProfile, req, firstClient);
+      return;
     }
 
     await this.spawnYtDlp(key, stream.watchUrl, ytProfile, ffProfile, req, firstClient);
@@ -140,7 +136,6 @@ export class SmartPlayer {
 
     streamRegistry.create(key, async () => {
       const proc = await procPromise;
-      // ffmpeg com loop=-1 ignora SIGTERM; usa timeout curto para ir direto ao SIGKILL
       await proc.kill(500);
     });
 
@@ -165,9 +160,6 @@ export class SmartPlayer {
    * Se o processo sair com erro dentro de STREAMLINK_FAST_FAIL_MS (ex: 400 Bad
    * Request do youtubei/v1/player), aciona fallback automático para yt-dlp
    * sem derrubar a sessão nem os clientes já conectados.
-   *
-   * O `procHolder` permite que o killFn sempre mate o processo atual,
-   * seja ele streamlink ou o yt-dlp que eventualmente o substituiu.
    */
   private spawnStreamlink(
     key: string,
@@ -215,7 +207,7 @@ export class SmartPlayer {
 
   /**
    * Fallback: substitui o streamlink por yt-dlp na sessão existente.
-   * Clientes conectados continuam na mesma sessão sem reconectar.
+   * Clientes conectados continuam sem reconectar.
    */
   private async switchToYtDlp(
     key: string,
@@ -233,7 +225,6 @@ export class SmartPlayer {
       return;
     }
 
-    // Se todos os clientes já desconectaram enquanto resolvemos a URL, abort.
     if (!streamRegistry.has(key)) {
       logger.info(`[SmartPlayer] Fallback yt-dlp abortado: sessão já encerrada: key=${key}`);
       return;
@@ -274,7 +265,7 @@ export class SmartPlayer {
 
     streamRegistry.create(key, async () => {
       const proc = await procPromise;
-      await proc.kill();
+      await proc.kill(500);
     });
 
     if (!this.subscribeClient(key, req, firstClient)) return;
@@ -292,17 +283,6 @@ export class SmartPlayer {
 
   // ─── Private: subscribe helper ────────────────────────────────────────────
 
-  /**
-   * Wires all disconnect listeners and registers the client with the session.
-   *
-   * Three complementary signals — no single one fires reliably in all cases:
-   *  1. res.on('close')  — Express finalizes the response
-   *  2. res.on('error')  — EPIPE / ECONNRESET on write
-   *  3. req.on('close')  — HTTP connection dropped (most reliable for VLC
-   *                         which doesn’t send TCP FIN on stop)
-   *
-   * Returns false if the session no longer exists, so callers can abort.
-   */
   private subscribeClient(key: string, req: Request, res: Response): boolean {
     res.setHeader('Content-Type', 'video/mp2t');
     const added = streamRegistry.addClient(key, res);
