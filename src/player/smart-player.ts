@@ -87,6 +87,16 @@ export class SmartPlayer {
     const stream = cache.streams[videoId];
     logger.info(`[SmartPlayer] Init: key=${key} status=${stream?.status ?? 'não encontrado'}`);
 
+  private async initStream(key: string, videoId: string, firstClient: Response): Promise<void> {
+    const slProfile = this.toolProfiles.resolveProfile('streamlink');
+    const ytProfile = this.toolProfiles.resolveProfile('yt-dlp');
+    const ffProfile = this.toolProfiles.resolveProfile('ffmpeg');
+
+    const cache  = this.readStateCache();
+    const stream = cache.streams[videoId];
+    logger.info(`[SmartPlayer] Init: key=${key} status=${stream?.status ?? 'não encontrado'}`);
+
+    // ── No stream found → generic placeholder ────────────────────────────────
     if (!stream) {
       const placeholder = getConfig('PLACEHOLDER_IMAGE_URL');
       if (!placeholder) {
@@ -108,6 +118,7 @@ export class SmartPlayer {
       return;
     }
 
+    // ── Live → try streamlink first, fallback to yt-dlp ─────────────────────
     if (stream.status === 'live' && this.isGenuinelyLive(stream)) {
       logger.info(`[SmartPlayer] Testando streamlink: key=${key}`);
       const playable = await streamlinkHasPlayableStream(

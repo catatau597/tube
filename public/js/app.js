@@ -4,6 +4,7 @@ import { renderStreams } from './streams.js';
 import { renderPlaylists } from './playlists.js';
 import { renderSettings } from './settings.js';
 import { renderLogs } from './logs.js';
+import { renderTitleFormat } from './title-format.js';
 
 console.log('[app] Module loaded OK');
 
@@ -24,10 +25,10 @@ const routes = {
 	'/settings/api': renderSettings,
 	'/settings/scheduler': renderSettings,
 	'/settings/content': renderSettings,
-	'/settings/titles': renderSettings,
+	'/settings/title-format': renderTitleFormat,
 	'/settings/retention': renderSettings,
 	'/settings/media': renderSettings,
-	'/settings/player': renderSettings,
+	'/settings/cache': renderSettings,
 	'/settings/tech': renderSettings,
 	'/logs': renderLogs,
 };

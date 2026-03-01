@@ -1,242 +1,75 @@
-import fs from "fs";
-import path from "path";
-import { Router } from "express";
-import multer from "multer";
-import { getDb } from "../../core/db";
-import { logger } from "../../core/logger";
-import {
-  CredentialsManager,
-  SupportedPlatform,
-} from "../../player/credentials-manager";
-import { streamlinkHasPlayableStream } from "../../player/streamlink-runner";
-import { testYtDlp } from "../../player/ytdlp-runner";
-
-const COOKIES_DIR = "/data/cookies";
-fs.mkdirSync(COOKIES_DIR, { recursive: true });
-
-const upload = multer({ dest: "/tmp" });
-const allowedPlatforms: SupportedPlatform[] = [
-  "youtube",
-  "dailymotion",
-  "soultv",
-];
-
-function validatePlatform(value: string): SupportedPlatform | null {
-  if ((allowedPlatforms as string[]).includes(value))
-    return value as SupportedPlatform;
-  return null;
-}
+import { Router } from 'express';
+import { getDb } from '../../core/db';
+import { logger } from '../../core/logger';
 
 /**
- * Cria o roteador HTTP para gestão de cookies, user-agents e testes de credenciais.
+ * Rota exclusiva para gerenciamento de User-Agents.
+ * Cookies foram migrados para /api/cookies (tabela independente).
  */
 export function createCredentialsRouter(): Router {
   const router = Router();
-  const manager = new CredentialsManager();
 
-  router.get("/", (_request, response) => {
+  /* GET /api/credentials — listar todos os UAs */
+  router.get('/', (_req, res) => {
     const rows = getDb()
-      .prepare(
-        "SELECT id, platform, type, label, value, active, is_default, created_at FROM credentials ORDER BY type, platform, id",
-      )
+      .prepare("SELECT id, label, value, is_default, active, created_at FROM credentials WHERE type = 'user-agent' ORDER BY is_default DESC, id DESC")
       .all();
-    response.json(rows);
+    res.json(rows);
   });
 
-  router.post(
-    "/cookie/:platform",
-    upload.single("file"),
-    (request, response) => {
-      const platform = validatePlatform(request.params.platform);
-      if (!platform) {
-        response.status(400).json({ error: "Plataforma inválida" });
-        return;
-      }
-      if (!request.file) {
-        response.status(400).json({ error: "Arquivo não enviado" });
-        return;
-      }
-
-      const finalPath = path.join(COOKIES_DIR, `${platform}.txt`);
-      fs.renameSync(request.file.path, finalPath);
-
-      getDb()
-        .prepare("DELETE FROM credentials WHERE platform = ? AND type = ?")
-        .run(platform, "cookie");
-      getDb()
-        .prepare(
-          "INSERT INTO credentials(platform, type, label, value, active, is_default) VALUES (?, ?, ?, ?, 1, 1)",
-        )
-        .run(platform, "cookie", `${platform}.txt`, finalPath);
-
-      logger.info(
-        `[API][credentials] Cookie atualizado para plataforma=${platform}`,
-      );
-
-      response.json({ ok: true, path: finalPath });
-    },
-  );
-
-  router.delete("/cookie/:platform", (request, response) => {
-    const platform = validatePlatform(request.params.platform);
-    if (!platform) {
-      response.status(400).json({ error: "Plataforma inválida" });
-      return;
-    }
-
-    const row = getDb()
-      .prepare(
-        "SELECT value FROM credentials WHERE platform = ? AND type = ? LIMIT 1",
-      )
-      .get(platform, "cookie") as { value: string } | undefined;
-
-    if (row?.value && fs.existsSync(row.value)) {
-      fs.unlinkSync(row.value);
-    }
-    getDb()
-      .prepare("DELETE FROM credentials WHERE platform = ? AND type = ?")
-      .run(platform, "cookie");
-    logger.info(
-      `[API][credentials] Cookie removido para plataforma=${platform}`,
-    );
-    response.json({ ok: true });
-  });
-
-  router.patch("/cookie/:platform/toggle", (request, response) => {
-    const platform = validatePlatform(request.params.platform);
-    if (!platform) {
-      response.status(400).json({ error: "Plataforma inválida" });
-      return;
-    }
-
-    const current = getDb()
-      .prepare(
-        "SELECT active FROM credentials WHERE platform = ? AND type = ? LIMIT 1",
-      )
-      .get(platform, "cookie") as { active: number } | undefined;
-    if (!current) {
-      response.status(404).json({ error: "Cookie não encontrado" });
-      return;
-    }
-
-    const next = current.active === 1 ? 0 : 1;
-    getDb()
-      .prepare(
-        "UPDATE credentials SET active = ? WHERE platform = ? AND type = ?",
-      )
-      .run(next, platform, "cookie");
-    logger.info(
-      `[API][credentials] Cookie ${platform} alterado para active=${next === 1}`,
-    );
-    response.json({ ok: true, active: next === 1 });
-  });
-
-  router.post("/ua", (request, response) => {
-    const { userAgent, platform, label } = request.body as {
-      userAgent?: string;
-      platform?: string;
-      label?: string;
-    };
+  /* POST /api/credentials/ua — adicionar UA */
+  router.post('/ua', (req, res) => {
+    const { userAgent, label } = req.body as { userAgent?: string; label?: string };
     if (!userAgent?.trim()) {
-      response.status(400).json({ error: "userAgent é obrigatório" });
-      return;
+      return res.status(400).json({ error: 'userAgent é obrigatório.' });
     }
-    const resolvedPlatform =
-      platform && validatePlatform(platform) ? platform : "global";
 
     const info = getDb()
-      .prepare(
-        "INSERT INTO credentials(platform, type, label, value, active, is_default) VALUES (?, ?, ?, ?, 1, 0)",
-      )
-      .run(
-        resolvedPlatform,
-        "user-agent",
-        label ?? userAgent.slice(0, 42),
-        userAgent,
-      );
-    logger.info(
-      `[API][credentials] User-Agent adicionado em plataforma=${resolvedPlatform}`,
-    );
-    response.json({ ok: true, id: info.lastInsertRowid });
+      .prepare("INSERT INTO credentials (platform, type, label, value, active, is_default) VALUES ('global','user-agent',?,?,1,0)")
+      .run(label?.trim() || userAgent.slice(0, 50), userAgent.trim());
+
+    logger.info(`[credentials] UA adicionado id=${info.lastInsertRowid}`);
+    res.json({ ok: true, id: info.lastInsertRowid });
   });
 
-  router.delete("/ua/:id", (request, response) => {
-    const id = Number(request.params.id);
-    getDb()
-      .prepare("DELETE FROM credentials WHERE id = ? AND type = ?")
-      .run(id, "user-agent");
-    logger.info(`[API][credentials] User-Agent removido id=${id}`);
-    response.json({ ok: true });
+  /* DELETE /api/credentials/ua/:id — remover UA */
+  router.delete('/ua/:id', (req, res) => {
+    const id = Number(req.params.id);
+    /* Remove referências em perfis antes de deletar */
+    getDb().prepare('UPDATE tool_profiles SET ua_id = NULL WHERE ua_id = ?').run(id);
+    getDb().prepare("DELETE FROM credentials WHERE id = ? AND type = 'user-agent'").run(id);
+    logger.info(`[credentials] UA removido id=${id}`);
+    res.json({ ok: true });
   });
 
-  router.patch("/ua/:id/default", (request, response) => {
-    const id = Number(request.params.id);
-    const current = getDb()
-      .prepare(
-        "SELECT id, platform, type FROM credentials WHERE id = ? AND type = ?",
-      )
-      .get(id, "user-agent") as
-      | { id: number; platform: string; type: string }
-      | undefined;
+  /* PATCH /api/credentials/ua/:id/default — definir como padrão */
+  router.patch('/ua/:id/default', (req, res) => {
+    const id = Number(req.params.id);
+    const row = getDb()
+      .prepare("SELECT id FROM credentials WHERE id = ? AND type = 'user-agent'")
+      .get(id);
 
-    if (!current) {
-      response.status(404).json({ error: "User-Agent não encontrado" });
-      return;
-    }
+    if (!row) return res.status(404).json({ error: 'User-Agent não encontrado.' });
 
-    getDb()
-      .prepare(
-        "UPDATE credentials SET is_default = 0 WHERE type = ? AND platform = ?",
-      )
-      .run("user-agent", current.platform);
-    getDb()
-      .prepare("UPDATE credentials SET is_default = 1 WHERE id = ?")
-      .run(id);
-    logger.info(
-      `[API][credentials] User-Agent padrão atualizado id=${id} plataforma=${current.platform}`,
-    );
-    response.json({ ok: true });
+    getDb().prepare("UPDATE credentials SET is_default = 0 WHERE type = 'user-agent'").run();
+    getDb().prepare('UPDATE credentials SET is_default = 1 WHERE id = ?').run(id);
+    logger.info(`[credentials] UA padrão definido id=${id}`);
+    res.json({ ok: true });
   });
 
-  router.post("/test", async (request, response) => {
-    const { url, tool, platform } = request.body as {
-      url?: string;
-      tool?: "streamlink" | "ytdlp";
-      platform?: SupportedPlatform;
-    };
+  /* PATCH /api/credentials/ua/:id/toggle — ativar/desativar UA */
+  router.patch('/ua/:id/toggle', (req, res) => {
+    const id = Number(req.params.id);
+    const row = getDb()
+      .prepare("SELECT active FROM credentials WHERE id = ? AND type = 'user-agent'")
+      .get(id) as { active: number } | undefined;
 
-    if (!url || !tool) {
-      response.status(400).json({ error: "url e tool são obrigatórios" });
-      return;
-    }
+    if (!row) return res.status(404).json({ error: 'User-Agent não encontrado.' });
 
-    const p = platform && validatePlatform(platform) ? platform : "youtube";
-    const creds = manager.resolveCredentials(p);
-    logger.info(
-      `[API][credentials] Teste de conectividade solicitado tool=${tool} platform=${p}`,
-    );
-
-    if (tool === "streamlink") {
-      const ok = await streamlinkHasPlayableStream(
-        url,
-        creds.userAgent,
-        creds.cookieFile,
-      );
-      logger.info(
-        `[API][credentials] Resultado teste streamlink platform=${p} success=${ok}`,
-      );
-      response.json({
-        success: ok,
-        output: ok ? "stream resolvida" : "stream não resolvida",
-      });
-      return;
-    }
-
-    const result = await testYtDlp(url, creds.userAgent, creds.cookieFile);
-    logger.info(
-      `[API][credentials] Resultado teste ytdlp platform=${p} success=${result.ok}`,
-    );
-    response.json({ success: result.ok, output: result.output });
+    const next = row.active === 1 ? 0 : 1;
+    getDb().prepare('UPDATE credentials SET active = ? WHERE id = ?').run(next, id);
+    logger.info(`[credentials] UA id=${id} active=${next === 1}`);
+    res.json({ ok: true, active: next === 1 });
   });
 
   return router;

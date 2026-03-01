@@ -155,7 +155,6 @@ def run_streamlink(watch_url: str, user_agent: str = "Mozilla/5.0"):
 
 def run_ytdlp(watch_url: str, user_agent: str = "Mozilla/5.0"):
     logger.info(f"Iniciando yt-dlp para VOD: {watch_url}")
-    logger.info(f"URL completa chamada para VOD: {watch_url}")
     ytdlp_cmd = ["yt-dlp", "-f", "best", "-o", "-", "--user-agent", user_agent, watch_url]
     logger.debug(f"Comando yt-dlp: {' '.join(ytdlp_cmd)}")
     try:

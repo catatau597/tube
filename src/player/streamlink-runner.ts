@@ -20,6 +20,7 @@ function buildArgs(
   return args;
 }
 
+/** Quick probe: does streamlink find a playable stream at this URL? */
 export async function streamlinkHasPlayableStream(
   url: string,
   userAgent: string,

@@ -617,3 +617,34 @@ This is the code block that represents the suggested code change:
 
 ---
 ```
+``````
+This is the description of what the code block changes:
+<changeDescription>
+Adicionar seção detalhando o problema e solução do VOD YouTube (yt-dlp) ao documento de revisão.
+</changeDescription>
+
+This is the code block that represents the suggested code change:
+```markdown
+---
+
+## Problema e Solução — VOD YouTube (yt-dlp)
+
+### Problema
+
+O streaming de VOD do YouTube (via yt-dlp) não era reproduzido corretamente em players como VLC. O problema principal era a incompatibilidade de codecs e formato de saída: o yt-dlp entregava fluxos em formatos variados (ex: webm/vp9, mp4/h264, áudio opus/aac), e o player esperava MPEG-TS com vídeo H.264 e áudio AAC. Além disso, havia risco de processos zumbis e logs residuais após o encerramento do player.
+
+### Solução
+
+- O runner do yt-dlp foi ajustado para:
+  - Forçar vídeo H.264 (avc1) e áudio AAC (m4a) nos argumentos (`-f "bestvideo[ext=mp4][vcodec^=avc1]+bestaudio[ext=m4a]"`)
+  - Usar ffmpeg como pipe intermediário para garantir saída em MPEG-TS (`ffmpeg -i - -c copy -f mpegts pipe:1`)
+  - Implementar lógica de kill agressivo (SIGTERM/SIGKILL) e fechamento explícito dos streams após o encerramento da resposta HTTP
+  - Adicionar handler para erro EPIPE no response, evitando crash ao fechar o player
+  - Manter logs completos para diagnóstico, sem ocultar mensagens residuais
+
+Essas mudanças garantem que o VOD seja reproduzido em tempo real, com codecs compatíveis, e que os processos externos sejam encerrados corretamente após o término do streaming.
+
+> **Nota:** O runner do Streamlink (usado para eventos ao vivo) permanece inalterado e continua sendo a primeira escolha para transmissões live. O yt-dlp é usado como fallback apenas quando Streamlink não consegue abrir o stream.
+
+---
+```

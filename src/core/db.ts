@@ -18,7 +18,6 @@ const DEFAULT_SETTINGS: Record<string, string> = {
   SCHEDULER_POST_EVENT_INTERVAL_MINUTES: '5',
   FULL_SYNC_INTERVAL_HOURS: '48',
   RESOLVE_HANDLES_TTL_HOURS: '24',
-  INITIAL_SYNC_DAYS: '2',
   MAX_SCHEDULE_HOURS: '72',
   MAX_UPCOMING_PER_CHANNEL: '6',
   TITLE_FILTER_EXPRESSIONS: 'ao vivo,AO VIVO',
@@ -42,7 +41,7 @@ const DEFAULT_SETTINGS: Record<string, string> = {
   STALE_HOURS: '6',
   USE_PLAYLIST_ITEMS: 'true',
   PROXY_ENABLE_ANALYTICS: 'true',
-  TUBEWRANGLERR_URL: 'http://localhost:8888',
+  TUBEWRANGLERR_URL: '',
   PROXY_THUMBNAIL_CACHE_HOURS: '24',
   LOG_LEVEL: 'INFO',
 };
@@ -63,13 +62,8 @@ function parseSimpleEnvFile(filePath: string): Record<string, string> {
     const key = line.slice(0, eq).trim();
     let value = line.slice(eq + 1).trim();
     const inlineComment = value.indexOf(' #');
-    if (inlineComment >= 0) {
-      value = value.slice(0, inlineComment).trim();
-    }
-    if (
-      (value.startsWith('"') && value.endsWith('"')) ||
-      (value.startsWith("'") && value.endsWith("'"))
-    ) {
+    if (inlineComment >= 0) value = value.slice(0, inlineComment).trim();
+    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
       value = value.slice(1, -1);
     }
     values[key] = value;
@@ -86,9 +80,7 @@ function readSeedEnv(): Record<string, string> {
 let dbInstance: Database.Database | null = null;
 
 export function getDb(): Database.Database {
-  if (!dbInstance) {
-    throw new Error('Database ainda não inicializado. Chame initDb() antes.');
-  }
+  if (!dbInstance) throw new Error('Database ainda não inicializado. Chame initDb() antes.');
   return dbInstance;
 }
 
@@ -101,6 +93,9 @@ export function initDb(): Database.Database {
   const db = new Database(DB_PATH);
   db.pragma('journal_mode = WAL');
 
+  /* ------------------------------------------------------------------ */
+  /* Tabelas base                                                         */
+  /* ------------------------------------------------------------------ */
   db.exec(`
     CREATE TABLE IF NOT EXISTS settings (
       key         TEXT PRIMARY KEY,
@@ -154,64 +149,97 @@ export function initDb(): Database.Database {
       created_at           TEXT DEFAULT (datetime('now')),
       updated_at           TEXT DEFAULT (datetime('now'))
     );
+
+    CREATE TABLE IF NOT EXISTS cookies (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      name       TEXT NOT NULL,
+      provider   TEXT NOT NULL DEFAULT 'youtube',
+      file_path  TEXT NOT NULL,
+      active     INTEGER NOT NULL DEFAULT 1,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
   `);
 
+  /* ------------------------------------------------------------------ */
+  /* tool_profiles: cria ou migra para novo schema                       */
+  /* ------------------------------------------------------------------ */
+  const tpMeta = db.prepare(
+    "SELECT sql FROM sqlite_master WHERE type='table' AND name='tool_profiles'"
+  ).get() as { sql: string } | undefined;
+
+  if (!tpMeta) {
+    /* Instalação nova */
+    db.exec(`
+      CREATE TABLE tool_profiles (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        name       TEXT NOT NULL,
+        tool       TEXT NOT NULL,
+        flags      TEXT NOT NULL DEFAULT '',
+        cookie_id  INTEGER REFERENCES cookies(id),
+        ua_id      INTEGER REFERENCES credentials(id),
+        is_active  INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now'))
+      );
+    `);
+    logger.info('[DB] Tabela tool_profiles criada.');
+  } else if (tpMeta.sql.includes('cookie_platform') || tpMeta.sql.includes("CHECK(tool IN")) {
+    /* Schema antigo: migrar */
+    db.exec(`
+      CREATE TABLE tool_profiles_v2 (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        name       TEXT NOT NULL,
+        tool       TEXT NOT NULL,
+        flags      TEXT NOT NULL DEFAULT '',
+        cookie_id  INTEGER REFERENCES cookies(id),
+        ua_id      INTEGER REFERENCES credentials(id),
+        is_active  INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now'))
+      );
+      INSERT OR IGNORE INTO tool_profiles_v2 (id, name, tool, flags, ua_id, is_active, created_at, updated_at)
+        SELECT id, name, tool, flags, ua_id, is_active, created_at, updated_at FROM tool_profiles;
+      DROP TABLE tool_profiles;
+      ALTER TABLE tool_profiles_v2 RENAME TO tool_profiles;
+    `);
+    logger.info('[DB] tool_profiles migrado para novo schema (cookie_id + ffmpeg).');
+  } else {
+    /* Schema já novo: garantir coluna cookie_id */
+    try {
+      db.exec('ALTER TABLE tool_profiles ADD COLUMN cookie_id INTEGER REFERENCES cookies(id)');
+    } catch { /* coluna já existe */ }
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Seeds                                                                */
+  /* ------------------------------------------------------------------ */
   const envSeed = readSeedEnv();
 
-  const settingsCount = db.prepare('SELECT COUNT(*) as count FROM settings').get() as {
-    count: number;
-  };
-
+  const settingsCount = db.prepare('SELECT COUNT(*) as count FROM settings').get() as { count: number };
   if (settingsCount.count === 0) {
     const insert = db.prepare('INSERT INTO settings (key, value) VALUES (?, ?)');
     const tx = db.transaction((entries: Array<[string, string]>) => {
       for (const [key, value] of entries) insert.run(key, value);
     });
-    const merged = { ...DEFAULT_SETTINGS, ...envSeed };
-    tx(Object.entries(merged));
+    tx(Object.entries({ ...DEFAULT_SETTINGS, ...envSeed }));
     logger.info('[DB] Seed inicial de settings aplicado.');
   }
 
-  const usersCount = db.prepare('SELECT COUNT(*) as count FROM auth_users').get() as {
-    count: number;
-  };
-
+  const usersCount = db.prepare('SELECT COUNT(*) as count FROM auth_users').get() as { count: number };
   if (usersCount.count === 0) {
     const hash = bcrypt.hashSync('tubewranglerr', 10);
-    db.prepare(
-      'INSERT INTO auth_users (username, password_hash, must_change_password) VALUES (?, ?, 1)',
-    ).run('admin', hash);
-    logger.info('[DB] Usuário admin padrão criado com troca obrigatória de senha.');
+    db.prepare('INSERT INTO auth_users (username, password_hash, must_change_password) VALUES (?, ?, 1)').run('admin', hash);
+    logger.info('[DB] Usuário admin padrão criado.');
   }
 
-  const channelsCount = db.prepare('SELECT COUNT(*) as count FROM channels').get() as {
-    count: number;
-  };
-
+  const channelsCount = db.prepare('SELECT COUNT(*) as count FROM channels').get() as { count: number };
   if (channelsCount.count === 0) {
-    const handles = (envSeed.TARGET_CHANNEL_HANDLES ?? '')
-      .split(',')
-      .map((v) => v.trim())
-      .filter(Boolean);
-    const ids = (envSeed.TARGET_CHANNEL_IDS ?? '')
-      .split(',')
-      .map((v) => v.trim())
-      .filter(Boolean);
-
-    const insert = db.prepare(
-      'INSERT OR IGNORE INTO channels (channel_id, handle, title, thumbnail_url, uploads_playlist_id, status) VALUES (?, ?, ?, ?, ?, ?)',
-    );
-
-    for (const handle of handles) {
-      insert.run(`pending:${handle}`, handle, handle, '', '', 'not_found');
-    }
-    for (const id of ids) {
-      insert.run(id, null, id, '', '', 'active');
-    }
-
-    if (handles.length > 0 || ids.length > 0) {
-      logger.info(`[DB] Seed de canais aplicado (${handles.length + ids.length}).`);
-    }
+    const handles = (envSeed.TARGET_CHANNEL_HANDLES ?? '').split(',').map((v) => v.trim()).filter(Boolean);
+    const ids = (envSeed.TARGET_CHANNEL_IDS ?? '').split(',').map((v) => v.trim()).filter(Boolean);
+    const insert = db.prepare('INSERT OR IGNORE INTO channels (channel_id, handle, title, thumbnail_url, uploads_playlist_id, status) VALUES (?, ?, ?, ?, ?, ?)');
+    for (const handle of handles) insert.run(`pending:${handle}`, handle, handle, '', '', 'not_found');
+    for (const id of ids) insert.run(id, null, id, '', '', 'active');
+    if (handles.length > 0 || ids.length > 0) logger.info(`[DB] Seed de canais aplicado (${handles.length + ids.length}).`);
   }
 
   dbInstance = db;

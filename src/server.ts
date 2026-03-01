@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import http from 'http';
 import path from 'path';
-import express from 'express';
+import express, { Request } from 'express';
 import session from 'express-session';
 import { WebSocketServer } from 'ws';
 import { initDb } from './core/db';
@@ -25,6 +25,9 @@ import { createSchedulerRouter } from './api/routes/scheduler';
 import { createCredentialsRouter } from './api/routes/credentials';
 import { createPlayerRouter } from './api/routes/player';
 import { createLogsRouter } from './api/routes/logs';
+import { createTitleFormatRouter } from './api/routes/title-format';
+import cookiesRouter from './api/routes/cookies';
+import toolProfilesRouter from './api/routes/tool-profiles';
 
 initDb();
 
@@ -51,6 +54,7 @@ const scheduler = new Scheduler(state, youtubeApi, {
   activeEndHour: getConfigNumber('SCHEDULER_ACTIVE_END_HOUR', 22),
   usePlaylistItems: getConfigBool('USE_PLAYLIST_ITEMS'),
   localTimezone: getConfig('LOCAL_TIMEZONE') || 'America/Sao_Paulo',
+  maxScheduleHours: getConfigNumber('MAX_SCHEDULE_HOURS', 72),
 });
 
 configEvents.on('configChanged', (key: string, value: string) => {
@@ -67,7 +71,19 @@ app.use(
   }),
 );
 
-// Log every HTTP request for debugging
+/**
+ * Helper: retorna a URL base do TubeWranglerr.
+ * Se TUBEWRANGLERR_URL estiver configurado, usa esse valor.
+ * Caso contrário, monta a URL a partir da requisição atual.
+ */
+export function resolveBaseUrl(req: Request): string {
+  const configured = getConfig('TUBEWRANGLERR_URL')?.trim();
+  if (configured) return configured.replace(/\/$/, '');
+  const proto = req.headers['x-forwarded-proto'] ?? req.protocol;
+  const host = req.headers['x-forwarded-host'] ?? req.headers['host'] ?? 'localhost';
+  return `${String(proto)}://${String(host)}`;
+}
+
 app.use((request, response, next) => {
   const start = Date.now();
   response.on('finish', () => {
@@ -87,27 +103,20 @@ app.get('/login', (_request, response) => {
 });
 
 app.get('/setup', (request, response) => {
-  if (!request.session.user) {
-    response.redirect('/login');
-    return;
-  }
-  if (!request.session.user.mustChangePassword) {
-    response.redirect('/');
-    return;
-  }
+  if (!request.session.user) { response.redirect('/login'); return; }
+  if (!request.session.user.mustChangePassword) { response.redirect('/'); return; }
   response.sendFile(path.join(publicDir, 'setup.html'));
 });
 
 app.get('/', (request, response) => {
-  if (!request.session.user) {
-    response.redirect('/login');
-    return;
-  }
-  if (request.session.user.mustChangePassword) {
-    response.redirect('/setup');
-    return;
-  }
+  if (!request.session.user) { response.redirect('/login'); return; }
+  if (request.session.user.mustChangePassword) { response.redirect('/setup'); return; }
   response.sendFile(path.join(publicDir, 'index.html'));
+});
+
+/* Expõe a URL base via API (usada pelo frontend para auto-preencher) */
+app.get('/api/base-url', (request, response) => {
+  response.json({ url: resolveBaseUrl(request) });
 });
 
 app.use('/api/auth', createAuthRouter());
@@ -122,10 +131,7 @@ app.use('/api', (request, response, next) => {
     request.path.startsWith('/auth/logout') ||
     request.path.startsWith('/stream/') ||
     request.path.startsWith('/thumbnail/')
-  ) {
-    next();
-    return;
-  }
+  ) { next(); return; }
   requireAuth(request, response, next);
 });
 
@@ -142,7 +148,10 @@ app.use('/api/streams', createStreamsRouter());
 app.use('/api/config', createConfigRouter());
 app.use('/api/scheduler', createSchedulerRouter(scheduler));
 app.use('/api/credentials', createCredentialsRouter());
+app.use('/api/tool-profiles', toolProfilesRouter);
+app.use('/api/cookies', cookiesRouter);
 app.use('/api/logs', createLogsRouter());
+app.use('/api', createTitleFormatRouter());
 
 app.use((request, response, next) => {
   const isPublicPath =
@@ -156,27 +165,15 @@ app.use((request, response, next) => {
     request.path.endsWith('.xml') ||
     request.path.startsWith('/ws/');
 
-  if (isPublicPath || request.path.startsWith('/api')) {
-    next();
-    return;
-  }
-
-  if (!request.session.user) {
-    response.status(401).send('Unauthorized');
-    return;
-  }
-
+  if (isPublicPath || request.path.startsWith('/api')) { next(); return; }
+  if (!request.session.user) { response.status(401).send('Unauthorized'); return; }
   next();
 });
 
 app.use(express.static(publicDir));
 
 wss.on('connection', (socket, request) => {
-  if (request.url !== '/ws/logs') {
-    socket.close(1008, 'Unknown path');
-    return;
-  }
-
+  if (request.url !== '/ws/logs') { socket.close(1008, 'Unknown path'); return; }
   wsLogHub.addClient(socket);
   socket.on('close', () => wsLogHub.removeClient(socket));
 });

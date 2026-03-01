@@ -9,6 +9,8 @@ Agregador de streams do YouTube com backend Node.js + TypeScript, geração de p
 - Auth por sessão com `express-session` + `bcrypt`
 - Scheduler com hot reload de configuração via EventEmitter
 - Geração de playlists `direct` e `proxy`
+- **Formato de Título Customizável** com drag & drop e preview em tempo real
+- Cache de thumbnails em disco
 - Logs em tempo real via WebSocket em `/ws/logs`
 
 ## Quickstart (Docker)
@@ -31,6 +33,23 @@ curl http://localhost:8888/health
 - Senha: `tubewranglerr`
 
 Após o primeiro login, altere via `PATCH /api/auth/password`.
+
+## Formato de Título
+
+Configure como os títulos das playlists são montados:
+
+- **Componentes disponíveis**: Status, Nome do Canal, Nome do Evento, Data/Hora
+- **Reordenação**: Arraste componentes para mudar a ordem
+- **Toggle**: Ative/desative componentes individualmente
+- **Marcadores**: Opcional usar colchetes `[ ]`
+- **Preview**: Visualize em tempo real como ficará o título
+
+Exemplo de título gerado:
+```
+[AO VIVO] [CazéTV] [Final da Copa] [15/02 21:00]
+```
+
+Acesse em: **Configurações → Formato de Título**
 
 ## Endpoints
 
@@ -66,6 +85,9 @@ Após o primeiro login, altere via `PATCH /api/auth/password`.
 	- `POST /api/config/export`
 	- `POST /api/config/import`
 	- `POST /api/config/reset`
+- **Formato de Título**
+	- `GET /api/title-format` - Obtém configuração atual
+	- `POST /api/title-format` - Salva nova configuração
 - Scheduler
 	- `GET /api/scheduler/status`
 	- `POST /api/scheduler/trigger`
@@ -107,4 +129,5 @@ APP_URL=http://localhost:8888 npm run test:integration
 - Cache de streams: `data/state_cache.json`
 - Textos de countdown: `data/textos_epg.json`
 - Cookies: `data/cookies/*.txt`
+- **Thumbnails em cache**: `data/thumbnails/*.jpg`
 
