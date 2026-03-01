@@ -2,53 +2,39 @@ import { spawn } from 'child_process';
 import { ManagedProcess } from './process-manager';
 import { logger } from '../core/logger';
 
+/**
+ * Remove API keys e tokens dos logs de stderr do streamlink.
+ * Evita vazamento de credenciais em logs de producao.
+ */
+function sanitizeStreamlinkLog(text: string): string {
+  return text
+    .replace(/key=AIza[A-Za-z0-9_-]+/gi, 'key=***REDACTED***')
+    .replace(/oauth_token=[^&\s]+/gi, 'oauth_token=***REDACTED***')
+    .replace(/Authorization: Bearer [^\s]+/gi, 'Authorization: Bearer ***REDACTED***');
+}
+
 function buildArgs(
   url: string,
   userAgent: string,
   cookieFile: string | null,
   extraFlags: string[],
-  mode: 'stream' | 'simulate',
 ): string[] {
   const args = [
     ...extraFlags,
     '--http-header', `User-Agent=${userAgent}`,
-    '--config', '/dev/null',
+    // Remove --config /dev/null: pode estar impedindo streamlink de carregar
+    // defaults importantes para YouTube (player client, etc)
     '--no-plugin-sideloading',
+    // Bypass SSL verification: alguns ISPs/firewalls causam problemas
+    '--http-no-ssl-verify',
+    // Forca loglevel info (nao trace, muito verboso)
+    '--loglevel', 'info',
+    '--stdout',
+    url,
+    'best',
   ];
   if (cookieFile) args.push('--http-cookie-jar', cookieFile);
-  args.push(mode === 'stream' ? '--stdout' : '--stream-url', url, 'best');
   return args;
-}
-
-/** Quick probe: does streamlink find a playable stream at this URL? */
-export async function streamlinkHasPlayableStream(
-  url: string,
-  userAgent: string,
-  cookieFile: string | null,
-  extraFlags: string[] = [],
-): Promise<boolean> {
-  return new Promise<boolean>((resolve) => {
-    logger.info(`[streamlink-runner] Testando stream: url=${url}`);
-    const proc = spawn(
-      'streamlink',
-      buildArgs(url, userAgent, cookieFile, extraFlags, 'simulate'),
-      { stdio: ['ignore', 'pipe', 'pipe'] },
-    );
-    let stderr = '';
-    proc.stderr?.on('data', (chunk: Buffer) => {
-      stderr += chunk.toString();
-      logger.debug(`[streamlink-runner][probe] ${chunk.toString().trim()}`);
-    });
-    proc.on('close', (code) => {
-      logger.info(`[streamlink-runner] Probe finalizado code=${code}`);
-      if (code === 0) { resolve(true); return; }
-      resolve(!/No playable streams found/i.test(stderr));
-    });
-    proc.on('error', (err) => {
-      logger.error(`[streamlink-runner] Erro no probe: ${err}`);
-      resolve(false);
-    });
-  });
 }
 
 export interface StreamlinkParams {
@@ -67,14 +53,26 @@ export function startStreamlink(params: StreamlinkParams): ManagedProcess {
   const proc = new ManagedProcess(
     'streamlink',
     'streamlink',
-    buildArgs(url, userAgent, cookieFile, extraFlags, 'stream'),
+    buildArgs(url, userAgent, cookieFile, extraFlags),
     { stdio: ['ignore', 'pipe', 'pipe'] },
   );
 
   proc.stdout?.on('data', (chunk: Buffer) => onData(chunk));
-  proc.stderr?.on('data', (chunk: Buffer) =>
-    logger.warn(`[streamlink-runner][stderr] ${chunk.toString().trim()}`),
-  );
+
+  // Streamlink escreve progresso e info em stderr (padrao CLI).
+  // Filtra linhas que sao apenas info/progresso, loga apenas erros reais.
+  proc.stderr?.on('data', (chunk: Buffer) => {
+    const text = chunk.toString().trim();
+    const sanitized = sanitizeStreamlinkLog(text);
+
+    // Ignora logs info do streamlink ([cli][info]), loga apenas erros/avisos
+    if (/\[cli\]\[error\]|\[cli\]\[warning\]|^error:/i.test(sanitized)) {
+      logger.warn(`[streamlink-runner][stderr] ${sanitized}`);
+    } else {
+      logger.debug(`[streamlink-runner][stderr] ${sanitized}`);
+    }
+  });
+
   proc.onClose((code) => {
     logger.info(`[streamlink-runner] Processo finalizado code=${code}`);
     onExit(code);
