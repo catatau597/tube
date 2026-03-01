@@ -4,20 +4,6 @@ import { logger } from '../core/logger';
 
 const URL_RESOLVE_TIMEOUT_MS = 30_000;
 
-/**
- * Phase 1 — URL Resolution.
- *
- * Uses `yt-dlp --get-url` which prints the direct stream URL(s) and exits
- * immediately without downloading any media. This keeps yt-dlp as a
- * short-lived helper (~2s) rather than a long-running pipe consumer.
- *
- * Returns:
- *  - 1 URL  → HLS manifest or direct single-format stream
- *  - 2 URLs → separate video URL + audio URL (muxed later by ffmpeg)
- *
- * Caller should pass extra flags from the yt-dlp tool profile.
- * Note: cookie/UA flags from the profile are also forwarded here.
- */
 export async function resolveYtDlpUrls(
   url: string,
   userAgent: string,
@@ -30,7 +16,7 @@ export async function resolveYtDlpUrls(
       '--user-agent', userAgent,
       '--extractor-args', 'youtube:player_client=android',
       '--no-playlist',
-      '--get-url',   // prints direct URL(s) then exits — no download, no pipe
+      '--get-url',
       ...extraFlags,
     ];
     if (cookieFile) args.push('--cookies', cookieFile);
@@ -75,29 +61,13 @@ export async function resolveYtDlpUrls(
 }
 
 export interface YtDlpFfmpegParams {
-  /** 1 or 2 URLs from resolveYtDlpUrls */
   urls: string[];
   userAgent: string;
-  /** Extra flags from the ffmpeg tool profile */
   extraFfmpegFlags: string[];
-  /** Called for every chunk of mpegts output. */
   onData: (chunk: Buffer) => void;
-  /** Called when ffmpeg exits. */
   onExit: (code: number | null) => void;
 }
 
-/**
- * Phase 2 — Streaming.
- *
- * Starts ffmpeg using the URL(s) resolved by resolveYtDlpUrls.
- * yt-dlp is already gone at this point — ffmpeg is the only long-lived process.
- *
- *  1 URL  → ffmpeg -i url           -c copy -f mpegts pipe:1
- *  2 URLs → ffmpeg -i vUrl -i aUrl  -c copy -f mpegts pipe:1  (mux)
- *
- * ffmpeg fetches the stream on-demand (range requests / HLS segments),
- * eliminating the full-download behavior of the old yt-dlp pipe approach.
- */
 export function startYtDlpFfmpeg(params: YtDlpFfmpegParams): ManagedProcess {
   const { urls, userAgent, extraFfmpegFlags, onData, onExit } = params;
 

@@ -16,19 +16,10 @@ export interface FfmpegPlaceholderParams {
   extraFlags?: string[];
   textLine1?: string;
   textLine2?: string;
-  /** Called for every chunk of mpegts output. */
   onData: (chunk: Buffer) => void;
-  /** Called when ffmpeg exits (code=null on signal/error). */
   onExit: (code: number | null) => void;
 }
 
-/**
- * Starts a looping ffmpeg placeholder stream (still image + silent audio).
- * Returns a ManagedProcess — the caller is responsible for killing it.
- *
- * Data is delivered via onData callbacks so the caller can fan-out to
- * multiple HTTP clients without this function knowing about them.
- */
 export function startFfmpegPlaceholder(params: FfmpegPlaceholderParams): ManagedProcess {
   const { imageUrl, userAgent, extraFlags = [], textLine1, textLine2, onData, onExit } = params;
 
@@ -59,8 +50,8 @@ export function startFfmpegPlaceholder(params: FfmpegPlaceholderParams): Managed
     '-map', '[v]', '-map', '1:a',
     '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '45',
     '-b:v', '150k',
-    '-r', '1',           // 1 frame/s (still image)
-    '-g', '2',           // GOP size = 2 frames → keyframe every 2s
+    '-r', '1',
+    '-g', '2',           // GOP=2 → keyframe a cada 2s, novo cliente vê imagem em ≤2s
     '-pix_fmt', 'yuv420p',
     '-tune', 'stillimage',
     '-c:a', 'aac', '-b:a', '24k', '-ac', '1',

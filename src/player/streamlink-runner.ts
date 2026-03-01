@@ -29,7 +29,6 @@ export async function streamlinkHasPlayableStream(
 ): Promise<boolean> {
   return new Promise<boolean>((resolve) => {
     logger.info(`[streamlink-runner] Testando stream: url=${url}`);
-    // Use plain spawn (short-lived, no need for ManagedProcess)
     const proc = spawn(
       'streamlink',
       buildArgs(url, userAgent, cookieFile, extraFlags, 'simulate'),
@@ -57,16 +56,10 @@ export interface StreamlinkParams {
   userAgent:  string;
   cookieFile: string | null;
   extraFlags: string[];
-  /** Called for every chunk of mpegts output. */
   onData: (chunk: Buffer) => void;
-  /** Called when streamlink exits. */
   onExit: (code: number | null) => void;
 }
 
-/**
- * Start a streamlink process piping its stdout to onData callbacks.
- * Returns a ManagedProcess — the caller is responsible for killing it.
- */
 export function startStreamlink(params: StreamlinkParams): ManagedProcess {
   const { url, userAgent, cookieFile, extraFlags, onData, onExit } = params;
   logger.info(`[streamlink-runner] Iniciando stream: url=${url}`);

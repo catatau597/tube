@@ -31,12 +31,8 @@ export class ManagedProcess {
     args: string[],
     options: SpawnOptions = {},
   ) {
-    // Explicitly set detached:false (it is the default, but we make it explicit
-    // to document the intent and guard against accidental inheritance).
     this.proc = spawn(command, args, { ...options, detached: false });
 
-    // Build exitPromise eagerly so it resolves even if the process exits
-    // before kill() is ever called.
     this.exitPromise = new Promise<void>(resolve => {
       this.proc.once('close', resolve);
       this.proc.once('exit',  resolve);
@@ -58,23 +54,12 @@ export class ManagedProcess {
     return this;
   }
 
-  /**
-   * Graceful shutdown:
-   *  1. Destroy all pipes (unblocks pending reads/writes, prevents SIGPIPE stalls)
-   *  2. SIGTERM — wait up to timeoutMs
-   *  3. SIGKILL if still alive
-   *
-   * Safe to call multiple times (idempotent) and safe to call after the
-   * process has already exited (exitPromise resolves immediately in that case).
-   */
   async kill(timeoutMs = 3000): Promise<void> {
-    // If already exited, exitPromise has already resolved — nothing to do.
     if (this.alreadyExited) {
       logger.info(`[${this.tag}] PID ${this.proc.pid} já encerrado, skip kill`);
       return;
     }
 
-    // Destroy pipes first so the child process isn't blocked waiting for I/O
     try {
       if (this.proc.stdin && !this.proc.stdin.destroyed) this.proc.stdin.destroy();
     } catch { /* */ }

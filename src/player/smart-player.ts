@@ -30,18 +30,17 @@ export class SmartPlayer {
 
   /**
    * Guards against duplicate process spawns when two clients request the
-   * same stream simultaneously during the initialization window
-   * (e.g. the ~2s yt-dlp URL resolution phase).
+   * same stream simultaneously during the initialization window.
    */
   private readonly pendingInits = new Map<string, Promise<void>>();
 
-  async serveVideo(videoId: string, _req: Request, res: Response): Promise<void> {
+  async serveVideo(videoId: string, req: Request, res: Response): Promise<void> {
     const key = videoId;
 
     // ── Fast path: stream already running ────────────────────────────────────
     if (streamRegistry.has(key)) {
       logger.info(`[SmartPlayer] Stream ativo, subscrevendo cliente: key=${key}`);
-      this.subscribeClient(key, res);
+      this.subscribeClient(key, req, res);
       return;
     }
 
@@ -50,7 +49,7 @@ export class SmartPlayer {
       logger.info(`[SmartPlayer] Init em andamento, aguardando: key=${key}`);
       await this.pendingInits.get(key);
       if (streamRegistry.has(key)) {
-        this.subscribeClient(key, res);
+        this.subscribeClient(key, req, res);
       } else {
         if (!res.writableEnded) res.status(503).end();
       }
@@ -58,7 +57,7 @@ export class SmartPlayer {
     }
 
     // ── Cold start ───────────────────────────────────────────────────────────
-    const initPromise = this.initStream(key, videoId, res);
+    const initPromise = this.initStream(key, videoId, req, res);
     this.pendingInits.set(key, initPromise.catch(() => { /* absorbed */ }));
     try {
       await initPromise;
@@ -74,7 +73,12 @@ export class SmartPlayer {
 
   // ─── Private: orchestration ───────────────────────────────────────────────
 
-  private async initStream(key: string, videoId: string, firstClient: Response): Promise<void> {
+  private async initStream(
+    key: string,
+    videoId: string,
+    req: Request,
+    firstClient: Response,
+  ): Promise<void> {
     const slProfile = this.toolProfiles.resolveProfile('streamlink');
     const ytProfile = this.toolProfiles.resolveProfile('yt-dlp');
     const ffProfile = this.toolProfiles.resolveProfile('ffmpeg');
@@ -83,18 +87,16 @@ export class SmartPlayer {
     const stream = cache.streams[videoId];
     logger.info(`[SmartPlayer] Init: key=${key} status=${stream?.status ?? 'não encontrado'}`);
 
-    // ── No stream found → generic placeholder ────────────────────────────────
     if (!stream) {
       const placeholder = getConfig('PLACEHOLDER_IMAGE_URL');
       if (!placeholder) {
         firstClient.status(404).json({ error: 'Stream não encontrado e sem placeholder configurado' });
         return;
       }
-      this.spawnPlaceholder(key, placeholder, ffProfile, undefined, undefined, firstClient);
+      this.spawnPlaceholder(key, placeholder, ffProfile, undefined, undefined, req, firstClient);
       return;
     }
 
-    // ── Upcoming → placeholder with schedule text ────────────────────────────
     if (stream.status === 'upcoming') {
       const texts = this.readTextsCache()[videoId] ?? { line1: '', line2: '' };
       const image = stream.thumbnailUrl || getConfig('PLACEHOLDER_IMAGE_URL');
@@ -102,40 +104,26 @@ export class SmartPlayer {
         firstClient.status(404).json({ error: 'Sem thumbnail/placeholder para stream upcoming' });
         return;
       }
-      this.spawnPlaceholder(key, image, ffProfile, texts.line1, texts.line2, firstClient);
+      this.spawnPlaceholder(key, image, ffProfile, texts.line1, texts.line2, req, firstClient);
       return;
     }
 
-    // ── Live → try streamlink first, fallback to yt-dlp ─────────────────────
     if (stream.status === 'live' && this.isGenuinelyLive(stream)) {
       logger.info(`[SmartPlayer] Testando streamlink: key=${key}`);
       const playable = await streamlinkHasPlayableStream(
         stream.watchUrl, slProfile.userAgent, slProfile.cookieFile, slProfile.flags,
       );
       if (playable) {
-        this.spawnStreamlink(key, stream.watchUrl, slProfile, firstClient);
+        this.spawnStreamlink(key, stream.watchUrl, slProfile, req, firstClient);
         return;
       }
       logger.info(`[SmartPlayer] Streamlink indisponível, usando yt-dlp: key=${key}`);
     }
 
-    // ── status=none or live without genuine stream → yt-dlp ──────────────────
-    await this.spawnYtDlp(key, stream.watchUrl, ytProfile, ffProfile, firstClient);
+    await this.spawnYtDlp(key, stream.watchUrl, ytProfile, ffProfile, req, firstClient);
   }
 
   // ─── Private: spawn helpers ───────────────────────────────────────────────
-  //
-  // Safe deferred-proc pattern (fixes race condition from review):
-  //
-  //   1. Create a procPromise that will resolve to the ManagedProcess.
-  //   2. Register the session with a killFn that awaits procPromise before
-  //      calling kill() — this ensures killFn always targets a real process
-  //      even if kill() is triggered before the sync spawn assignment below.
-  //   3. Subscribe firstClient.
-  //   4. Spawn synchronously and resolve procPromise.
-  //
-  // Because step 4 is synchronous (spawn helpers are sync), procPromise
-  // resolves in the same tick, but the pattern is safe even if they were async.
 
   private spawnPlaceholder(
     key: string,
@@ -143,6 +131,7 @@ export class SmartPlayer {
     ff: ResolvedToolProfile,
     textLine1: string | undefined,
     textLine2: string | undefined,
+    req: Request,
     firstClient: Response,
   ): void {
     let resolveProc!: (p: ManagedProcess) => void;
@@ -153,7 +142,7 @@ export class SmartPlayer {
       await proc.kill();
     });
 
-    if (!this.subscribeClient(key, firstClient)) return; // session already killed
+    if (!this.subscribeClient(key, req, firstClient)) return;
 
     const proc = startFfmpegPlaceholder({
       imageUrl,
@@ -172,6 +161,7 @@ export class SmartPlayer {
     key: string,
     url: string,
     sl: ResolvedToolProfile,
+    req: Request,
     firstClient: Response,
   ): void {
     let resolveProc!: (p: ManagedProcess) => void;
@@ -182,7 +172,7 @@ export class SmartPlayer {
       await proc.kill();
     });
 
-    if (!this.subscribeClient(key, firstClient)) return; // session already killed
+    if (!this.subscribeClient(key, req, firstClient)) return;
 
     const proc = startStreamlink({
       url,
@@ -201,6 +191,7 @@ export class SmartPlayer {
     url: string,
     yt: ResolvedToolProfile,
     ff: ResolvedToolProfile,
+    req: Request,
     firstClient: Response,
   ): Promise<void> {
     let urls: string[];
@@ -222,7 +213,7 @@ export class SmartPlayer {
       await proc.kill();
     });
 
-    if (!this.subscribeClient(key, firstClient)) return; // session already killed
+    if (!this.subscribeClient(key, req, firstClient)) return;
 
     const proc = startYtDlpFfmpeg({
       urls,
@@ -238,11 +229,18 @@ export class SmartPlayer {
   // ─── Private: subscribe helper ────────────────────────────────────────────
 
   /**
-   * Adds res to the stream session and wires disconnect listeners.
-   * Returns false if the session no longer exists (was killed between
+   * Wires all disconnect listeners and registers the client with the session.
+   *
+   * Three complementary signals — no single one fires reliably in all cases:
+   *  1. res.on('close')  — Express finalizes the response
+   *  2. res.on('error')  — EPIPE / ECONNRESET on write
+   *  3. req.on('close')  — HTTP connection dropped (most reliable for VLC
+   *                         which doesn’t send TCP FIN on stop)
+   *
+   * Returns false if the session no longer exists (killed between
    * create() and subscribeClient()), so callers can abort.
    */
-  private subscribeClient(key: string, res: Response): boolean {
+  private subscribeClient(key: string, req: Request, res: Response): boolean {
     res.setHeader('Content-Type', 'video/mp2t');
     const added = streamRegistry.addClient(key, res);
     if (!added) {
@@ -253,6 +251,7 @@ export class SmartPlayer {
     const unsub = () => streamRegistry.removeClient(key, res);
     res.on('close', unsub);
     res.on('error', unsub);
+    req.on('close', unsub);
     return true;
   }
 

@@ -1,9 +1,61 @@
-2026-02-21 18:26:46 INFO [HTTP] GET /health → 200 (0ms) [anon]
-2026-02-21 18:27:16 INFO [SmartPlayer] Requisição de stream: videoId=kRX_dNg4fVU
-2026-02-21 18:27:16 INFO [SmartPlayer] Stream encontrado: videoId=kRX_dNg4fVU status=none
-2026-02-21 18:27:16 INFO [SmartPlayer] Usando yt-dlp para videoId=kRX_dNg4fVU status=none
-2026-02-21 18:27:16 INFO [ytdlp-runner] Iniciando yt-dlp: url=https://www.youtube.com/watch?v=kRX_dNg4fVU
-2026-02-21 18:27:16 WARN [ytdlp-runner][ffmpeg stderr] ffmpeg version 8.0.1 Copyright (c) 2000-2025 the FFmpeg developers
+2026-02-25 22:35:39 INFO [Scheduler] Loop parado.
+2026-02-25 22:35:42 INFO [StateManager] Cache carregado com 17 streams.
+2026-02-25 22:35:42 INFO [YouTubeApi] Lista de chaves atualizada (1 chave(s)).
+Warning: connect.session() MemoryStore is not
+designed for a production environment, as it will leak
+memory, and will not scale past a single process.
+2026-02-25 22:35:42 INFO Servidor HTTP iniciado em http://0.0.0.0:8888
+2026-02-25 22:35:42 INFO [Scheduler] Iniciado com delay inicial (cache existente detectado).
+2026-02-25 22:35:42 INFO [Scheduler] Loop iniciado. Tick a cada 60s.
+2026-02-25 22:36:02 INFO [HTTP] GET / → 302 (5ms) [anon]
+2026-02-25 22:36:02 INFO [HTTP] GET /login → 200 (5ms) [anon]
+2026-02-25 22:36:02 INFO [HTTP] GET /css/style.css → 200 (3ms) [anon]
+2026-02-25 22:36:02 INFO [HTTP] GET /favicon.ico → 404 (2ms) [anon]
+2026-02-25 22:36:09 INFO [HTTP] POST /api/auth/login → 200 (74ms) [admin]
+2026-02-25 22:36:09 INFO [HTTP] GET / → 200 (2ms) [admin]
+2026-02-25 22:36:09 INFO [HTTP] GET /css/style.css → 304 (1ms) [admin]
+2026-02-25 22:36:09 INFO [HTTP] GET /js/app.js → 304 (2ms) [admin]
+2026-02-25 22:36:09 INFO [HTTP] GET /js/dashboard.js → 304 (1ms) [admin]
+2026-02-25 22:36:09 INFO [HTTP] GET /js/channels.js → 304 (1ms) [admin]
+2026-02-25 22:36:09 INFO [HTTP] GET /js/streams.js → 304 (4ms) [admin]
+2026-02-25 22:36:09 INFO [HTTP] GET /js/playlists.js → 304 (3ms) [admin]
+2026-02-25 22:36:09 INFO [HTTP] GET /js/settings.js → 304 (4ms) [admin]
+2026-02-25 22:36:09 INFO [HTTP] GET /js/logs.js → 304 (2ms) [admin]
+2026-02-25 22:36:09 INFO [HTTP] GET /api/scheduler/status → 200 (3ms) [admin]
+2026-02-25 22:36:09 INFO [HTTP] GET /api/channels → 304 (4ms) [admin]
+2026-02-25 22:36:09 INFO [HTTP] GET /api/streams → 304 (3ms) [admin]
+2026-02-25 22:36:09 INFO [HTTP] GET /api/config → 304 (2ms) [admin]
+2026-02-25 22:36:09 INFO [HTTP] GET /api/scheduler/status → 304 (0ms) [admin]
+2026-02-25 22:36:22 INFO [HTTP] GET /api/scheduler/status → 304 (1ms) [admin]
+2026-02-25 22:36:23 INFO [HTTP] GET /api/scheduler/status → 304 (0ms) [admin]
+2026-02-25 22:36:23 INFO [HTTP] GET /api/channels → 304 (2ms) [admin]
+2026-02-25 22:36:23 INFO [HTTP] GET /api/streams → 304 (1ms) [admin]
+2026-02-25 22:36:23 INFO [HTTP] GET /api/config → 304 (1ms) [admin]
+2026-02-25 22:36:23 INFO [HTTP] GET /api/scheduler/status → 304 (1ms) [admin]
+2026-02-25 22:36:24 INFO [HTTP] GET /api/scheduler/status → 304 (0ms) [admin]
+2026-02-25 22:36:36 INFO [HTTP] GET /upcoming-proxy.m3u → 200 (3ms) [anon]
+2026-02-25 22:36:36 INFO [SmartPlayer] Requisição de stream: videoId=1ufsTmR3ccI
+2026-02-25 22:36:36 INFO [SmartPlayer] Stream encontrado: videoId=1ufsTmR3ccI status=upcoming
+2026-02-25 22:36:36 INFO [SmartPlayer] Enviando placeholder com texto para videoId=1ufsTmR3ccI
+[ffmpeg-runner] Comando ffmpeg: ffmpeg '-loglevel' 'error' '-user_agent' 'Mozilla/5.0' '-i' 'https://i.ytimg.com/vi/1ufsTmR3ccI/maxresdefault.jpg' '-f' 'lavfi' '-i' 'anullsrc=r=44100:cl=mono' '-filter_complex' '[0:v]scale=854:480,loop=-1:1:0,drawtext=fontfile='/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf':text='Ao vivo em 13h 24m':x=(w-text_w)/2:y=h-100:fontsize=48:fontcolor=white:borderw=2:bordercolor=black@0.8,drawtext=fontfile='/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf':text='26 Fev às 12\:00':x=(w-text_w)/2:y=h-50:fontsize=36:fontcolor=white:borderw=2:bordercolor=black@0.8[v]' '-map' '[v]' '-map' '1:a' '-c:v' 'libx264' '-preset' 'ultrafast' '-crf' '45' '-b:v' '150k' '-r' '1' '-g' '120' '-pix_fmt' 'yuv420p' '-c:a' 'aac' '-b:a' '24k' '-ac' '1' '-tune' 'stillimage' '-f' 'mpegts' 'pipe:1'
+[ffmpeg-runner] User-Agent: Mozilla/5.0
+2026-02-25 22:36:36 INFO [ffmpeg-runner] Iniciando ffmpeg placeholder: imageUrl=https://i.ytimg.com/vi/1ufsTmR3ccI/maxresdefault.jpg
+2026-02-25 22:36:43 INFO [ffmpeg-runner] Evento 'close' (response) disparado. Encerrando ffmpeg pid=18...
+2026-02-25 22:36:43 INFO [ffmpeg-runner] Evento 'close' (request) disparado. Encerrando ffmpeg pid=18...
+2026-02-25 22:36:43 INFO [SmartPlayer] Requisição de stream: videoId=BMgbdb43F2k
+2026-02-25 22:36:43 INFO [SmartPlayer] Stream encontrado: videoId=BMgbdb43F2k status=upcoming
+2026-02-25 22:36:43 INFO [SmartPlayer] Enviando placeholder com texto para videoId=BMgbdb43F2k
+[ffmpeg-runner] Comando ffmpeg: ffmpeg '-loglevel' 'error' '-user_agent' 'Mozilla/5.0' '-i' 'https://i.ytimg.com/vi/BMgbdb43F2k/maxresdefault_live.jpg' '-f' 'lavfi' '-i' 'anullsrc=r=44100:cl=mono' '-filter_complex' '[0:v]scale=854:480,loop=-1:1:0,drawtext=fontfile='/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf':text='Ao vivo em 22h 39m':x=(w-text_w)/2:y=h-100:fontsize=48:fontcolor=white:borderw=2:bordercolor=black@0.8,drawtext=fontfile='/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf':text='26 Fev às 21\:15':x=(w-text_w)/2:y=h-50:fontsize=36:fontcolor=white:borderw=2:bordercolor=black@0.8[v]' '-map' '[v]' '-map' '1:a' '-c:v' 'libx264' '-preset' 'ultrafast' '-crf' '45' '-b:v' '150k' '-r' '1' '-g' '120' '-pix_fmt' 'yuv420p' '-c:a' 'aac' '-b:a' '24k' '-ac' '1' '-tune' 'stillimage' '-f' 'mpegts' 'pipe:1'
+[ffmpeg-runner] User-Agent: Mozilla/5.0
+2026-02-25 22:36:43 INFO [ffmpeg-runner] Iniciando ffmpeg placeholder: imageUrl=https://i.ytimg.com/vi/BMgbdb43F2k/maxresdefault_live.jpg
+2026-02-25 22:36:50 INFO [ffmpeg-runner] Evento 'close' (response) disparado. Encerrando ffmpeg pid=51...
+2026-02-25 22:36:50 INFO [ffmpeg-runner] Evento 'close' (request) disparado. Encerrando ffmpeg pid=51...
+2026-02-25 22:36:58 INFO [HTTP] GET /vod-proxy.m3u → 200 (2ms) [anon]
+2026-02-25 22:36:58 INFO [SmartPlayer] Requisição de stream: videoId=XWhoMk128aM
+2026-02-25 22:36:58 INFO [SmartPlayer] Stream encontrado: videoId=XWhoMk128aM status=none
+2026-02-25 22:36:58 INFO [SmartPlayer] Usando yt-dlp para videoId=XWhoMk128aM status=none
+2026-02-25 22:36:58 INFO [ytdlp-runner] Iniciando yt-dlp: url=https://www.youtube.com/watch?v=XWhoMk128aM
+2026-02-25 22:36:58 WARN [ytdlp-runner][ffmpeg stderr] ffmpeg version 8.0.1 Copyright (c) 2000-2025 the FFmpeg developers
   built with gcc 15.2.0 (Alpine 15.2.0)
   configuration: --prefix=/usr --disable-librtmp --disable-lzma --disable-static --disable-stripping --enable-avfilter --enable-gpl --enable-ladspa --enable-libaom --enable-libass --enable-libbluray --enable-libdav1d --enable-libdrm --enable-libfontconfig --enable-libfreetype --enable-libfribidi --enable-libharfbuzz --enable-libjxl --enable-libmp3lame --enable-libopenmpt --enable-libopus --enable-libplacebo --enable-libpulse --enable-librav1e --enable-librist --enable-libshaderc --enable-libsoxr --enable-libsrt --enable-libssh --enable-libtheora --enable-libv4l2 --enable-libvidstab --enable-libvorbis --enable-libvpx --enable-libwebp --enable-libx264 --enable-libx265 --enable-libxcb --enable-libxml2 --enable-libxvid --enable-libzimg --enable-libzmq --enable-lto=auto --enable-lv2 --enable-openssl --enable-pic --enable-pthreads --enable-shared --enable-vaapi --enable-vdpau --enable-version3 --enable-vulkan --optflags=-O3 --enable-libsvtav1 --enable-libvpl
   libavutil      60.  8.100 / 60.  8.100
@@ -14,45 +66,44 @@
   libswscale      9.  1.100 /  9.  1.100
   libswresample   6.  1.100 /  6.  1.100
 
-2026-02-21 18:27:16 INFO [HTTP] GET /health → 200 (0ms) [anon]
-2026-02-21 18:27:16 WARN [ytdlp-runner][yt-dlp stderr] [youtube] Extracting URL: https://www.youtube.com/watch?v=kRX_dNg4fVU
+2026-02-25 22:36:59 WARN [ytdlp-runner][yt-dlp stderr] [youtube] Extracting URL: https://www.youtube.com/watch?v=XWhoMk128aM
 
-2026-02-21 18:27:16 WARN [ytdlp-runner][yt-dlp stderr] [youtube] kRX_dNg4fVU: Downloading webpage
+2026-02-25 22:36:59 WARN [ytdlp-runner][yt-dlp stderr] [youtube] XWhoMk128aM: Downloading webpage
 
-2026-02-21 18:27:17 WARN [ytdlp-runner][yt-dlp stderr] WARNING: [youtube] No supported JavaScript runtime could be found. Only deno is enabled by default; to use another runtime add  --js-runtimes RUNTIME[:PATH]  to your command/config. YouTube extraction without a JS runtime has been deprecated, and some formats may be missing. See  https://github.com/yt-dlp/yt-dlp/wiki/EJS  for details on installing one
+2026-02-25 22:37:00 WARN [ytdlp-runner][yt-dlp stderr] WARNING: [youtube] No supported JavaScript runtime could be found. Only deno is enabled by default; to use another runtime add  --js-runtimes RUNTIME[:PATH]  to your command/config. YouTube extraction without a JS runtime has been deprecated, and some formats may be missing. See  https://github.com/yt-dlp/yt-dlp/wiki/EJS  for details on installing one
 
-2026-02-21 18:27:17 WARN [ytdlp-runner][yt-dlp stderr] [youtube] kRX_dNg4fVU: Downloading android vr player API JSON
+2026-02-25 22:37:00 WARN [ytdlp-runner][yt-dlp stderr] [youtube] XWhoMk128aM: Downloading android vr player API JSON
 
-2026-02-21 18:27:17 WARN [ytdlp-runner][yt-dlp stderr] [info] kRX_dNg4fVU: Downloading 1 format(s): 137+140
+2026-02-25 22:37:00 WARN [ytdlp-runner][yt-dlp stderr] [info] XWhoMk128aM: Downloading 1 format(s): 137+140
 
-2026-02-21 18:27:17 WARN [ytdlp-runner][yt-dlp stderr] [download] Destination: -
+2026-02-25 22:37:00 WARN [ytdlp-runner][yt-dlp stderr] [download] Destination: -
 
-2026-02-21 18:27:18 WARN [ytdlp-runner][yt-dlp stderr] Input #0, mov,mp4,m4a,3gp,3g2,mj2, from 'https://rr4---sn-b8u-jfcy.googlevideo.com/videoplayback?expire=1771730837&ei=NSOaaYySKaqX-LAPraqx-Qs&ip=177.207.209.234&id=o-AFqDEbcLiYhWbinqaTI7PRHaiZXW1jnASzQUbjQVWYRL&itag=137&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=918&met=1771709237%2C&mh=u6&mm=31%2C29&mn=sn-b8u-jfcy%2Csn-bg0e6nll&ms=au%2Crdu&mv=m&mvi=4&pcm2cms=yes&pl=23&rms=au%2Cau&initcwndbps=2458750&bui=AVNa5-x5NG0-ZSooPEUTmsjn1Bl7OKL-gQp7Blb6CbxBMi88-ZQXwozTb8vS33NYvKhrlJJQsB5RiRzG&spc=6dlaFARoWUgP&vprv=1&svpuc=1&mime=video%2Fmp4&rqh=1&gir=yes&clen=583781929&dur=3284.999&lmt=1771649945363130&mt=1771708634&fvip=1&keepalive=yes&fexp=51552689%2C51565115%2C51565681%2C51580968&c=ANDROID_VR&txp=4432534&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AJEij0EwRQIhAMlQlFiwLc4eFta7JMvmPP8vwAW3MxU3E_YpJsTLpk4EAiAFt5bb2rIFmVLfO3Mueld466WO_CAZZSibcVfeeNw-GQ%3D%3D&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpcm2cms%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRAIgKFT9IS07pRODMDsWq5mvj1zU4BkvED9emJ9NutS0Ua8CIBhzCXkEBoB2p8urV2ZPPPtJELgLKXYTRWRYIbRfxtBW':
+2026-02-25 22:37:01 WARN [ytdlp-runner][yt-dlp stderr] Input #0, mov,mp4,m4a,3gp,3g2,mj2, from 'https://rr2---sn-b8u-jfcr.googlevideo.com/videoplayback?expire=1772091420&ei=vKOfaZPGFp_S1sQP7JK4mQE&ip=177.207.209.234&id=o-AIa6zC4900-24lFJOHRlZFgl9DrVPw-vRk1HvAvuFohM&itag=137&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=535&met=1772069820%2C&mh=E4&mm=31%2C29&mn=sn-b8u-jfcr%2Csn-bg0e6nes&ms=au%2Crdu&mv=m&mvi=2&pl=23&rms=au%2Cau&initcwndbps=2075000&bui=AVNa5-y6y8scIUfaISj4kiThTIcmuFWW-3NZpz350xAUlwoCduwWZWWgMgkbyyHhUBg2crXBjcXlMuIb&spc=6dlaFJ7-dgKg&vprv=1&svpuc=1&mime=video%2Fmp4&rqh=1&gir=yes&clen=290545490&dur=607.239&lmt=1771593015419763&mt=1772069354&fvip=4&keepalive=yes&fexp=51552689%2C51565115%2C51565681%2C51580968%2C51791334&c=ANDROID_VR&txp=4432534&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AJEij0EwRgIhAK1BXWkpe9EToZdLhn8wZC0bQUwGBalnc58QJewxEBpWAiEArpUaGxdV6aTxrK5x7JmZ2oK9_5fVzytB-i-8oH6NTVo%3D&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRgIhAJ5G13wSSEJnGOli3S10ypvDaWCHd8VEpt6LuTk46S7dAiEAmqKk2d3e8ZxViK-L2lCfroRPx7dgpZDjLdECvzu6lBM%3D':
   Metadata:
     major_brand     : dash
     minor_version   : 0
     compatible_brands: iso6avc1mp41
-    creation_time   : 2026-02-21T04:41:10.000000Z
-  Duration: 00:54:45.00, start: 0.000000, bitrate: 1421 kb/s
+    creation_time   : 2026-02-20T12:48:48.000000Z
+  Duration: 00:10:07.24, start: 0.000000, bitrate: 3827 kb/s
 
-2026-02-21 18:27:18 WARN [ytdlp-runner][yt-dlp stderr]   Stream #0:0[0x1](und): Video: h264 (High) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 1920x1080 [SAR 1:1 DAR 16:9], 1271 kb/s, 30 fps, 30 tbr, 15360 tbn (default)
+2026-02-25 22:37:01 WARN [ytdlp-runner][yt-dlp stderr]   Stream #0:0[0x1](und): Video: h264 (High) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 1920x1080 [SAR 1:1 DAR 16:9], 3140 kb/s, 29.97 fps, 29.97 tbr, 30k tbn (default)
     Metadata:
-      creation_time   : 2026-02-21T04:41:10.000000Z
+      creation_time   : 2026-02-20T12:48:48.000000Z
       handler_name    : ISO Media file produced by Google Inc.
       vendor_id       : [0][0][0][0]
 
-2026-02-21 18:27:18 WARN [ytdlp-runner][yt-dlp stderr] Input #1, mov,mp4,m4a,3gp,3g2,mj2, from 'https://rr4---sn-b8u-jfcy.googlevideo.com/videoplayback?expire=1771730837&ei=NSOaaYySKaqX-LAPraqx-Qs&ip=177.207.209.234&id=o-AFqDEbcLiYhWbinqaTI7PRHaiZXW1jnASzQUbjQVWYRL&itag=140&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=918&met=1771709237%2C&mh=u6&mm=31%2C29&mn=sn-b8u-jfcy%2Csn-bg0e6nll&ms=au%2Crdu&mv=m&mvi=4&pcm2cms=yes&pl=23&rms=au%2Cau&initcwndbps=2458750&bui=AVNa5-x5NG0-ZSooPEUTmsjn1Bl7OKL-gQp7Blb6CbxBMi88-ZQXwozTb8vS33NYvKhrlJJQsB5RiRzG&spc=6dlaFARoWUgP&vprv=1&svpuc=1&mime=audio%2Fmp4&rqh=1&gir=yes&clen=53165999&dur=3285.066&lmt=1771649319532182&mt=1771708634&fvip=1&keepalive=yes&fexp=51552689%2C51565115%2C51565681%2C51580968&c=ANDROID_VR&txp=4432534&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AJEij0EwRQIgNcLl31A2kiA10uGQjvLbvFRqjSaJz5bBJb-JO93MxJUCIQDScT6WEzmCBFQ32pasFddwyw-v4dAPns8oSfGKAn_2jw%3D%3D&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpcm2cms%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRAIgKFT9IS07pRODMDsWq5mvj1zU4BkvED9emJ9NutS0Ua8CIBhzCXkEBoB2p8urV2ZPPPtJELgLKXYTRWRYIbRfxtBW':
+2026-02-25 22:37:01 WARN [ytdlp-runner][yt-dlp stderr] Input #1, mov,mp4,m4a,3gp,3g2,mj2, from 'https://rr2---sn-b8u-jfcr.googlevideo.com/videoplayback?expire=1772091420&ei=vKOfaZPGFp_S1sQP7JK4mQE&ip=177.207.209.234&id=o-AIa6zC4900-24lFJOHRlZFgl9DrVPw-vRk1HvAvuFohM&itag=140&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=535&met=1772069820%2C&mh=E4&mm=31%2C29&mn=sn-b8u-jfcr%2Csn-bg0e6nes&ms=au%2Crdu&mv=m&mvi=2&pl=23&rms=au%2Cau&initcwndbps=2075000&bui=AVNa5-y6y8scIUfaISj4kiThTIcmuFWW-3NZpz350xAUlwoCduwWZWWgMgkbyyHhUBg2crXBjcXlMuIb&spc=6dlaFJ7-dgKg&vprv=1&svpuc=1&mime=audio%2Fmp4&rqh=1&gir=yes&clen=9829427&dur=607.294&lmt=1771592667102963&mt=1772069354&fvip=4&keepalive=yes&fexp=51552689%2C51565115%2C51565681%2C51580968%2C51791334&c=ANDROID_VR&txp=4432534&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AJEij0EwRAIgGLnjQTNKNeL6wEoPJQFTUGkT3gqslz0Ez76dG1Uia5ACIFtsDqTstoDKWMzfWrygRyV8tAsGIZmuaKRq23iudRuG&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRgIhAJ5G13wSSEJnGOli3S10ypvDaWCHd8VEpt6LuTk46S7dAiEAmqKk2d3e8ZxViK-L2lCfroRPx7dgpZDjLdECvzu6lBM%3D':
   Metadata:
     major_brand     : dash
     minor_version   : 0
     compatible_brands: iso6mp41
-    creation_time   : 2026-02-21T04:44:47.000000Z
+    creation_time   : 2026-02-20T13:04:10.000000Z
     encoder         : Google
-  Duration: 00:54:45.07
-2026-02-21 18:27:18 WARN [ytdlp-runner][yt-dlp stderr] , start: 0.000000, bitrate: 129 kb/s
-  Stream #1:0[0x1](eng): Audio: aac (LC) (mp4a / 0x6134706D), 44100 Hz, stereo, fltp, 128 kb/s (default)
+  Duration: 00:10:07.29, start: 0.000000, bitrate: 129 kb/s
+  Stream #1:0[0x1]
+2026-02-25 22:37:01 WARN [ytdlp-runner][yt-dlp stderr] (eng): Audio: aac (LC) (mp4a / 0x6134706D), 44100 Hz, stereo, fltp, 128 kb/s (default)
     Metadata:
-      creation_time   : 2026-02-21T04:44:47.000000Z
+      creation_time   : 2026-02-20T13:04:10.000000Z
       handler_name    : ISO Media file produced by Google Inc.
       vendor_id       : [0][0][0][0]
 Stream mapping:
@@ -64,570 +115,112 @@ Output #0, mpegts, to 'pipe:':
     minor_version   : 0
     compatible_brands: iso6avc1mp41
     encoder         : Lavf62.3.100
-  Stream #0:0(und): Video: h264 (High) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 1920x1080 [SAR 1:1 DAR 16:9], q=2-31, 1271 kb/s, 30 fps, 30 tbr, 90k tbn (default)
+  Stream #0:0(und): Video: h264 (High) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 1920x1080 [SAR 1:1 DAR 16:9], q=2-31, 3140 kb/s, 29.97 fps, 29.97 tbr, 90k tbn (default)
     Metadata:
-      creation_time   : 2026-02-21T04:41:10.000000Z
+      creation_time   : 2026-02-20T12:48:48.000000Z
       handler_name    : ISO Media file produced by Google Inc.
-2026-02-21 18:27:18 WARN [ytdlp-runner][yt-dlp stderr]
       vendor_id       : [0][0][0][0]
   Stream #0:1(eng): Audio: aac (LC) (mp4a / 0x6134706D), 44100 Hz, stereo, fltp, 128 kb/s (default)
     Metadata:
-      creation_time   : 2026-02-21T04:44:47.000000Z
+      creation_time   : 2026-02-20T13:04:10.000000Z
       handler_name    : ISO Media file produced by Google Inc.
       vendor_id       : [0][0][0][0]
 Press [q] to stop, [?] for help
 
-2026-02-21 18:27:19 WARN [ytdlp-runner][yt-dlp stderr] frame=   22 fps=0.0 q=-1.0 size=     148KiB time=00:00:00.58 bitrate=2083.1kbits/s speed=1.16x elapsed=0:00:00.50
-2026-02-21 18:27:19 WARN [ytdlp-runner][yt-dlp stderr] frame=   83 fps= 83 q=-1.0 size=     540KiB time=00:00:02.60 bitrate=1702.0kbits/s speed= 2.6x elapsed=0:00:01.00
-2026-02-21 18:27:20 WARN [ytdlp-runner][yt-dlp stderr] frame=   83 fps= 55 q=-1.0 size=     540KiB time=00:00:02.60 bitrate=1702.0kbits/s speed=1.73x elapsed=0:00:01.50
-2026-02-21 18:27:20 WARN [ytdlp-runner][yt-dlp stderr] frame=  114 fps= 57 q=-1.0 size=     708KiB time=00:00:03.64 bitrate=1591.2kbits/s speed=1.82x elapsed=0:00:02.00
-2026-02-21 18:27:21 WARN [ytdlp-runner][ffmpeg stderr] Input #0, mpegts, from 'fd:':
-  Duration: N/A, start: 1.433333, bitrate: N/A
+2026-02-25 22:37:01 WARN [ytdlp-runner][yt-dlp stderr] frame=   66 fps=0.0 q=-1.0 size=     959KiB time=00:00:02.16 bitrate=3621.9kbits/s speed=4.34x elapsed=0:00:00.50
+2026-02-25 22:37:02 WARN [ytdlp-runner][yt-dlp stderr] frame=  107 fps=107 q=-1.0 size=    1479KiB time=00:00:03.53 bitrate=3426.1kbits/s speed=3.54x elapsed=0:00:01.00
+2026-02-25 22:37:02 WARN [ytdlp-runner][yt-dlp stderr] frame=  143 fps= 95 q=-1.0 size=    1983KiB time=00:00:04.73 bitrate=3429.2kbits/s speed=3.16x elapsed=0:00:01.50
+2026-02-25 22:37:02 WARN [ytdlp-runner][ffmpeg stderr] Input #0, mpegts, from 'fd:':
+  Duration: N/A, start: 1.433367, bitrate: N/A
   Program 1
     Metadata:
       service_name    : Service01
       service_provider: FFmpeg
-  Stream #0:0[0x100]: Video: h264 (High) ([27][0][0][0] / 0x001B), yuv420p(tv, bt709, progressive), 1920x1080 [SAR 1:1 DAR 16:9],
-2026-02-21 18:27:21 WARN [ytdlp-runner][ffmpeg stderr] 30 fps, 30 tbr, 90k tbn, start 1.433333
-  Stream #0:1[0x101](eng): Audio: aac (LC) ([15][0][0][0] / 0x000F), 44100 Hz, stereo, fltp, 130 kb/s, start 1.433333
+  Stream #0
+2026-02-25 22:37:02 WARN [ytdlp-runner][ffmpeg stderr] :0[0x100]: Video: h264 (High) ([27][0][0][0] / 0x001B), yuv420p(tv, bt709, progressive), 1920x1080 [SAR 1:1 DAR 16:9], 29.97 fps, 29.97 tbr, 90k tbn, start 1.433367
+  Stream #0:1[0x101](eng): Audio: aac (LC) ([15][0][0][0] / 0x000F), 44100 Hz, stereo, fltp, 130 kb/s, start 1.433367
 Stream mapping:
   Stream #0:0 -> #0:0 (copy)
   Stream #0:1 -> #0:1 (copy)
 Output #0, mpegts, to 'pipe:1':
   Metadata:
     encoder         : Lavf62.3.100
-  Stream #0:0: Video: h264 (High) ([27][0][0][0] / 0x001B), yuv420p(tv, bt709, progressive), 1920x1080 [SAR 1:1 DAR 16:9], q=2-31, 30 fps, 30 tbr, 90k tbn
+  Stream #0:0: Video: h264 (High) ([27][0][0][0] / 0x001B), yuv420p(tv, bt709, progressive), 1920x1080 [SAR 1:1 DAR 16:9], q=2-31, 29.97 fps, 29.97 tbr, 90k tbn
   Stream #0:1(eng): Audio: aac (LC) ([15][0][0][0] / 0x000F), 44100 Hz, stereo, fltp, 130 kb/s
 
-2026-02-21 18:27:21 WARN [ytdlp-runner][yt-dlp stderr] frame=  175 fps= 70 q=-1.0 size=    1071KiB time=00:00:05.68 bitrate=1542.1kbits/s speed=2.27x elapsed=0:00:02.50
-2026-02-21 18:27:21 WARN [ytdlp-runner][ffmpeg stderr] frame=  134 fps=0.0 q=-1.0 size=     836KiB time=00:00:04.48 bitrate=1529.0kbits/s speed=8.96x elapsed=0:00:00.50
-2026-02-21 18:27:21 WARN [ytdlp-runner][yt-dlp stderr] frame=  175 fps= 58 q=-1.0 size=    1071KiB time=00:00:05.68 bitrate=1542.1kbits/s speed= 1.9x elapsed=0:00:03.00
-2026-02-21 18:27:22 WARN [ytdlp-runner][ffmpeg stderr] frame=  200 fps=200 q=-1.0 size=    1190KiB time=00:00:06.63 bitrate=1469.2kbits/s speed=6.63x elapsed=0:00:01.00
-2026-02-21 18:27:22 WARN [ytdlp-runner][yt-dlp stderr] frame=  237 fps= 68 q=-1.0 size=    1339KiB time=00:00:07.75 bitrate=1414.7kbits/s speed=2.22x elapsed=0:00:03.50
-2026-02-21 18:27:22 WARN [ytdlp-runner][ffmpeg stderr] frame=  231 fps=154 q=-1.0 size=    1320KiB time=00:00:07.63 bitrate=1415.7kbits/s speed=5.09x elapsed=0:00:01.50
-2026-02-21 18:27:22 WARN [ytdlp-runner][yt-dlp stderr] frame=  237 fps= 59 q=-1.0 size=    1339KiB time=00:00:07.75 bitrate=1414.7kbits/s speed=1.94x elapsed=0:00:04.00
-2026-02-21 18:27:23 WARN [ytdlp-runner][ffmpeg stderr] frame=  262 fps=131 q=-1.0 size=    1480KiB time=00:00:08.61 bitrate=1407.9kbits/s speed=4.31x elapsed=0:00:02.00
-2026-02-21 18:27:23 WARN [ytdlp-runner][yt-dlp stderr] frame=  298 fps= 66 q=-1.0 size=    1629KiB time=00:00:09.79 bitrate=1361.7kbits/s speed=2.18x elapsed=0:00:04.50
-2026-02-21 18:27:23 WARN [ytdlp-runner][ffmpeg stderr] frame=  293 fps=117 q=-1.0 size=    1605KiB time=00:00:09.63 bitrate=1364.3kbits/s speed=3.85x elapsed=0:00:02.50
-2026-02-21 18:27:23 WARN [ytdlp-runner][yt-dlp stderr] frame=  298 fps= 60 q=-1.0 size=    1629KiB time=00:00:09.79 bitrate=1361.7kbits/s speed=1.96x elapsed=0:00:05.00
-2026-02-21 18:27:24 WARN [ytdlp-runner][ffmpeg stderr] frame=  351 fps=117 q=-1.0 size=    1940KiB time=00:00:11.63 bitrate=1366.0kbits/s speed=3.88x elapsed=0:00:03.00
-2026-02-21 18:27:24 WARN [ytdlp-runner][yt-dlp stderr] frame=  356 fps= 65 q=-1.0 size=    1961KiB time=00:00:11.72 bitrate=1370.1kbits/s speed=2.13x elapsed=0:00:05.50
-2026-02-21 18:27:24 WARN [ytdlp-runner][ffmpeg stderr] frame=  351 fps=100 q=-1.0 size=    1940KiB time=00:00:11.63 bitrate=1366.0kbits/s speed=3.32x elapsed=0:00:03.50
-2026-02-21 18:27:24 WARN [ytdlp-runner][yt-dlp stderr] frame=  363 fps= 60 q=-1.0 size=    2007KiB time=00:00:12.06 bitrate=1362.6kbits/s speed=2.01x elapsed=0:00:06.00
-2026-02-21 18:27:25 WARN [ytdlp-runner][ffmpeg stderr] frame=  382 fps= 95 q=-1.0 size=    2093KiB time=00:00:12.67 bitrate=1352.3kbits/s speed=3.17x elapsed=0:00:04.00
-2026-02-21 18:27:25 WARN [ytdlp-runner][yt-dlp stderr] frame=  418 fps= 64 q=-1.0 size=    2291KiB time=00:00:13.76 bitrate=1362.8kbits/s speed=2.12x elapsed=0:00:06.50
-2026-02-21 18:27:25 WARN [ytdlp-runner][ffmpeg stderr] frame=  412 fps= 92 q=-1.0 size=    2265KiB time=00:00:13.67 bitrate=1356.6kbits/s speed=3.04x elapsed=0:00:04.50
-2026-02-21 18:27:25 WARN [ytdlp-runner][yt-dlp stderr] frame=  480 fps= 69 q=-1.0 size=    2641KiB time=00:00:15.83 bitrate=1366.1kbits/s speed=2.26x elapsed=0:00:07.00
-2026-02-21 18:27:26 WARN [ytdlp-runner][ffmpeg stderr] frame=  474 fps= 95 q=-1.0 size=    2610KiB time=00:00:15.67 bitrate=1364.1kbits/s speed=3.13x elapsed=0:00:05.00
-2026-02-21 18:27:26 WARN [ytdlp-runner][yt-dlp stderr] frame=  480 fps= 64 q=-1.0 size=    2641KiB time=00:00:15.83 bitrate=1366.1kbits/s speed=2.11x elapsed=0:00:07.50
-2026-02-21 18:27:26 WARN [ytdlp-runner][ffmpeg stderr] frame=  474 fps= 86 q=-1.0 size=    2610KiB time=00:00:15.67 bitrate=1364.1kbits/s speed=2.85x elapsed=0:00:05.50
-2026-02-21 18:27:26 WARN [ytdlp-runner][yt-dlp stderr] frame=  480 fps= 60 q=-1.0 size=    2641KiB time=00:00:15.83 bitrate=1366.1kbits/s speed=1.98x elapsed=0:00:08.00
-2026-02-21 18:27:27 WARN [ytdlp-runner][ffmpeg stderr] frame=  535 fps= 89 q=-1.0 size=    2916KiB time=00:00:17.80 bitrate=1342.0kbits/s speed=2.97x elapsed=0:00:06.00
-2026-02-21 18:27:27 WARN [ytdlp-runner][yt-dlp stderr] frame=  541 fps= 64 q=-1.0 size=    2928KiB time=00:00:17.87 bitrate=1341.7kbits/s speed= 2.1x elapsed=0:00:08.50
-2026-02-21 18:27:27 WARN [ytdlp-runner][ffmpeg stderr] frame=  535 fps= 82 q=-1.0 size=    2916KiB time=00:00:17.80 bitrate=1342.0kbits/s speed=2.74x elapsed=0:00:06.50
-2026-02-21 18:27:27 WARN [ytdlp-runner][yt-dlp stderr] frame=  541 fps= 60 q=-1.0 size=    2928KiB time=00:00:17.87 bitrate=1341.7kbits/s speed=1.99x elapsed=0:00:09.00
-2026-02-21 18:27:28 WARN [ytdlp-runner][ffmpeg stderr] frame=  535 fps= 76 q=-1.0 size=    2916KiB time=00:00:17.80 bitrate=1342.0kbits/s speed=2.54x elapsed=0:00:07.00
-2026-02-21 18:27:28 WARN [ytdlp-runner][yt-dlp stderr] frame=  602 fps= 63 q=-1.0 size=    3171KiB time=00:00:19.92 bitrate=1303.9kbits/s speed= 2.1x elapsed=0:00:09.50
-2026-02-21 18:27:28 WARN [ytdlp-runner][ffmpeg stderr] frame=  596 fps= 79 q=-1.0 size=    3164KiB time=00:00:19.82 bitrate=1307.0kbits/s speed=2.64x elapsed=0:00:07.50
-2026-02-21 18:27:28 WARN [ytdlp-runner][yt-dlp stderr] frame=  602 fps= 60 q=-1.0 size=    3171KiB time=00:00:19.92 bitrate=1303.9kbits/s speed=1.99x elapsed=0:00:10.00
-2026-02-21 18:27:29 WARN [ytdlp-runner][ffmpeg stderr] frame=  596 fps= 74 q=-1.0 size=    3164KiB time=00:00:19.82 bitrate=1307.0kbits/s speed=2.48x elapsed=0:00:08.00
-2026-02-21 18:27:29 WARN [ytdlp-runner][yt-dlp stderr] frame=  691 fps= 66 q=-1.0 size=    3583KiB time=00:00:22.87 bitrate=1283.3kbits/s speed=2.18x elapsed=0:00:10.50
-2026-02-21 18:27:29 WARN [ytdlp-runner][ffmpeg stderr] frame=  685 fps= 81 q=-1.0 size=    3575KiB time=00:00:22.80 bitrate=1284.4kbits/s speed=2.68x elapsed=0:00:08.50
-2026-02-21 18:27:29 WARN [ytdlp-runner][yt-dlp stderr] frame=  691 fps= 63 q=-1.0 size=    3583KiB time=00:00:22.87 bitrate=1283.3kbits/s speed=2.08x elapsed=0:00:11.00
-2026-02-21 18:27:30 WARN [ytdlp-runner][ffmpeg stderr] frame=  685 fps= 76 q=-1.0 size=    3575KiB time=00:00:22.80 bitrate=1284.4kbits/s speed=2.53x elapsed=0:00:09.00
-2026-02-21 18:27:30 WARN [ytdlp-runner][yt-dlp stderr] frame=  691 fps= 60 q=-1.0 size=    3583KiB time=00:00:22.87 bitrate=1283.3kbits/s speed=1.99x elapsed=0:00:11.50
-2026-02-21 18:27:30 WARN [ytdlp-runner][ffmpeg stderr] frame=  747 fps= 79 q=-1.0 size=    4100KiB time=00:00:24.82 bitrate=1353.1kbits/s speed=2.61x elapsed=0:00:09.50
-2026-02-21 18:27:30 WARN [ytdlp-runner][yt-dlp stderr] frame=  753 fps= 63 q=-1.0 size=    4129KiB time=00:00:24.93 bitrate=1356.4kbits/s speed=2.08x elapsed=0:00:12.00
-2026-02-21 18:27:31 WARN [ytdlp-runner][ffmpeg stderr] frame=  747 fps= 75 q=-1.0 size=    4100KiB time=00:00:24.82 bitrate=1353.1kbits/s speed=2.48x elapsed=0:00:10.00
-2026-02-21 18:27:31 WARN [ytdlp-runner][yt-dlp stderr] frame=  753 fps= 60 q=-1.0 size=    4129KiB time=00:00:24.93 bitrate=1356.4kbits/s speed=1.99x elapsed=0:00:12.50
-2026-02-21 18:27:31 WARN [ytdlp-runner][ffmpeg stderr] frame=  747 fps= 71 q=-1.0 size=    4100KiB time=00:00:24.82 bitrate=1353.1kbits/s speed=2.36x elapsed=0:00:10.50
-2026-02-21 18:27:31 WARN [ytdlp-runner][yt-dlp stderr] frame=  814 fps= 63 q=-1.0 size=    4693KiB time=00:00:26.98 bitrate=1424.9kbits/s speed=2.07x elapsed=0:00:13.00
-2026-02-21 18:27:32 WARN [ytdlp-runner][ffmpeg stderr] frame=  808 fps= 73 q=-1.0 size=    4667KiB time=00:00:26.81 bitrate=1425.7kbits/s speed=2.44x elapsed=0:00:11.00
-2026-02-21 18:27:32 WARN [ytdlp-runner][yt-dlp stderr] frame=  814 fps= 60 q=-1.0 size=    4693KiB time=00:00:26.98 bitrate=1424.9kbits/s speed=   2x elapsed=0:00:13.50
-2026-02-21 18:27:32 WARN [ytdlp-runner][ffmpeg stderr] frame=  808 fps= 70 q=-1.0 size=    4667KiB time=00:00:26.81 bitrate=1425.7kbits/s speed=2.33x elapsed=0:00:11.50
-2026-02-21 18:27:32 WARN [ytdlp-runner][yt-dlp stderr] frame=  903 fps= 64 q=-1.0 size=    5431KiB time=00:00:29.95 bitrate=1485.4kbits/s speed=2.14x elapsed=0:00:14.00
-2026-02-21 18:27:33 WARN [ytdlp-runner][ffmpeg stderr] frame=  897 fps= 75 q=-1.0 size=    5408KiB time=00:00:29.81 bitrate=1486.1kbits/s speed=2.48x elapsed=0:00:12.00
-2026-02-21 18:27:33 WARN [ytdlp-runner][yt-dlp stderr] frame=  903 fps= 62 q=-1.0 size=    5431KiB time=00:00:29.95 bitrate=1485.4kbits/s speed=2.06x elapsed=0:00:14.50
-2026-02-21 18:27:33 WARN [ytdlp-runner][ffmpeg stderr] frame=  897 fps= 72 q=-1.0 size=    5408KiB time=00:00:29.81 bitrate=1486.1kbits/s speed=2.38x elapsed=0:00:12.50
-2026-02-21 18:27:33 WARN [ytdlp-runner][yt-dlp stderr] frame=  903 fps= 60 q=-1.0 size=    5431KiB time=00:00:29.95 bitrate=1485.4kbits/s speed=   2x elapsed=0:00:15.00
-2026-02-21 18:27:34 WARN [ytdlp-runner][ffmpeg stderr] frame=  958 fps= 74 q=-1.0 size=    5925KiB time=00:00:31.90 bitrate=1521.5kbits/s speed=2.45x elapsed=0:00:13.00
-2026-02-21 18:27:34 WARN [ytdlp-runner][yt-dlp stderr] frame=  964 fps= 62 q=-1.0 size=    5942KiB time=00:00:31.97 bitrate=1522.5kbits/s speed=2.06x elapsed=0:00:15.50
-2026-02-21 18:27:34 WARN [ytdlp-runner][ffmpeg stderr] frame=  958 fps= 71 q=-1.0 size=    5925KiB time=00:00:31.90 bitrate=1521.5kbits/s speed=2.36x elapsed=0:00:13.50
-2026-02-21 18:27:34 WARN [ytdlp-runner][yt-dlp stderr] frame=  964 fps= 60 q=-1.0 size=    5942KiB time=00:00:31.97 bitrate=1522.5kbits/s speed=   2x elapsed=0:00:16.00
-2026-02-21 18:27:35 WARN [ytdlp-runner][ffmpeg stderr] frame=  958 fps= 68 q=-1.0 size=    5925KiB time=00:00:31.90 bitrate=1521.5kbits/s speed=2.28x elapsed=0:00:14.00
-2026-02-21 18:27:35 WARN [ytdlp-runner][yt-dlp stderr] frame= 1025 fps= 62 q=-1.0 size=    6342KiB time=00:00:34.01 bitrate=1527.4kbits/s speed=2.06x elapsed=0:00:16.50
-2026-02-21 18:27:35 WARN [ytdlp-runner][ffmpeg stderr] frame= 1019 fps= 70 q=-1.0 size=    6321KiB time=00:00:33.92 bitrate=1526.3kbits/s speed=2.34x elapsed=0:00:14.50
-2026-02-21 18:27:35 WARN [ytdlp-runner][yt-dlp stderr] frame= 1056 fps= 62 q=-1.0 size=    6542KiB time=00:00:35.06 bitrate=1528.6kbits/s speed=2.06x elapsed=0:00:17.00
-2026-02-21 18:27:36 WARN [ytdlp-runner][ffmpeg stderr] frame= 1051 fps= 70 q=-1.0 size=    6502KiB time=00:00:34.92 bitrate=1525.2kbits/s speed=2.33x elapsed=0:00:15.00
-2026-02-21 18:27:36 WARN [ytdlp-runner][yt-dlp stderr] frame= 1056 fps= 60 q=-1.0 size=    6542KiB time=00:00:35.06 bitrate=1528.6kbits/s speed=   2x elapsed=0:00:17.50
-2026-02-21 18:27:36 WARN [ytdlp-runner][ffmpeg stderr] frame= 1051 fps= 68 q=-1.0 size=    6502KiB time=00:00:34.92 bitrate=1525.2kbits/s speed=2.25x elapsed=0:00:15.50
-2026-02-21 18:27:36 WARN [ytdlp-runner][yt-dlp stderr] frame= 1086 fps= 60 q=-1.0 size=    6745KiB time=00:00:36.06 bitrate=1532.3kbits/s speed=   2x elapsed=0:00:18.00
-2026-02-21 18:27:37 WARN [ytdlp-runner][ffmpeg stderr] frame= 1112 fps= 69 q=-1.0 size=    6888KiB time=00:00:36.94 bitrate=1527.5kbits/s speed=2.31x elapsed=0:00:16.00
-2026-02-21 18:27:37 WARN [ytdlp-runner][yt-dlp stderr] frame= 1118 fps= 60 q=-1.0 size=    6993KiB time=00:00:37.10 bitrate=1543.8kbits/s speed=   2x elapsed=0:00:18.50
-2026-02-21 18:27:37 WARN [ytdlp-runner][ffmpeg stderr] frame= 1142 fps= 69 q=-1.0 size=    7139KiB time=00:00:37.94 bitrate=1541.4kbits/s speed= 2.3x elapsed=0:00:16.50
-2026-02-21 18:27:37 WARN [ytdlp-runner][yt-dlp stderr] frame= 1148 fps= 60 q=-1.0 size=    7171KiB time=00:00:38.10 bitrate=1541.6kbits/s speed=   2x elapsed=0:00:19.00
-2026-02-21 18:27:38 WARN [ytdlp-runner][ffmpeg stderr] frame= 1142 fps= 67 q=-1.0 size=    7139KiB time=00:00:37.94 bitrate=1541.4kbits/s speed=2.23x elapsed=0:00:17.00
-2026-02-21 18:27:38 WARN [ytdlp-runner][yt-dlp stderr] frame= 1179 fps= 60 q=-1.0 size=    7351KiB time=00:00:39.14 bitrate=1538.2kbits/s speed=2.01x elapsed=0:00:19.50
-2026-02-21 18:27:38 WARN [ytdlp-runner][ffmpeg stderr] frame= 1173 fps= 67 q=-1.0 size=    7320KiB time=00:00:38.96 bitrate=1539.0kbits/s speed=2.23x elapsed=0:00:17.50
-2026-02-21 18:27:38 WARN [ytdlp-runner][yt-dlp stderr] frame= 1237 fps= 62 q=-1.0 size=    7825KiB time=00:00:41.09 bitrate=1559.6kbits/s speed=2.05x elapsed=0:00:20.00
-2026-02-21 18:27:39 WARN [ytdlp-runner][ffmpeg stderr] frame= 1232 fps= 68 q=-1.0 size=    7796KiB time=00:00:40.98 bitrate=1558.4kbits/s speed=2.28x elapsed=0:00:18.00
-2026-02-21 18:27:39 WARN [ytdlp-runner][yt-dlp stderr] frame= 1237 fps= 60 q=-1.0 size=    7825KiB time=00:00:41.09 bitrate=1559.6kbits/s speed=   2x elapsed=0:00:20.50
-2026-02-21 18:27:39 WARN [ytdlp-runner][ffmpeg stderr] frame= 1232 fps= 67 q=-1.0 size=    7796KiB time=00:00:40.98 bitrate=1558.4kbits/s speed=2.21x elapsed=0:00:18.50
-2026-02-21 18:27:39 WARN [ytdlp-runner][yt-dlp stderr] frame= 1299 fps= 62 q=-1.0 size=    8294KiB time=00:00:43.14 bitrate=1575.0kbits/s speed=2.05x elapsed=0:00:21.00
-2026-02-21 18:27:40 WARN [ytdlp-runner][ffmpeg stderr] frame= 1293 fps= 68 q=-1.0 size=    8244KiB time=00:00:42.98 bitrate=1571.3kbits/s speed=2.26x elapsed=0:00:19.00
-2026-02-21 18:27:40 WARN [ytdlp-runner][yt-dlp stderr] frame= 1299 fps= 60 q=-1.0 size=    8294KiB time=00:00:43.14 bitrate=1575.0kbits/s speed=2.01x elapsed=0:00:21.50
-2026-02-21 18:27:40 WARN [ytdlp-runner][ffmpeg stderr] frame= 1324 fps= 68 q=-1.0 size=    8502KiB time=00:00:44.10 bitrate=1579.3kbits/s speed=2.26x elapsed=0:00:19.50
-2026-02-21 18:27:40 WARN [ytdlp-runner][yt-dlp stderr] frame= 1329 fps= 60 q=-1.0 size=    8528KiB time=00:00:44.16 bitrate=1581.9kbits/s speed=2.01x elapsed=0:00:22.00
-2026-02-21 18:27:41 WARN [ytdlp-runner][ffmpeg stderr] frame= 1355 fps= 68 q=-1.0 size=    8786KiB time=00:00:45.09 bitrate=1596.1kbits/s speed=2.25x elapsed=0:00:20.00
-2026-02-21 18:27:41 WARN [ytdlp-runner][yt-dlp stderr] frame= 1361 fps= 60 q=-1.0 size=    8802KiB time=00:00:45.20 bitrate=1595.0kbits/s speed=2.01x elapsed=0:00:22.50
-2026-02-21 18:27:41 WARN [ytdlp-runner][ffmpeg stderr] frame= 1355 fps= 66 q=-1.0 size=    8786KiB time=00:00:45.09 bitrate=1596.1kbits/s speed= 2.2x elapsed=0:00:20.50
-2026-02-21 18:27:41 WARN [ytdlp-runner][yt-dlp stderr] frame= 1391 fps= 60 q=-1.0 size=    9025KiB time=00:00:46.20 bitrate=1600.0kbits/s speed=2.01x elapsed=0:00:23.00
-2026-02-21 18:27:42 WARN [ytdlp-runner][ffmpeg stderr] frame= 1385 fps= 66 q=-1.0 size=    9007KiB time=00:00:46.09 bitrate=1600.9kbits/s speed=2.19x elapsed=0:00:21.00
-2026-02-21 18:27:42 WARN [ytdlp-runner][yt-dlp stderr] frame= 1453 fps= 62 q=-1.0 size=    9498KiB time=00:00:48.27 bitrate=1611.8kbits/s speed=2.05x elapsed=0:00:23.50
-2026-02-21 18:27:42 WARN [ytdlp-runner][ffmpeg stderr] frame= 1447 fps= 67 q=-1.0 size=    9473KiB time=00:00:48.11 bitrate=1612.9kbits/s speed=2.24x elapsed=0:00:21.50
-2026-02-21 18:27:42 WARN [ytdlp-runner][yt-dlp stderr] frame= 1453 fps= 61 q=-1.0 size=    9498KiB time=00:00:48.27 bitrate=1611.8kbits/s speed=2.01x elapsed=0:00:24.01
-2026-02-21 18:27:43 WARN [ytdlp-runner][ffmpeg stderr] frame= 1447 fps= 66 q=-1.0 size=    9473KiB time=00:00:48.11 bitrate=1612.9kbits/s speed=2.19x elapsed=0:00:22.00
-2026-02-21 18:27:43 WARN [ytdlp-runner][yt-dlp stderr] frame= 1511 fps= 62 q=-1.0 size=    9888KiB time=00:00:50.20 bitrate=1613.5kbits/s speed=2.05x elapsed=0:00:24.51
-2026-02-21 18:27:43 WARN [ytdlp-runner][ffmpeg stderr] frame= 1505 fps= 67 q=-1.0 size=    9849KiB time=00:00:50.08 bitrate=1610.9kbits/s speed=2.23x elapsed=0:00:22.50
-2026-02-21 18:27:43 WARN [ytdlp-runner][yt-dlp stderr] frame= 1511 fps= 60 q=-1.0 size=    9888KiB time=00:00:50.20 bitrate=1613.5kbits/s speed=2.01x elapsed=0:00:25.01
-2026-02-21 18:27:44 WARN [ytdlp-runner][ffmpeg stderr] frame= 1505 fps= 65 q=-1.0 size=    9849KiB time=00:00:50.08 bitrate=1610.9kbits/s speed=2.18x elapsed=0:00:23.00
-2026-02-21 18:27:44 WARN [ytdlp-runner][yt-dlp stderr] frame= 1511 fps= 59 q=-1.0 size=    9888KiB time=00:00:50.20 bitrate=1613.5kbits/s speed=1.97x elapsed=0:00:25.51
-2026-02-21 18:27:44 WARN [ytdlp-runner][ffmpeg stderr] frame= 1566 fps= 67 q=-1.0 size=   10248KiB time=00:00:52.08 bitrate=1611.9kbits/s speed=2.22x elapsed=0:00:23.50
-2026-02-21 18:27:44 WARN [ytdlp-runner][yt-dlp stderr] frame= 1572 fps= 60 q=-1.0 size=   10287KiB time=00:00:52.24 bitrate=1613.0kbits/s speed=2.01x elapsed=0:00:26.01
-2026-02-21 18:27:45 WARN [ytdlp-runner][ffmpeg stderr] frame= 1566 fps= 65 q=-1.0 size=   10248KiB time=00:00:52.08 bitrate=1611.9kbits/s speed=2.17x elapsed=0:00:24.00
-2026-02-21 18:27:45 WARN [ytdlp-runner][yt-dlp stderr] frame= 1572 fps= 59 q=-1.0 size=   10287KiB time=00:00:52.24 bitrate=1613.0kbits/s speed=1.97x elapsed=0:00:26.51
-2026-02-21 18:27:45 WARN [ytdlp-runner][ffmpeg stderr] frame= 1627 fps= 66 q=-1.0 size=   10661KiB time=00:00:54.20 bitrate=1611.4kbits/s speed=2.21x elapsed=0:00:24.50
-2026-02-21 18:27:45 WARN [ytdlp-runner][yt-dlp stderr] frame= 1633 fps= 60 q=-1.0 size=   10683KiB time=00:00:54.28 bitrate=1612.1kbits/s speed=2.01x elapsed=0:00:27.01
-2026-02-21 18:27:46 WARN [ytdlp-runner][ffmpeg stderr] frame= 1627 fps= 65 q=-1.0 size=   10661KiB time=00:00:54.20 bitrate=1611.4kbits/s speed=2.17x elapsed=0:00:25.00
-2026-02-21 18:27:46 WARN [ytdlp-runner][yt-dlp stderr] frame= 1664 fps= 60 q=-1.0 size=   10929KiB time=00:00:55.33 bitrate=1618.0kbits/s speed=2.01x elapsed=0:00:27.51
-2026-02-21 18:27:46 INFO [HTTP] GET /health → 200 (1ms) [anon]
-2026-02-21 18:27:46 WARN [ytdlp-runner][ffmpeg stderr] frame= 1689 fps= 66 q=-1.0 size=   11077KiB time=00:00:56.21 bitrate=1614.2kbits/s speed= 2.2x elapsed=0:00:25.51
-2026-02-21 18:27:46 WARN [ytdlp-runner][yt-dlp stderr] frame= 1694 fps= 60 q=-1.0 size=   11177KiB time=00:00:56.33 bitrate=1625.4kbits/s speed=2.01x elapsed=0:00:28.01
-2026-02-21 18:27:47 WARN [ytdlp-runner][ffmpeg stderr] frame= 1689 fps= 65 q=-1.0 size=   11077KiB time=00:00:56.21 bitrate=1614.2kbits/s speed=2.16x elapsed=0:00:26.01
-2026-02-21 18:27:47 WARN [ytdlp-runner][yt-dlp stderr] frame= 1725 fps= 61 q=-1.0 size=   11381KiB time=00:00:57.35 bitrate=1625.6kbits/s speed=2.01x elapsed=0:00:28.51
-2026-02-21 18:27:47 WARN [ytdlp-runner][ffmpeg stderr] frame= 1719 fps= 65 q=-1.0 size=   11362KiB time=00:00:57.21 bitrate=1626.8kbits/s speed=2.16x elapsed=0:00:26.51
-2026-02-21 18:27:47 WARN [ytdlp-runner][yt-dlp stderr] frame= 1756 fps= 61 q=-1.0 size=   11604KiB time=00:00:58.39 bitrate=1627.8kbits/s speed=2.01x elapsed=0:00:29.01
-2026-02-21 18:27:48 WARN [ytdlp-runner][ffmpeg stderr] frame= 1781 fps= 66 q=-1.0 size=   11765KiB time=00:00:59.33 bitrate=1624.3kbits/s speed= 2.2x elapsed=0:00:27.01
-2026-02-21 18:27:48 WARN [ytdlp-runner][yt-dlp stderr] frame= 1787 fps= 61 q=-1.0 size=   11789KiB time=00:00:59.41 bitrate=1625.2kbits/s speed=2.01x elapsed=0:00:29.51
-2026-02-21 18:27:48 WARN [ytdlp-runner][ffmpeg stderr] frame= 1809 fps= 66 q=-1.0 size=   11926KiB time=00:01:00.16 bitrate=1623.9kbits/s speed=2.19x elapsed=0:00:27.51
-2026-02-21 18:27:48 WARN [ytdlp-runner][yt-dlp stderr] frame= 1814 fps= 60 q=-1.0 size=   11952KiB time=00:01:00.32 bitrate=1623.1kbits/s speed=2.01x elapsed=0:00:30.01
-2026-02-21 18:27:49 WARN [ytdlp-runner][ffmpeg stderr] frame= 1839 fps= 66 q=-1.0 size=   12112KiB time=00:01:01.26 bitrate=1619.6kbits/s speed=2.19x elapsed=0:00:28.01
-2026-02-21 18:27:49 WARN [ytdlp-runner][yt-dlp stderr] frame= 1845 fps= 60 q=-1.0 size=   12119KiB time=00:01:01.34 bitrate=1618.3kbits/s speed=2.01x elapsed=0:00:30.51
-2026-02-21 18:27:49 WARN [ytdlp-runner][ffmpeg stderr] frame= 1839 fps= 65 q=-1.0 size=   12112KiB time=00:01:01.26 bitrate=1619.6kbits/s speed=2.15x elapsed=0:00:28.51
-2026-02-21 18:27:49 WARN [ytdlp-runner][yt-dlp stderr] frame= 1845 fps= 59 q=-1.0 size=   12119KiB time=00:01:01.34 bitrate=1618.3kbits/s speed=1.98x elapsed=0:00:31.01
-2026-02-21 18:27:50 WARN [ytdlp-runner][ffmpeg stderr] frame= 1870 fps= 64 q=-1.0 size=   12299KiB time=00:01:02.30 bitrate=1617.2kbits/s speed=2.15x elapsed=0:00:29.01
-2026-02-21 18:27:50 WARN [ytdlp-runner][yt-dlp stderr] frame= 1876 fps= 60 q=-1.0 size=   12318KiB time=00:01:02.36 bitrate=1617.9kbits/s speed=1.98x elapsed=0:00:31.51
-2026-02-21 18:27:50 WARN [ytdlp-runner][ffmpeg stderr] frame= 1931 fps= 65 q=-1.0 size=   12831KiB time=00:01:04.31 bitrate=1634.2kbits/s speed=2.18x elapsed=0:00:29.51
-2026-02-21 18:27:50 WARN [ytdlp-runner][yt-dlp stderr] frame= 1937 fps= 61 q=-1.0 size=   12857KiB time=00:01:04.41 bitrate=1635.2kbits/s speed=2.01x elapsed=0:00:32.01
-2026-02-21 18:27:51 WARN [ytdlp-runner][ffmpeg stderr] frame= 1931 fps= 64 q=-1.0 size=   12831KiB time=00:01:04.31 bitrate=1634.2kbits/s speed=2.14x elapsed=0:00:30.01
-2026-02-21 18:27:51 WARN [ytdlp-runner][yt-dlp stderr] frame= 1968 fps= 61 q=-1.0 size=   13123KiB time=00:01:05.45 bitrate=1642.4kbits/s speed=2.01x elapsed=0:00:32.51
-2026-02-21 18:27:51 WARN [ytdlp-runner][ffmpeg stderr] frame= 1963 fps= 64 q=-1.0 size=   13078KiB time=00:01:05.29 bitrate=1640.8kbits/s speed=2.14x elapsed=0:00:30.51
-2026-02-21 18:27:51 WARN [ytdlp-runner][yt-dlp stderr] frame= 1968 fps= 60 q=-1.0 size=   13123KiB time=00:01:05.45 bitrate=1642.4kbits/s speed=1.98x elapsed=0:00:33.01
-2026-02-21 18:27:52 WARN [ytdlp-runner][ffmpeg stderr] frame= 1992 fps= 64 q=-1.0 size=   13352KiB time=00:01:06.36 bitrate=1648.2kbits/s speed=2.14x elapsed=0:00:31.01
-2026-02-21 18:27:52 WARN [ytdlp-runner][yt-dlp stderr] frame= 1998 fps= 60 q=-1.0 size=   13359KiB time=00:01:06.45 bitrate=1646.8kbits/s speed=1.98x elapsed=0:00:33.51
-2026-02-21 18:27:52 WARN [ytdlp-runner][ffmpeg stderr] frame= 2044 fps= 65 q=-1.0 size=   13739KiB time=00:01:08.10 bitrate=1652.7kbits/s speed=2.16x elapsed=0:00:31.51
-2026-02-21 18:27:52 WARN [ytdlp-runner][yt-dlp stderr] frame= 2060 fps= 61 q=-1.0 size=   13840KiB time=00:01:08.52 bitrate=1654.6kbits/s speed=2.01x elapsed=0:00:34.01
-2026-02-21 18:27:53 WARN [ytdlp-runner][ffmpeg stderr] frame= 2054 fps= 64 q=-1.0 size=   13820KiB time=00:01:08.43 bitrate=1654.4kbits/s speed=2.14x elapsed=0:00:32.01
-2026-02-21 18:27:53 WARN [ytdlp-runner][yt-dlp stderr] frame= 2072 fps= 60 q=-1.0 size=   13938KiB time=00:01:09.03 bitrate=1654.0kbits/s speed=   2x elapsed=0:00:34.51
-2026-02-21 18:27:53 WARN [ytdlp-runner][ffmpeg stderr] frame= 2082 fps= 64 q=-1.0 size=   14117KiB time=00:01:09.28 bitrate=1669.1kbits/s speed=2.13x elapsed=0:00:32.51
-2026-02-21 18:27:53 WARN [ytdlp-runner][yt-dlp stderr] frame= 2097 fps= 60 q=-1.0 size=   14258KiB time=00:01:09.86 bitrate=1671.8kbits/s speed=   2x elapsed=0:00:35.01
-2026-02-21 18:27:54 WARN [ytdlp-runner][ffmpeg stderr] frame= 2101 fps= 64 q=-1.0 size=   14264KiB time=00:01:09.93 bitrate=1670.7kbits/s speed=2.12x elapsed=0:00:33.01
-2026-02-21 18:27:54 WARN [ytdlp-runner][yt-dlp stderr] frame= 2118 fps= 60 q=-1.0 size=   14414KiB time=00:01:10.44 bitrate=1676.1kbits/s speed=1.98x elapsed=0:00:35.51
-2026-02-21 18:27:54 WARN [ytdlp-runner][ffmpeg stderr] frame= 2125 fps= 63 q=-1.0 size=   14498KiB time=00:01:10.77 bitrate=1678.1kbits/s speed=2.11x elapsed=0:00:33.51
-2026-02-21 18:27:54 WARN [ytdlp-runner][yt-dlp stderr] frame= 2141 fps= 59 q=-1.0 size=   14631KiB time=00:01:11.33 bitrate=1680.2kbits/s speed=1.98x elapsed=0:00:36.01
-2026-02-21 18:27:55 WARN [ytdlp-runner][ffmpeg stderr] frame= 2151 fps= 63 q=-1.0 size=   14691KiB time=00:01:11.61 bitrate=1680.6kbits/s speed=2.11x elapsed=0:00:34.01
-2026-02-21 18:27:55 WARN [ytdlp-runner][yt-dlp stderr] frame= 2170 fps= 59 q=-1.0 size=   14841KiB time=00:01:12.30 bitrate=1681.6kbits/s speed=1.98x elapsed=0:00:36.51
-2026-02-21 18:27:55 WARN [ytdlp-runner][ffmpeg stderr] frame= 2183 fps= 63 q=-1.0 size=   14909KiB time=00:01:12.60 bitrate=1682.1kbits/s speed= 2.1x elapsed=0:00:34.51
-2026-02-21 18:27:55 WARN [ytdlp-runner][yt-dlp stderr] frame= 2196 fps= 59 q=-1.0 size=   15039KiB time=00:01:13.16 bitrate=1683.8kbits/s speed=1.98x elapsed=0:00:37.01
-2026-02-21 18:27:56 WARN [ytdlp-runner][ffmpeg stderr] frame= 2202 fps= 63 q=-1.0 size=   15075KiB time=00:01:13.28 bitrate=1685.2kbits/s speed=2.09x elapsed=0:00:35.01
-2026-02-21 18:27:56 WARN [ytdlp-runner][yt-dlp stderr] frame= 2221 fps= 59 q=-1.0 size=   15243KiB time=00:01:14.00 bitrate=1687.4kbits/s speed=1.97x elapsed=0:00:37.51
-2026-02-21 18:27:56 WARN [ytdlp-runner][ffmpeg stderr] frame= 2229 fps= 63 q=-1.0 size=   15302KiB time=00:01:14.25 bitrate=1688.1kbits/s speed=2.09x elapsed=0:00:35.51
-2026-02-21 18:27:56 WARN [ytdlp-runner][yt-dlp stderr] frame= 2249 fps= 59 q=-1.0 size=   15460KiB time=00:01:14.93 bitrate=1690.2kbits/s speed=1.97x elapsed=0:00:38.01
-2026-02-21 18:27:57 WARN [ytdlp-runner][ffmpeg stderr] frame= 2258 fps= 63 q=-1.0 size=   15525KiB time=00:01:15.23 bitrate=1690.5kbits/s speed=2.09x elapsed=0:00:36.01
-2026-02-21 18:27:57 WARN [ytdlp-runner][yt-dlp stderr] frame= 2262 fps= 59 q=-1.0 size=   15542KiB time=00:01:15.36 bitrate=1689.3kbits/s speed=1.96x elapsed=0:00:38.51
-2026-02-21 18:27:57 WARN [ytdlp-runner][ffmpeg stderr] frame= 2272 fps= 62 q=-1.0 size=   15684KiB time=00:01:15.58 bitrate=1700.0kbits/s speed=2.07x elapsed=0:00:36.51
-2026-02-21 18:27:57 WARN [ytdlp-runner][yt-dlp stderr] frame= 2289 fps= 59 q=-1.0 size=   15836KiB time=00:01:16.26 bitrate=1701.0kbits/s speed=1.95x elapsed=0:00:39.01
-2026-02-21 18:27:58 WARN [ytdlp-runner][ffmpeg stderr] frame= 2294 fps= 62 q=-1.0 size=   15872KiB time=00:01:16.41 bitrate=1701.5kbits/s speed=2.06x elapsed=0:00:37.01
-2026-02-21 18:27:58 WARN [ytdlp-runner][yt-dlp stderr] frame= 2313 fps= 59 q=-1.0 size=   16036KiB time=00:01:17.06 bitrate=1704.6kbits/s speed=1.95x elapsed=0:00:39.51
-2026-02-21 18:27:58 WARN [ytdlp-runner][ffmpeg stderr] frame= 2319 fps= 62 q=-1.0 size=   16075KiB time=00:01:17.22 bitrate=1705.1kbits/s speed=2.06x elapsed=0:00:37.51
-2026-02-21 18:27:58 WARN [ytdlp-runner][yt-dlp stderr] frame= 2334 fps= 58 q=-1.0 size=   16215KiB time=00:01:17.76 bitrate=1708.1kbits/s speed=1.94x elapsed=0:00:40.01
-2026-02-21 18:27:59 WARN [ytdlp-runner][ffmpeg stderr] frame= 2345 fps= 62 q=-1.0 size=   16288KiB time=00:01:18.04 bitrate=1709.8kbits/s speed=2.05x elapsed=0:00:38.01
-2026-02-21 18:27:59 WARN [ytdlp-runner][yt-dlp stderr] frame= 2360 fps= 58 q=-1.0 size=   16400KiB time=00:01:18.63 bitrate=1708.5kbits/s speed=1.94x elapsed=0:00:40.51
-2026-02-21 18:27:59 WARN [ytdlp-runner][ffmpeg stderr] frame= 2367 fps= 61 q=-1.0 size=   16482KiB time=00:01:18.86 bitrate=1712.0kbits/s speed=2.05x elapsed=0:00:38.51
-2026-02-21 18:27:59 WARN [ytdlp-runner][yt-dlp stderr] frame= 2386 fps= 58 q=-1.0 size=   16611KiB time=00:01:19.50 bitrate=1711.7kbits/s speed=1.94x elapsed=0:00:41.01
-2026-02-21 18:28:00 WARN [ytdlp-runner][ffmpeg stderr] frame= 2409 fps= 62 q=-1.0 size=   16703KiB time=00:01:20.17 bitrate=1706.5kbits/s speed=2.06x elapsed=0:00:39.01
-2026-02-21 18:28:00 WARN [ytdlp-runner][yt-dlp stderr] frame= 2444 fps= 59 q=-1.0 size=   16845KiB time=00:01:21.43 bitrate=1694.6kbits/s speed=1.96x elapsed=0:00:41.51
-2026-02-21 18:28:00 WARN [ytdlp-runner][ffmpeg stderr] frame= 2466 fps= 62 q=-1.0 size=   16923KiB time=00:01:22.15 bitrate=1687.5kbits/s speed=2.08x elapsed=0:00:39.51
-2026-02-21 18:28:00 WARN [ytdlp-runner][yt-dlp stderr] frame= 2494 fps= 59 q=-1.0 size=   17047KiB time=00:01:23.10 bitrate=1680.5kbits/s speed=1.98x elapsed=0:00:42.01
-2026-02-21 18:28:01 WARN [ytdlp-runner][ffmpeg stderr] frame= 2509 fps= 63 q=-1.0 size=   17119KiB time=00:01:23.63 bitrate=1676.8kbits/s speed=2.09x elapsed=0:00:40.01
-2026-02-21 18:28:01 WARN [ytdlp-runner][yt-dlp stderr] frame= 2540 fps= 60 q=-1.0 size=   17277KiB time=00:01:24.63 bitrate=1672.4kbits/s speed=1.99x elapsed=0:00:42.51
-2026-02-21 18:28:01 WARN [ytdlp-runner][ffmpeg stderr] frame= 2548 fps= 63 q=-1.0 size=   17303KiB time=00:01:24.79 bitrate=1671.6kbits/s speed=2.09x elapsed=0:00:40.51
-2026-02-21 18:28:01 WARN [ytdlp-runner][yt-dlp stderr] frame= 2572 fps= 60 q=-1.0 size=   17470KiB time=00:01:25.70 bitrate=1669.9kbits/s speed=1.99x elapsed=0:00:43.01
-2026-02-21 18:28:02 WARN [ytdlp-runner][ffmpeg stderr] frame= 2589 fps= 63 q=-1.0 size=   17531KiB time=00:01:26.26 bitrate=1664.9kbits/s speed= 2.1x elapsed=0:00:41.01
-2026-02-21 18:28:02 WARN [ytdlp-runner][yt-dlp stderr] frame= 2606 fps= 60 q=-1.0 size=   17592KiB time=00:01:26.72 bitrate=1661.7kbits/s speed=1.99x elapsed=0:00:43.51
-2026-02-21 18:28:02 WARN [ytdlp-runner][ffmpeg stderr] frame= 2645 fps= 64 q=-1.0 size=   17763KiB time=00:01:28.09 bitrate=1651.8kbits/s speed=2.12x elapsed=0:00:41.51
-2026-02-21 18:28:02 WARN [ytdlp-runner][yt-dlp stderr] frame= 2668 fps= 61 q=-1.0 size=   17854KiB time=00:01:28.76 bitrate=1647.7kbits/s speed=2.02x elapsed=0:00:44.01
-2026-02-21 18:28:03 WARN [ytdlp-runner][ffmpeg stderr] frame= 2662 fps= 63 q=-1.0 size=   17849KiB time=00:01:28.70 bitrate=1648.5kbits/s speed=2.11x elapsed=0:00:42.01
-2026-02-21 18:28:03 WARN [ytdlp-runner][yt-dlp stderr] frame= 2668 fps= 60 q=-1.0 size=   17854KiB time=00:01:28.76 bitrate=1647.7kbits/s speed=1.99x elapsed=0:00:44.51
-2026-02-21 18:28:03 WARN [ytdlp-runner][ffmpeg stderr] frame= 2709 fps= 64 q=-1.0 size=   18177KiB time=00:01:30.23 bitrate=1650.2kbits/s speed=2.12x elapsed=0:00:42.51
-2026-02-21 18:28:03 WARN [ytdlp-runner][yt-dlp stderr] frame= 2721 fps= 60 q=-1.0 size=   18282KiB time=00:01:30.66 bitrate=1651.9kbits/s speed=2.01x elapsed=0:00:45.01
-2026-02-21 18:28:04 WARN [ytdlp-runner][ffmpeg stderr] frame= 2720 fps= 63 q=-1.0 size=   18263KiB time=00:01:30.55 bitrate=1652.1kbits/s speed=2.11x elapsed=0:00:43.01
-2026-02-21 18:28:04 WARN [ytdlp-runner][yt-dlp stderr] frame= 2725 fps= 60 q=-1.0 size=   18307KiB time=00:01:30.69 bitrate=1653.6kbits/s speed=1.99x elapsed=0:00:45.51
-2026-02-21 18:28:04 WARN [ytdlp-runner][ffmpeg stderr] frame= 2752 fps= 63 q=-1.0 size=   18528KiB time=00:01:31.70 bitrate=1655.2kbits/s speed=2.11x elapsed=0:00:43.51
-2026-02-21 18:28:04 WARN [ytdlp-runner][yt-dlp stderr] frame= 2771 fps= 60 q=-1.0 size=   18699KiB time=00:01:32.33 bitrate=1659.0kbits/s speed=2.01x elapsed=0:00:46.01
-2026-02-21 18:28:05 WARN [ytdlp-runner][ffmpeg stderr] frame= 2779 fps= 63 q=-1.0 size=   18760KiB time=00:01:32.55 bitrate=1660.4kbits/s speed= 2.1x elapsed=0:00:44.01
-2026-02-21 18:28:05 WARN [ytdlp-runner][yt-dlp stderr] frame= 2787 fps= 60 q=-1.0 size=   18807KiB time=00:01:32.74 bitrate=1661.3kbits/s speed=1.99x elapsed=0:00:46.51
-2026-02-21 18:28:05 WARN [ytdlp-runner][ffmpeg stderr] frame= 2781 fps= 62 q=-1.0 size=   18784KiB time=00:01:32.66 bitrate=1660.6kbits/s speed=2.08x elapsed=0:00:44.51
-2026-02-21 18:28:05 WARN [ytdlp-runner][yt-dlp stderr] frame= 2818 fps= 60 q=-1.0 size=   19073KiB time=00:01:33.90 bitrate=1664.0kbits/s speed=   2x elapsed=0:00:47.01
-2026-02-21 18:28:06 WARN [ytdlp-runner][ffmpeg stderr] frame= 2806 fps= 62 q=-1.0 size=   18963KiB time=00:01:33.55 bitrate=1660.5kbits/s speed=2.08x elapsed=0:00:45.01
-2026-02-21 18:28:06 WARN [ytdlp-runner][yt-dlp stderr] frame= 2848 fps= 60 q=-1.0 size=   19290KiB time=00:01:34.80 bitrate=1666.8kbits/s speed=   2x elapsed=0:00:47.51
-2026-02-21 18:28:06 WARN [ytdlp-runner][ffmpeg stderr] frame= 2846 fps= 63 q=-1.0 size=   19290KiB time=00:01:34.89 bitrate=1665.2kbits/s speed=2.08x elapsed=0:00:45.51
-2026-02-21 18:28:06 WARN [ytdlp-runner][yt-dlp stderr] frame= 2871 fps= 60 q=-1.0 size=   19492KiB time=00:01:35.66 bitrate=1669.1kbits/s speed=1.99x elapsed=0:00:48.02
-2026-02-21 18:28:07 WARN [ytdlp-runner][ffmpeg stderr] frame= 2879 fps= 63 q=-1.0 size=   19531KiB time=00:01:35.85 bitrate=1669.2kbits/s speed=2.08x elapsed=0:00:46.01
-2026-02-21 18:28:07 WARN [ytdlp-runner][yt-dlp stderr] frame= 2896 fps= 60 q=-1.0 size=   19676KiB time=00:01:36.50 bitrate=1670.3kbits/s speed=1.99x elapsed=0:00:48.52
-2026-02-21 18:28:07 WARN [ytdlp-runner][ffmpeg stderr] frame= 2907 fps= 62 q=-1.0 size=   19725KiB time=00:01:36.85 bitrate=1668.4kbits/s speed=2.08x elapsed=0:00:46.51
-2026-02-21 18:28:07 WARN [ytdlp-runner][yt-dlp stderr] frame= 2913 fps= 59 q=-1.0 size=   19882KiB time=00:01:37.06 bitrate=1678.0kbits/s speed=1.98x elapsed=0:00:49.02
-2026-02-21 18:28:08 WARN [ytdlp-runner][ffmpeg stderr] frame= 2919 fps= 62 q=-1.0 size=   19913KiB time=00:01:37.17 bitrate=1678.7kbits/s speed=2.07x elapsed=0:00:47.01
-2026-02-21 18:28:08 WARN [ytdlp-runner][yt-dlp stderr] frame= 2935 fps= 59 q=-1.0 size=   20057KiB time=00:01:37.80 bitrate=1680.1kbits/s speed=1.97x elapsed=0:00:49.52
-2026-02-21 18:28:08 WARN [ytdlp-runner][ffmpeg stderr] frame= 2942 fps= 62 q=-1.0 size=   20117KiB time=00:01:38.01 bitrate=1681.4kbits/s speed=2.06x elapsed=0:00:47.51
-2026-02-21 18:28:08 WARN [ytdlp-runner][yt-dlp stderr] frame= 2961 fps= 59 q=-1.0 size=   20263KiB time=00:01:38.66 bitrate=1682.4kbits/s speed=1.97x elapsed=0:00:50.02
-2026-02-21 18:28:09 WARN [ytdlp-runner][ffmpeg stderr] frame= 2968 fps= 62 q=-1.0 size=   20314KiB time=00:01:38.82 bitrate=1683.9kbits/s speed=2.06x elapsed=0:00:48.01
-2026-02-21 18:28:09 WARN [ytdlp-runner][yt-dlp stderr] frame= 2983 fps= 59 q=-1.0 size=   20441KiB time=00:01:39.40 bitrate=1684.6kbits/s speed=1.97x elapsed=0:00:50.52
-2026-02-21 18:28:09 WARN [ytdlp-runner][ffmpeg stderr] frame= 2995 fps= 62 q=-1.0 size=   20523KiB time=00:01:39.79 bitrate=1684.6kbits/s speed=2.06x elapsed=0:00:48.51
-2026-02-21 18:28:09 WARN [ytdlp-runner][yt-dlp stderr] frame= 3014 fps= 59 q=-1.0 size=   20685KiB time=00:01:40.43 bitrate=1687.2kbits/s speed=1.97x elapsed=0:00:51.02
-2026-02-21 18:28:10 WARN [ytdlp-runner][ffmpeg stderr] frame= 3024 fps= 62 q=-1.0 size=   20741KiB time=00:01:40.76 bitrate=1686.1kbits/s speed=2.06x elapsed=0:00:49.01
-2026-02-21 18:28:10 WARN [ytdlp-runner][yt-dlp stderr] frame= 3039 fps= 59 q=-1.0 size=   20867KiB time=00:01:41.26 bitrate=1688.0kbits/s speed=1.97x elapsed=0:00:51.52
-2026-02-21 18:28:10 WARN [ytdlp-runner][ffmpeg stderr] frame= 3045 fps= 61 q=-1.0 size=   20912KiB time=00:01:41.42 bitrate=1689.0kbits/s speed=2.05x elapsed=0:00:49.51
-2026-02-21 18:28:10 WARN [ytdlp-runner][yt-dlp stderr] frame= 3060 fps= 59 q=-1.0 size=   21044KiB time=00:01:41.96 bitrate=1690.7kbits/s speed=1.96x elapsed=0:00:52.02
-2026-02-21 18:28:11 WARN [ytdlp-runner][ffmpeg stderr] frame= 3069 fps= 61 q=-1.0 size=   21107KiB time=00:01:42.26 bitrate=1690.9kbits/s speed=2.04x elapsed=0:00:50.02
-2026-02-21 18:28:11 WARN [ytdlp-runner][yt-dlp stderr] frame= 3087 fps= 59 q=-1.0 size=   21268KiB time=00:01:42.86 bitrate=1693.7kbits/s speed=1.96x elapsed=0:00:52.52
-2026-02-21 18:28:11 WARN [ytdlp-runner][ffmpeg stderr] frame= 3091 fps= 61 q=-1.0 size=   21286KiB time=00:01:42.91 bitrate=1694.4kbits/s speed=2.04x elapsed=0:00:50.52
-2026-02-21 18:28:11 WARN [ytdlp-runner][yt-dlp stderr] frame= 3108 fps= 59 q=-1.0 size=   21407KiB time=00:01:43.56 bitrate=1693.3kbits/s speed=1.95x elapsed=0:00:53.02
-2026-02-21 18:28:12 WARN [ytdlp-runner][ffmpeg stderr] frame= 3127 fps= 61 q=-1.0 size=   21528KiB time=00:01:44.07 bitrate=1694.6kbits/s speed=2.04x elapsed=0:00:51.02
-2026-02-21 18:28:12 WARN [ytdlp-runner][yt-dlp stderr] frame= 3138 fps= 59 q=-1.0 size=   21633KiB time=00:01:44.56 bitrate=1694.8kbits/s speed=1.95x elapsed=0:00:53.52
-2026-02-21 18:28:12 WARN [ytdlp-runner][ffmpeg stderr] frame= 3151 fps= 61 q=-1.0 size=   21709KiB time=00:01:44.90 bitrate=1695.2kbits/s speed=2.04x elapsed=0:00:51.52
-2026-02-21 18:28:12 WARN [ytdlp-runner][yt-dlp stderr] frame= 3174 fps= 59 q=-1.0 size=   21858KiB time=00:01:45.76 bitrate=1692.9kbits/s speed=1.96x elapsed=0:00:54.02
-2026-02-21 18:28:13 WARN [ytdlp-runner][ffmpeg stderr] frame= 3189 fps= 61 q=-1.0 size=   21915KiB time=00:01:46.20 bitrate=1690.3kbits/s speed=2.04x elapsed=0:00:52.02
-2026-02-21 18:28:13 WARN [ytdlp-runner][yt-dlp stderr] frame= 3217 fps= 59 q=-1.0 size=   22069KiB time=00:01:47.20 bitrate=1686.5kbits/s speed=1.97x elapsed=0:00:54.52
-2026-02-21 18:28:13 WARN [ytdlp-runner][ffmpeg stderr] frame= 3231 fps= 62 q=-1.0 size=   22120KiB time=00:01:47.55 bitrate=1684.8kbits/s speed=2.05x elapsed=0:00:52.52
-2026-02-21 18:28:13 WARN [ytdlp-runner][yt-dlp stderr] frame= 3254 fps= 59 q=-1.0 size=   22267KiB time=00:01:48.43 bitrate=1682.2kbits/s speed=1.97x elapsed=0:00:55.02
-2026-02-21 18:28:14 WARN [ytdlp-runner][ffmpeg stderr] frame= 3268 fps= 62 q=-1.0 size=   22340KiB time=00:01:48.90 bitrate=1680.5kbits/s speed=2.05x elapsed=0:00:53.02
-2026-02-21 18:28:14 WARN [ytdlp-runner][yt-dlp stderr] frame= 3291 fps= 59 q=-1.0 size=   22476KiB time=00:01:49.66 bitrate=1678.9kbits/s speed=1.98x elapsed=0:00:55.52
-2026-02-21 18:28:14 WARN [ytdlp-runner][ffmpeg stderr] frame= 3299 fps= 62 q=-1.0 size=   22516KiB time=00:01:49.87 bitrate=1678.7kbits/s speed=2.05x elapsed=0:00:53.52
-2026-02-21 18:28:14 WARN [ytdlp-runner][yt-dlp stderr] frame= 3323 fps= 59 q=-1.0 size=   22696KiB time=00:01:50.73 bitrate=1679.0kbits/s speed=1.98x elapsed=0:00:56.02
-2026-02-21 18:28:15 WARN [ytdlp-runner][ffmpeg stderr] frame= 3336 fps= 62 q=-1.0 size=   22746KiB time=00:01:51.08 bitrate=1677.4kbits/s speed=2.06x elapsed=0:00:54.02
-2026-02-21 18:28:15 WARN [ytdlp-runner][yt-dlp stderr] frame= 3358 fps= 59 q=-1.0 size=   22884KiB time=00:01:51.90 bitrate=1675.3kbits/s speed=1.98x elapsed=0:00:56.52
-2026-02-21 18:28:15 WARN [ytdlp-runner][ffmpeg stderr] frame= 3368 fps= 62 q=-1.0 size=   22962KiB time=00:01:52.22 bitrate=1676.2kbits/s speed=2.06x elapsed=0:00:54.52
-2026-02-21 18:28:15 WARN [ytdlp-runner][yt-dlp stderr] frame= 3392 fps= 59 q=-1.0 size=   23096KiB time=00:01:53.03 bitrate=1673.9kbits/s speed=1.98x elapsed=0:00:57.02
-2026-02-21 18:28:16 WARN [ytdlp-runner][ffmpeg stderr] frame= 3403 fps= 62 q=-1.0 size=   23158KiB time=00:01:53.35 bitrate=1673.5kbits/s speed=2.06x elapsed=0:00:55.02
-2026-02-21 18:28:16 WARN [ytdlp-runner][yt-dlp stderr] frame= 3426 fps= 60 q=-1.0 size=   23283KiB time=00:01:54.16 bitrate=1670.6kbits/s speed=1.98x elapsed=0:00:57.52
-2026-02-21 18:28:16 WARN [ytdlp-runner][ffmpeg stderr] frame= 3435 fps= 62 q=-1.0 size=   23318KiB time=00:01:54.38 bitrate=1670.1kbits/s speed=2.06x elapsed=0:00:55.52
-2026-02-21 18:28:16 INFO [HTTP] GET /health → 200 (0ms) [anon]
-2026-02-21 18:28:16 WARN [ytdlp-runner][yt-dlp stderr] frame= 3461 fps= 60 q=-1.0 size=   23497KiB time=00:01:55.33 bitrate=1669.0kbits/s speed=1.99x elapsed=0:00:58.02
-2026-02-21 18:28:17 WARN [ytdlp-runner][ffmpeg stderr] frame= 3476 fps= 62 q=-1.0 size=   23551KiB time=00:01:55.70 bitrate=1667.4kbits/s speed=2.07x elapsed=0:00:56.02
-2026-02-21 18:28:17 WARN [ytdlp-runner][yt-dlp stderr] frame= 3484 fps= 60 q=-1.0 size=   23711KiB time=00:01:56.10 bitrate=1673.0kbits/s speed=1.98x elapsed=0:00:58.52
-2026-02-21 18:28:17 WARN [ytdlp-runner][ffmpeg stderr] frame= 3498 fps= 62 q=-1.0 size=   23790KiB time=00:01:56.54 bitrate=1672.3kbits/s speed=2.06x elapsed=0:00:56.52
-2026-02-21 18:28:17 WARN [ytdlp-runner][yt-dlp stderr] frame= 3513 fps= 60 q=-1.0 size=   23911KiB time=00:01:57.06 bitrate=1673.2kbits/s speed=1.98x elapsed=0:00:59.02
-2026-02-21 18:28:18 WARN [ytdlp-runner][ffmpeg stderr] frame= 3518 fps= 62 q=-1.0 size=   23942KiB time=00:01:57.21 bitrate=1673.3kbits/s speed=2.06x elapsed=0:00:57.02
-2026-02-21 18:28:18 INFO [ytdlp-runner] Resposta fechada, processos yt-dlp e ffmpeg encerrados.
-2026-02-21 18:28:18 WARN [ytdlp-runner][yt-dlp stderr] frame= 3532 fps= 59 q=-1.0 size=   24093KiB time=00:01:57.70 bitrate=1676.9kbits/s speed=1.98x elapsed=0:00:59.52
-2026-02-21 18:28:18 WARN [ytdlp-runner][ffmpeg stderr] [out#0/mpegts @ 0x7f379b79e7c0] video:20824KiB audio:1877KiB subtitle:0KiB other streams:0KiB global headers:0KiB muxing overhead: 6.343927%
-frame= 3536 fps= 61 q=-1.0 Lsize=   24141KiB time=00:01:57.83 bitrate=1678.3kbits/s speed=2.05x elapsed=0:00:57.53
+2026-02-25 22:37:03 WARN [ytdlp-runner][yt-dlp stderr] frame=  174 fps= 87 q=-1.0 size=    2500KiB time=00:00:05.77 bitrate=3548.2kbits/s speed=2.89x elapsed=0:00:02.00
+2026-02-25 22:37:03 WARN [ytdlp-runner][ffmpeg stderr] frame=   84 fps=0.0 q=-1.0 size=    1175KiB time=00:00:02.86 bitrate=3354.4kbits/s speed=5.74x elapsed=0:00:00.50
+2026-02-25 22:37:03 WARN [ytdlp-runner][yt-dlp stderr] frame=  184 fps= 74 q=-1.0 size=    2624KiB time=00:00:06.20 bitrate=3464.0kbits/s speed=2.48x elapsed=0:00:02.50
+2026-02-25 22:37:03 WARN [ytdlp-runner][ffmpeg stderr] frame=  138 fps=138 q=-1.0 size=    1917KiB time=00:00:04.64 bitrate=3381.7kbits/s speed=4.64x elapsed=0:00:01.00
+2026-02-25 22:37:04 WARN [ytdlp-runner][yt-dlp stderr] frame=  249 fps= 83 q=-1.0 size=    3372KiB time=00:00:08.27 bitrate=3338.6kbits/s speed=2.76x elapsed=0:00:03.00
+2026-02-25 22:37:04 WARN [ytdlp-runner][ffmpeg stderr] frame=  231 fps=154 q=-1.0 size=    3197KiB time=00:00:07.75 bitrate=3376.7kbits/s speed=5.17x elapsed=0:00:01.50
+2026-02-25 22:37:04 WARN [ytdlp-runner][yt-dlp stderr] frame=  287 fps= 82 q=-1.0 size=    4024KiB time=00:00:09.54 bitrate=3454.4kbits/s speed=2.73x elapsed=0:00:03.50
+2026-02-25 22:37:04 WARN [ytdlp-runner][ffmpeg stderr] frame=  295 fps=147 q=-1.0 size=    4104KiB time=00:00:09.75 bitrate=3447.6kbits/s speed=4.88x elapsed=0:00:02.00
+2026-02-25 22:37:05 WARN [ytdlp-runner][yt-dlp stderr] frame=  322 fps= 80 q=-1.0 size=    4513KiB time=00:00:10.71 bitrate=3452.1kbits/s speed=2.68x elapsed=0:00:04.00
+2026-02-25 22:37:05 WARN [ytdlp-runner][ffmpeg stderr] frame=  331 fps=132 q=-1.0 size=    4575KiB time=00:00:10.89 bitrate=3441.7kbits/s speed=4.36x elapsed=0:00:02.50
+2026-02-25 22:37:05 WARN [ytdlp-runner][yt-dlp stderr] frame=  352 fps= 78 q=-1.0 size=    5025KiB time=00:00:11.71 bitrate=3515.1kbits/s speed= 2.6x elapsed=0:00:04.50
+2026-02-25 22:37:05 WARN [ytdlp-runner][ffmpeg stderr] frame=  360 fps=120 q=-1.0 size=    5105KiB time=00:00:11.88 bitrate=3517.9kbits/s speed=3.96x elapsed=0:00:03.00
+2026-02-25 22:37:06 WARN [ytdlp-runner][yt-dlp stderr] frame=  381 fps= 76 q=-1.0 size=    5525KiB time=00:00:12.67 bitrate=3569.7kbits/s speed=2.54x elapsed=0:00:05.00
+2026-02-25 22:37:06 WARN [ytdlp-runner][ffmpeg stderr] frame=  390 fps=111 q=-1.0 size=    5609KiB time=00:00:12.86 bitrate=3571.7kbits/s speed=3.67x elapsed=0:00:03.50
+2026-02-25 22:37:06 WARN [ytdlp-runner][yt-dlp stderr] frame=  409 fps= 74 q=-1.0 size=    5998KiB time=00:00:13.61 bitrate=3609.1kbits/s speed=2.47x elapsed=0:00:05.50
+2026-02-25 22:37:06 WARN [ytdlp-runner][ffmpeg stderr] frame=  417 fps=104 q=-1.0 size=    6104KiB time=00:00:13.83 bitrate=3613.4kbits/s speed=3.46x elapsed=0:00:04.00
+2026-02-25 22:37:07 WARN [ytdlp-runner][yt-dlp stderr] frame=  435 fps= 72 q=-1.0 size=    6535KiB time=00:00:14.48 bitrate=3697.1kbits/s speed=2.41x elapsed=0:00:06.00
+2026-02-25 22:37:07 WARN [ytdlp-runner][ffmpeg stderr] frame=  435 fps= 97 q=-1.0 size=    6493KiB time=00:00:14.48 bitrate=3673.3kbits/s speed=3.22x elapsed=0:00:04.50
+2026-02-25 22:37:07 WARN [ytdlp-runner][yt-dlp stderr] frame=  454 fps= 70 q=-1.0 size=    7024KiB time=00:00:15.11 bitrate=3806.8kbits/s speed=2.32x elapsed=0:00:06.50
+2026-02-25 22:37:07 WARN [ytdlp-runner][ffmpeg stderr] frame=  464 fps= 93 q=-1.0 size=    7112KiB time=00:00:15.32 bitrate=3801.5kbits/s speed=3.06x elapsed=0:00:05.00
+2026-02-25 22:37:08 WARN [ytdlp-runner][yt-dlp stderr] frame=  489 fps= 70 q=-1.0 size=    7542KiB time=00:00:16.28 bitrate=3794.3kbits/s speed=2.33x elapsed=0:00:07.00
+2026-02-25 22:37:08 WARN [ytdlp-runner][ffmpeg stderr] frame=  496 fps= 90 q=-1.0 size=    7629KiB time=00:00:16.50 bitrate=3785.3kbits/s speed=   3x elapsed=0:00:05.50
+2026-02-25 22:37:08 WARN [ytdlp-runner][yt-dlp stderr] frame=  518 fps= 69 q=-1.0 size=    8029KiB time=00:00:17.25 bitrate=3812.8kbits/s speed= 2.3x elapsed=0:00:07.50
+2026-02-25 22:37:08 WARN [ytdlp-runner][ffmpeg stderr] frame=  524 fps= 87 q=-1.0 size=    8070KiB time=00:00:17.32 bitrate=3816.7kbits/s speed=2.89x elapsed=0:00:06.00
+2026-02-25 22:37:09 WARN [ytdlp-runner][yt-dlp stderr] frame=  547 fps= 68 q=-1.0 size=    8527KiB time=00:00:18.21 bitrate=3834.1kbits/s speed=2.28x elapsed=0:00:08.00
+2026-02-25 22:37:09 WARN [ytdlp-runner][ffmpeg stderr] frame=  551 fps= 85 q=-1.0 size=    8576KiB time=00:00:18.29 bitrate=3839.8kbits/s speed=2.81x elapsed=0:00:06.50
+2026-02-25 22:37:09 WARN [ytdlp-runner][yt-dlp stderr] frame=  566 fps= 67 q=-1.0 size=    8944KiB time=00:00:18.85 bitrate=3886.3kbits/s speed=2.22x elapsed=0:00:08.50
+2026-02-25 22:37:09 WARN [ytdlp-runner][ffmpeg stderr] frame=  568 fps= 81 q=-1.0 size=    8917KiB time=00:00:18.80 bitrate=3883.9kbits/s speed=2.69x elapsed=0:00:07.00
+2026-02-25 22:37:10 WARN [ytdlp-runner][yt-dlp stderr] frame=  576 fps= 64 q=-1.0 size=    9503KiB time=00:00:19.18 bitrate=4057.5kbits/s speed=2.13x elapsed=0:00:09.00
+2026-02-25 22:37:10 WARN [ytdlp-runner][ffmpeg stderr] frame=  579 fps= 77 q=-1.0 size=    9579KiB time=00:00:19.28 bitrate=4068.8kbits/s speed=2.57x elapsed=0:00:07.50
+2026-02-25 22:37:10 WARN [ytdlp-runner][yt-dlp stderr] frame=  603 fps= 63 q=-1.0 size=    9992KiB time=00:00:20.08 bitrate=4074.9kbits/s speed=2.11x elapsed=0:00:09.50
+2026-02-25 22:37:10 WARN [ytdlp-runner][ffmpeg stderr] frame=  612 fps= 76 q=-1.0 size=   10109KiB time=00:00:20.34 bitrate=4071.3kbits/s speed=2.54x elapsed=0:00:08.00
+2026-02-25 22:37:11 WARN [ytdlp-runner][yt-dlp stderr] frame=  634 fps= 63 q=-1.0 size=   10513KiB time=00:00:21.12 bitrate=4077.4kbits/s speed=2.11x elapsed=0:00:10.00
+2026-02-25 22:37:11 WARN [ytdlp-runner][ffmpeg stderr] frame=  644 fps= 76 q=-1.0 size=   10641KiB time=00:00:21.45 bitrate=4062.8kbits/s speed=2.52x elapsed=0:00:08.50
+2026-02-25 22:37:11 INFO [ytdlp-runner] Cliente desconectou (response-close), encerrando processos.
+2026-02-25 22:37:11 INFO [ytdlp-runner] Cliente desconectou (request-close), encerrando processos.
+2026-02-25 22:37:11 WARN [ytdlp-runner][yt-dlp stderr] frame=  671 fps= 64 q=-1.0 size=   11010KiB time=00:00:22.35 bitrate=4034.3kbits/s speed=2.13x elapsed=0:00:10.50
+2026-02-25 22:37:12 WARN [ytdlp-runner][yt-dlp stderr] frame=  695 fps= 63 q=-1.0 size=   11472KiB time=00:00:23.15 bitrate=4058.4kbits/s speed= 2.1x elapsed=0:00:11.00
+2026-02-25 22:37:12 WARN [ytdlp-runner][yt-dlp stderr] frame=  701 fps= 61 q=-1.0 size=   11584KiB time=00:00:23.45 bitrate=4045.5kbits/s speed=2.04x elapsed=0:00:11.50
+2026-02-25 22:37:13 WARN [ytdlp-runner][yt-dlp stderr] frame=  701 fps= 58 q=-1.0 size=   11584KiB time=00:00:23.45 bitrate=4045.5kbits/s speed=1.95x elapsed=0:00:12.00
+2026-02-25 22:37:13 WARN [ytdlp-runner] Forçando SIGKILL em processos yt-dlp/ffmpeg para garantir limpeza.
+2026-02-25 22:37:13 WARN [ytdlp-runner] Forçando SIGKILL em processos yt-dlp/ffmpeg para garantir limpeza.
+node:events:502
+      throw er; // Unhandled 'error' event
+      ^
 
-2026-02-21 18:28:18 WARN [ytdlp-runner][ffmpeg stderr] Exiting normally, received signal 15.
+Error: write EPIPE
+    at WriteWrap.onWriteComplete [as oncomplete] (node:internal/stream_base_commons:95:16)
+Emitted 'error' event on Socket instance at:
+    at Socket.onerror (node:internal/streams/readable:1028:14)
+    at Socket.emit (node:events:524:28)
+    at emitErrorNT (node:internal/streams/destroy:169:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:128:3)
+    at process.processTicksAndRejections (node:internal/process/task_queues:82:21) {
+  errno: -32,
+  code: 'EPIPE',
+  syscall: 'write'
+}
 
-2026-02-21 18:28:18 INFO [ytdlp-runner] ffmpeg finalizado com code=255
-2026-02-21 18:28:18 WARN [ytdlp-runner][yt-dlp stderr] frame= 3553 fps= 59 q=-1.0 size=   24292KiB time=00:01:58.40 bitrate=1680.7kbits/s speed=1.97x elapsed=0:01:00.02
-2026-02-21 18:28:19 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 59 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.97x elapsed=0:01:00.52
-2026-02-21 18:28:19 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 58 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.95x elapsed=0:01:01.02
-2026-02-21 18:28:20 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 58 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.93x elapsed=0:01:01.52
-2026-02-21 18:28:20 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 57 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.92x elapsed=0:01:02.02
-2026-02-21 18:28:21 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 57 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed= 1.9x elapsed=0:01:02.52
-2026-02-21 18:28:21 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 57 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.89x elapsed=0:01:03.02
-2026-02-21 18:28:22 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 56 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.87x elapsed=0:01:03.52
-2026-02-21 18:28:22 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 56 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.86x elapsed=0:01:04.02
-2026-02-21 18:28:23 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 55 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.84x elapsed=0:01:04.52
-2026-02-21 18:28:23 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 55 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.83x elapsed=0:01:05.02
-2026-02-21 18:28:24 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 54 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.82x elapsed=0:01:05.52
-2026-02-21 18:28:24 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 54 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed= 1.8x elapsed=0:01:06.02
-2026-02-21 18:28:25 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 54 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.79x elapsed=0:01:06.52
-2026-02-21 18:28:25 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 53 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.77x elapsed=0:01:07.02
-2026-02-21 18:28:26 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 53 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.76x elapsed=0:01:07.52
-2026-02-21 18:28:26 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 52 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.75x elapsed=0:01:08.02
-2026-02-21 18:28:27 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 52 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.74x elapsed=0:01:08.52
-2026-02-21 18:28:27 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 52 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.72x elapsed=0:01:09.02
-2026-02-21 18:28:28 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 51 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.71x elapsed=0:01:09.52
-2026-02-21 18:28:28 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 51 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed= 1.7x elapsed=0:01:10.02
-2026-02-21 18:28:29 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 51 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.69x elapsed=0:01:10.53
-2026-02-21 18:28:29 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 50 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.67x elapsed=0:01:11.03
-2026-02-21 18:28:30 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 50 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.66x elapsed=0:01:11.53
-2026-02-21 18:28:30 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 50 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.65x elapsed=0:01:12.03
-2026-02-21 18:28:31 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 49 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.64x elapsed=0:01:12.53
-2026-02-21 18:28:31 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 49 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.63x elapsed=0:01:13.03
-2026-02-21 18:28:32 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 48 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.62x elapsed=0:01:13.53
-2026-02-21 18:28:32 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 48 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.61x elapsed=0:01:14.03
-2026-02-21 18:28:33 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 48 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed= 1.6x elapsed=0:01:14.53
-2026-02-21 18:28:33 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 48 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.59x elapsed=0:01:15.03
-2026-02-21 18:28:34 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 47 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.57x elapsed=0:01:15.53
-2026-02-21 18:28:34 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 47 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.56x elapsed=0:01:16.03
-2026-02-21 18:28:35 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 47 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.55x elapsed=0:01:16.53
-2026-02-21 18:28:35 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 46 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.54x elapsed=0:01:17.03
-2026-02-21 18:28:36 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 46 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.53x elapsed=0:01:17.53
-2026-02-21 18:28:36 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 46 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.52x elapsed=0:01:18.03
-2026-02-21 18:28:37 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 45 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.51x elapsed=0:01:18.53
-2026-02-21 18:28:37 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 45 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed= 1.5x elapsed=0:01:19.03
-2026-02-21 18:28:38 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 45 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed= 1.5x elapsed=0:01:19.53
-2026-02-21 18:28:38 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 45 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.49x elapsed=0:01:20.03
-2026-02-21 18:28:39 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 44 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.48x elapsed=0:01:20.53
-2026-02-21 18:28:39 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 44 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.47x elapsed=0:01:21.03
-2026-02-21 18:28:40 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 44 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.46x elapsed=0:01:21.53
-2026-02-21 18:28:40 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 43 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.45x elapsed=0:01:22.03
-2026-02-21 18:28:41 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 43 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.44x elapsed=0:01:22.53
-2026-02-21 18:28:41 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 43 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.43x elapsed=0:01:23.03
-2026-02-21 18:28:42 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 43 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.42x elapsed=0:01:23.53
-2026-02-21 18:28:43 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 42 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.42x elapsed=0:01:24.03
-2026-02-21 18:28:43 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 42 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.41x elapsed=0:01:24.53
-2026-02-21 18:28:44 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 42 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed= 1.4x elapsed=0:01:25.03
-2026-02-21 18:28:44 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 42 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.39x elapsed=0:01:25.53
-2026-02-21 18:28:45 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 41 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.38x elapsed=0:01:26.03
-2026-02-21 18:28:45 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 41 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.37x elapsed=0:01:26.53
-2026-02-21 18:28:46 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 41 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.37x elapsed=0:01:27.03
-2026-02-21 18:28:46 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 41 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.36x elapsed=0:01:27.53
-2026-02-21 18:28:46 INFO [HTTP] GET /health → 200 (1ms) [anon]
-2026-02-21 18:28:47 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 41 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.35x elapsed=0:01:28.03
-2026-02-21 18:28:47 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 40 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.34x elapsed=0:01:28.53
-2026-02-21 18:28:48 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 40 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.34x elapsed=0:01:29.03
-2026-02-21 18:28:48 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 40 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.33x elapsed=0:01:29.53
-2026-02-21 18:28:49 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 40 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.32x elapsed=0:01:30.03
-2026-02-21 18:28:49 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 39 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.31x elapsed=0:01:30.53
-2026-02-21 18:28:50 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 39 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.31x elapsed=0:01:31.03
-2026-02-21 18:28:50 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 39 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed= 1.3x elapsed=0:01:31.53
-2026-02-21 18:28:51 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 39 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.29x elapsed=0:01:32.03
-2026-02-21 18:28:51 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 39 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.29x elapsed=0:01:32.53
-2026-02-21 18:28:52 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 38 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.28x elapsed=0:01:33.04
-2026-02-21 18:28:52 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 38 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.27x elapsed=0:01:33.54
-2026-02-21 18:28:53 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 38 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.26x elapsed=0:01:34.04
-2026-02-21 18:28:53 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 38 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.26x elapsed=0:01:34.54
-2026-02-21 18:28:54 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 38 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.25x elapsed=0:01:35.04
-2026-02-21 18:28:54 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 37 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.24x elapsed=0:01:35.54
-2026-02-21 18:28:55 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 37 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.24x elapsed=0:01:36.04
-2026-02-21 18:28:55 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 37 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.23x elapsed=0:01:36.54
-2026-02-21 18:28:56 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 37 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.23x elapsed=0:01:37.04
-2026-02-21 18:28:56 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 37 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.22x elapsed=0:01:37.54
-2026-02-21 18:28:57 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 36 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.21x elapsed=0:01:38.04
-2026-02-21 18:28:57 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 36 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.21x elapsed=0:01:38.54
-2026-02-21 18:28:58 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 36 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed= 1.2x elapsed=0:01:39.04
-2026-02-21 18:28:58 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 36 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.19x elapsed=0:01:39.54
-2026-02-21 18:28:59 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 36 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.19x elapsed=0:01:40.04
-2026-02-21 18:28:59 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 35 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.18x elapsed=0:01:40.54
-2026-02-21 18:29:00 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 35 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.18x elapsed=0:01:41.04
-2026-02-21 18:29:00 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 35 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.17x elapsed=0:01:41.54
-2026-02-21 18:29:01 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 35 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.17x elapsed=0:01:42.04
-2026-02-21 18:29:01 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 35 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.16x elapsed=0:01:42.54
-2026-02-21 18:29:02 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 35 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.15x elapsed=0:01:43.04
-2026-02-21 18:29:02 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 34 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.15x elapsed=0:01:43.54
-2026-02-21 18:29:03 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 34 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.14x elapsed=0:01:44.04
-2026-02-21 18:29:03 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 34 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.14x elapsed=0:01:44.54
-2026-02-21 18:29:04 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 34 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.13x elapsed=0:01:45.04
-2026-02-21 18:29:04 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 34 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.13x elapsed=0:01:45.54
-2026-02-21 18:29:05 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 34 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.12x elapsed=0:01:46.04
-2026-02-21 18:29:05 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 33 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.12x elapsed=0:01:46.54
-2026-02-21 18:29:06 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 33 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.11x elapsed=0:01:47.04
-2026-02-21 18:29:06 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 33 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.11x elapsed=0:01:47.54
-2026-02-21 18:29:07 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 33 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed= 1.1x elapsed=0:01:48.04
-2026-02-21 18:29:07 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 33 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed= 1.1x elapsed=0:01:48.54
-2026-02-21 18:29:08 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 33 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.09x elapsed=0:01:49.04
-2026-02-21 18:29:08 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 33 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.09x elapsed=0:01:49.54
-2026-02-21 18:29:09 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 32 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.08x elapsed=0:01:50.04
-2026-02-21 18:29:09 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 32 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.08x elapsed=0:01:50.54
-2026-02-21 18:29:10 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 32 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.07x elapsed=0:01:51.04
-2026-02-21 18:29:10 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 32 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.07x elapsed=0:01:51.54
-2026-02-21 18:29:11 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 32 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.06x elapsed=0:01:52.04
-2026-02-21 18:29:11 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 32 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.06x elapsed=0:01:52.54
-2026-02-21 18:29:12 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 32 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.05x elapsed=0:01:53.04
-2026-02-21 18:29:12 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 31 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.05x elapsed=0:01:53.54
-2026-02-21 18:29:13 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 31 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.04x elapsed=0:01:54.04
-2026-02-21 18:29:13 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 31 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.04x elapsed=0:01:54.54
-2026-02-21 18:29:14 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 31 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.03x elapsed=0:01:55.05
-2026-02-21 18:29:14 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 31 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.03x elapsed=0:01:55.55
-2026-02-21 18:29:15 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 31 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.02x elapsed=0:01:56.05
-2026-02-21 18:29:15 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 31 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.02x elapsed=0:01:56.55
-2026-02-21 18:29:16 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 30 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.02x elapsed=0:01:57.05
-2026-02-21 18:29:16 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 30 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.01x elapsed=0:01:57.55
-2026-02-21 18:29:16 INFO [HTTP] GET /health → 200 (1ms) [anon]
-2026-02-21 18:29:17 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 30 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=1.01x elapsed=0:01:58.05
-2026-02-21 18:29:17 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 30 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=   1x elapsed=0:01:58.55
-2026-02-21 18:29:18 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 30 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.999x elapsed=0:01:59.05
-2026-02-21 18:29:18 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 30 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.995x elapsed=0:01:59.55
-2026-02-21 18:29:19 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 30 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.991x elapsed=0:02:00.05
-2026-02-21 18:29:19 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 30 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.987x elapsed=0:02:00.55
-2026-02-21 18:29:20 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 29 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.982x elapsed=0:02:01.05
-2026-02-21 18:29:20 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 29 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.978x elapsed=0:02:01.55
-2026-02-21 18:29:21 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 29 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.974x elapsed=0:02:02.05
-2026-02-21 18:29:21 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 29 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.97x elapsed=0:02:02.55
-2026-02-21 18:29:22 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 29 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.967x elapsed=0:02:03.05
-2026-02-21 18:29:22 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 29 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.963x elapsed=0:02:03.55
-2026-02-21 18:29:23 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 29 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.959x elapsed=0:02:04.05
-2026-02-21 18:29:23 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 29 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.955x elapsed=0:02:04.55
-2026-02-21 18:29:24 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 29 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.951x elapsed=0:02:05.05
-2026-02-21 18:29:24 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 28 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.947x elapsed=0:02:05.55
-2026-02-21 18:29:25 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 28 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.944x elapsed=0:02:06.05
-2026-02-21 18:29:25 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 28 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.94x elapsed=0:02:06.55
-2026-02-21 18:29:26 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 28 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.936x elapsed=0:02:07.05
-2026-02-21 18:29:26 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 28 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.932x elapsed=0:02:07.55
-2026-02-21 18:29:27 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 28 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.929x elapsed=0:02:08.05
-2026-02-21 18:29:27 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 28 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.925x elapsed=0:02:08.55
-2026-02-21 18:29:28 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 28 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.922x elapsed=0:02:09.05
-2026-02-21 18:29:28 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 28 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.918x elapsed=0:02:09.55
-2026-02-21 18:29:29 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 27 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.914x elapsed=0:02:10.05
-2026-02-21 18:29:29 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 27 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.911x elapsed=0:02:10.55
-2026-02-21 18:29:30 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 27 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.907x elapsed=0:02:11.05
-2026-02-21 18:29:30 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 27 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.904x elapsed=0:02:11.55
-2026-02-21 18:29:31 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 27 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.901x elapsed=0:02:12.05
-2026-02-21 18:29:31 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 27 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.897x elapsed=0:02:12.55
-2026-02-21 18:29:32 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 27 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.894x elapsed=0:02:13.05
-2026-02-21 18:29:32 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 27 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.89x elapsed=0:02:13.55
-2026-02-21 18:29:33 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 27 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.887x elapsed=0:02:14.05
-2026-02-21 18:29:33 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 27 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.884x elapsed=0:02:14.55
-2026-02-21 18:29:34 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 26 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.881x elapsed=0:02:15.05
-2026-02-21 18:29:34 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 26 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.877x elapsed=0:02:15.55
-2026-02-21 18:29:35 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 26 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.874x elapsed=0:02:16.05
-2026-02-21 18:29:35 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 26 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.871x elapsed=0:02:16.55
-2026-02-21 18:29:36 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 26 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.868x elapsed=0:02:17.06
-2026-02-21 18:29:36 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 26 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.865x elapsed=0:02:17.56
-2026-02-21 18:29:37 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 26 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.861x elapsed=0:02:18.06
-2026-02-21 18:29:37 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 26 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.858x elapsed=0:02:18.56
-2026-02-21 18:29:38 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 26 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.855x elapsed=0:02:19.06
-2026-02-21 18:29:38 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 26 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.852x elapsed=0:02:19.56
-2026-02-21 18:29:39 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 25 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.849x elapsed=0:02:20.06
-2026-02-21 18:29:39 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 25 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.846x elapsed=0:02:20.56
-2026-02-21 18:29:40 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 25 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.843x elapsed=0:02:21.06
-2026-02-21 18:29:40 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 25 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.84x elapsed=0:02:21.56
-2026-02-21 18:29:41 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 25 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.837x elapsed=0:02:22.06
-2026-02-21 18:29:41 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 25 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.834x elapsed=0:02:22.56
-2026-02-21 18:29:42 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 25 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.831x elapsed=0:02:23.06
-2026-02-21 18:29:42 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 25 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.828x elapsed=0:02:23.56
-2026-02-21 18:29:43 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 25 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.826x elapsed=0:02:24.06
-2026-02-21 18:29:43 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 25 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.823x elapsed=0:02:24.56
-2026-02-21 18:29:44 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 25 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.82x elapsed=0:02:25.06
-2026-02-21 18:29:44 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 24 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.817x elapsed=0:02:25.56
-2026-02-21 18:29:45 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 24 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.814x elapsed=0:02:26.06
-2026-02-21 18:29:45 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 24 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.811x elapsed=0:02:26.56
-2026-02-21 18:29:46 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 24 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.809x elapsed=0:02:27.06
-2026-02-21 18:29:46 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 24 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.806x elapsed=0:02:27.56
-2026-02-21 18:29:46 INFO [HTTP] GET /health → 200 (0ms) [anon]
-2026-02-21 18:29:47 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 24 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.803x elapsed=0:02:28.06
-2026-02-21 18:29:47 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 24 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.801x elapsed=0:02:28.56
-2026-02-21 18:29:48 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 24 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.798x elapsed=0:02:29.06
-2026-02-21 18:29:48 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 24 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.795x elapsed=0:02:29.56
-2026-02-21 18:29:49 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 24 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.793x elapsed=0:02:30.06
-2026-02-21 18:29:49 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 24 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.79x elapsed=0:02:30.56
-2026-02-21 18:29:50 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 24 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.787x elapsed=0:02:31.06
-2026-02-21 18:29:50 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 24 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.785x elapsed=0:02:31.56
-2026-02-21 18:29:51 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 23 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.782x elapsed=0:02:32.06
-2026-02-21 18:29:51 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 23 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.78x elapsed=0:02:32.56
-2026-02-21 18:29:52 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 23 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.777x elapsed=0:02:33.06
-2026-02-21 18:29:52 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 23 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.774x elapsed=0:02:33.56
-2026-02-21 18:29:53 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 23 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.772x elapsed=0:02:34.06
-2026-02-21 18:29:53 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 23 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.769x elapsed=0:02:34.56
-2026-02-21 18:29:54 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 23 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.767x elapsed=0:02:35.06
-2026-02-21 18:29:54 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 23 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.765x elapsed=0:02:35.56
-2026-02-21 18:29:55 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 23 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.762x elapsed=0:02:36.06
-2026-02-21 18:29:55 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 23 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.76x elapsed=0:02:36.56
-2026-02-21 18:29:56 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 23 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.757x elapsed=0:02:37.06
-2026-02-21 18:29:56 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 23 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.755x elapsed=0:02:37.56
-2026-02-21 18:29:57 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 23 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.752x elapsed=0:02:38.06
-2026-02-21 18:29:57 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 22 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.75x elapsed=0:02:38.56
-2026-02-21 18:29:58 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 22 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.748x elapsed=0:02:39.06
-2026-02-21 18:29:58 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 22 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.745x elapsed=0:02:39.57
-2026-02-21 18:29:59 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 22 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.743x elapsed=0:02:40.07
-2026-02-21 18:29:59 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 22 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.741x elapsed=0:02:40.57
-2026-02-21 18:30:00 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 22 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.738x elapsed=0:02:41.07
-2026-02-21 18:30:00 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 22 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.736x elapsed=0:02:41.57
-2026-02-21 18:30:01 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 22 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.734x elapsed=0:02:42.07
-2026-02-21 18:30:01 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 22 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.732x elapsed=0:02:42.57
-2026-02-21 18:30:02 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 22 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.729x elapsed=0:02:43.07
-2026-02-21 18:30:02 WARN [ytdlp-runner][yt-dlp stderr] frame= 3566 fps= 22 q=-1.0 size=   24411KiB time=00:01:58.93 bitrate=1681.4kbits/s speed=0.727x elapsed=0:02:43.57
-
-LOG de 27/02/26 22h
-
-root@master3:~# sudo docker compose --file /home/user1/docker/docker-compose-master3.yml up -d tube
-[+] Running 1/1
- ✔ Container tube  Started                                                                                                                                         0.4s
-root@master3:~# docker logs -f tube
-2026-02-27 22:50:53 INFO [StateManager] Cache carregado com 114 streams.
-2026-02-27 22:50:53 INFO [YouTubeApi] Lista de chaves atualizada (1 chave(s)).
+Node.js v20.20.0
+2026-02-25 22:37:15 INFO [StateManager] Cache carregado com 17 streams.
+2026-02-25 22:37:15 INFO [YouTubeApi] Lista de chaves atualizada (1 chave(s)).
 Warning: connect.session() MemoryStore is not
 designed for a production environment, as it will leak
 memory, and will not scale past a single process.
-2026-02-27 22:50:53 INFO Servidor HTTP iniciado em http://0.0.0.0:8888
-2026-02-27 22:50:53 INFO [Scheduler] Iniciado com delay inicial (cache existente detectado).
-2026-02-27 22:50:53 INFO [Scheduler] Loop iniciado. Tick a cada 60s.
-2026-02-27 22:50:53 INFO [Scheduler] 1 stream(s) na janela pré-evento.
-2026-02-27 22:50:53 INFO [Scheduler] 1 stream(s) live em monitoramento.
-2026-02-27 22:50:53 INFO [Scheduler] Verificação alta frequência: 2 stream(s).
-2026-02-27 22:50:53 INFO [Scheduler] Estado: 1 live | 103 upcoming | 10 vod.
-2026-02-27 22:51:09 INFO [HTTP] GET / → 302 (4ms) [anon]
-2026-02-27 22:51:09 INFO [HTTP] GET /login → 200 (18ms) [anon]
-2026-02-27 22:51:10 INFO [HTTP] GET /css/style.css → 200 (8ms) [anon]
-2026-02-27 22:51:10 INFO [HTTP] GET /favicon.ico → 404 (8ms) [anon]
-2026-02-27 22:51:18 INFO [HTTP] POST /api/auth/login → 200 (45ms) [admin]
-2026-02-27 22:51:18 INFO [HTTP] GET / → 200 (1ms) [admin]
-2026-02-27 22:51:18 INFO [HTTP] GET /css/style.css → 304 (6ms) [admin]
-2026-02-27 22:51:18 INFO [HTTP] GET /js/app.js → 200 (9ms) [admin]
-2026-02-27 22:51:18 INFO [HTTP] GET /js/dashboard.js → 200 (19ms) [admin]
-2026-02-27 22:51:18 INFO [HTTP] GET /js/channels.js → 200 (19ms) [admin]
-2026-02-27 22:51:18 INFO [HTTP] GET /js/streams.js → 200 (21ms) [admin]
-2026-02-27 22:51:18 INFO [HTTP] GET /js/settings.js → 200 (11ms) [admin]
-2026-02-27 22:51:18 INFO [HTTP] GET /js/playlists.js → 200 (10ms) [admin]
-2026-02-27 22:51:18 INFO [HTTP] GET /js/logs.js → 200 (9ms) [admin]
-2026-02-27 22:51:18 INFO [HTTP] GET /api/scheduler/status → 200 (7ms) [admin]
-2026-02-27 22:51:18 INFO [HTTP] GET /api/channels → 304 (24ms) [admin]
-2026-02-27 22:51:18 INFO [HTTP] GET /api/config → 304 (2ms) [admin]
-2026-02-27 22:51:18 INFO [HTTP] GET /api/streams → 200 (45ms) [admin]
-2026-02-27 22:51:18 INFO [HTTP] GET /api/scheduler/status → 304 (5ms) [admin]
-2026-02-27 22:51:21 INFO [HTTP] GET /api/scheduler/status → 304 (2ms) [admin]
-2026-02-27 22:51:22 INFO [HTTP] GET /health → 200 (1ms) [anon]
-2026-02-27 22:51:37 INFO [HTTP] GET /live-proxy.m3u → 200 (4ms) [anon]
-2026-02-27 22:51:37 INFO [SmartPlayer] Requisição de stream: videoId=zUGmLLq3An8
-2026-02-27 22:51:37 INFO [SmartPlayer] Stream encontrado: videoId=zUGmLLq3An8 status=live
-2026-02-27 22:51:37 INFO [SmartPlayer] Stream está genuinamente ao vivo: videoId=zUGmLLq3An8
-2026-02-27 22:51:37 INFO [streamlink-runner] Testando streamlinkHasPlayableStream: url=https://www.youtube.com/watch?v=zUGmLLq3An8
-2026-02-27 22:51:39 INFO [streamlink-runner] streamlinkHasPlayableStream finalizado code=1
-2026-02-27 22:51:39 INFO [SmartPlayer] streamlinkHasPlayableStream=true videoId=zUGmLLq3An8
-2026-02-27 22:51:39 INFO [SmartPlayer] Usando Streamlink para videoId=zUGmLLq3An8
-2026-02-27 22:51:39 INFO [streamlink-runner] Iniciando streamlink: url=https://www.youtube.com/watch?v=zUGmLLq3An8
-2026-02-27 22:51:39 WARN [streamlink-runner][stderr] [cli][info] streamlink is running as root! Be careful!
-
-2026-02-27 22:51:39 WARN [streamlink-runner][stderr] [cli][info] Found matching plugin youtube for URL https://www.youtube.com/watch?v=zUGmLLq3An8
-
-2026-02-27 22:51:40 WARN [streamlink-runner][stderr] [cli][info] Available streams: 144p (worst), 240p, 360p, 480p, 720p, 1080p (best)
-
-2026-02-27 22:51:40 WARN [streamlink-runner][stderr] [cli][info] Opening stream: 1080p (hls)
-
-2026-02-27 22:51:48 INFO [streamlink-runner] Cliente desconectou (response), encerrando streamlink pid=26
-2026-02-27 22:51:48 WARN [streamlink-runner][stderr] [cli][info] Stream ended
-Interrupted! Exiting...
-
-2026-02-27 22:51:48 WARN [streamlink-runner][stderr] [cli][info] Closing currently open stream...
-
-2026-02-27 22:51:48 INFO [streamlink-runner] streamlink finalizado com code=130
-2026-02-27 22:51:52 INFO [HTTP] GET /health → 200 (0ms) [anon]
-2026-02-27 22:52:01 INFO [HTTP] GET /upcoming-proxy.m3u → 200 (4ms) [anon]
-2026-02-27 22:52:01 INFO [SmartPlayer] Requisição de stream: videoId=VqrQfozoPAU
-2026-02-27 22:52:01 INFO [SmartPlayer] Stream encontrado: videoId=VqrQfozoPAU status=upcoming
-2026-02-27 22:52:01 INFO [SmartPlayer] Enviando placeholder com texto para videoId=VqrQfozoPAU
-[ffmpeg-runner] Comando ffmpeg: ffmpeg '-loglevel' 'error' '-user_agent' 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.3' '-i' 'https://i.ytimg.com/vi/VqrQfozoPAU/maxresdefault_live.jpg' '-f' 'lavfi' '-i' 'anullsrc=r=44100:cl=mono' '-filter_complex' '[0:v]scale=854:480,loop=-1:1:0,drawtext=fontfile='/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf':text='Ao vivo em 1d 12h':x=(w-text_w)/2:y=h-100:fontsize=48:fontcolor=white:borderw=2:bordercolor=black@0.8,drawtext=fontfile='/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf':text='1 Mar às 10\:55':x=(w-text_w)/2:y=h-50:fontsize=36:fontcolor=white:borderw=2:bordercolor=black@0.8[v]' '-map' '[v]' '-map' '1:a' '-c:v' 'libx264' '-preset' 'ultrafast' '-crf' '45' '-b:v' '150k' '-r' '1' '-g' '120' '-pix_fmt' 'yuv420p' '-c:a' 'aac' '-b:a' '24k' '-ac' '1' '-tune' 'stillimage' '-f' 'mpegts' 'pipe:1'
-[ffmpeg-runner] User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.3
-2026-02-27 22:52:01 INFO [ffmpeg-runner] Iniciando ffmpeg placeholder: imageUrl=https://i.ytimg.com/vi/VqrQfozoPAU/maxresdefault_live.jpg
-2026-02-27 22:52:10 INFO [ffmpeg-runner] Cliente desconectou (response), encerrando ffmpeg pid=37...
-2026-02-27 22:52:22 INFO [HTTP] GET /health → 200 (1ms) [anon]
-2026-02-27 22:52:28 INFO [HTTP] GET /vod-proxy.m3u → 200 (4ms) [anon]
-2026-02-27 22:52:28 INFO [SmartPlayer] Requisição de stream: videoId=HciTwfuweB8
-2026-02-27 22:52:28 INFO [SmartPlayer] Stream encontrado: videoId=HciTwfuweB8 status=none
-2026-02-27 22:52:28 INFO [SmartPlayer] Usando yt-dlp para videoId=HciTwfuweB8 status=none
-2026-02-27 22:52:28 INFO [ytdlp-runner] Iniciando yt-dlp: url=https://www.youtube.com/watch?v=HciTwfuweB8
-2026-02-27 22:52:28 WARN [ytdlp-runner][ffmpeg stderr] ffmpeg version 8.0.1 Copyright (c) 2000-2025 the FFmpeg developers
+2026-02-25 22:37:15 INFO Servidor HTTP iniciado em http://0.0.0.0:8888
+2026-02-25 22:37:15 INFO [Scheduler] Iniciado com delay inicial (cache existente detectado).
+2026-02-25 22:37:15 INFO [Scheduler] Loop iniciado. Tick a cada 60s.
+2026-02-25 22:37:16 INFO [SmartPlayer] Requisição de stream: videoId=smDmy-EVXUE
+2026-02-25 22:37:16 INFO [SmartPlayer] Stream encontrado: videoId=smDmy-EVXUE status=none
+2026-02-25 22:37:16 INFO [SmartPlayer] Usando yt-dlp para videoId=smDmy-EVXUE status=none
+2026-02-25 22:37:16 INFO [ytdlp-runner] Iniciando yt-dlp: url=https://www.youtube.com/watch?v=smDmy-EVXUE
+2026-02-25 22:37:17 WARN [ytdlp-runner][ffmpeg stderr] ffmpeg version 8.0.1 Copyright (c) 2000-2025 the FFmpeg developers
   built with gcc 15.2.0 (Alpine 15.2.0)
   configuration: --prefix=/usr --disable-librtmp --disable-lzma --disable-static --disable-stripping --enable-avfilter --enable-gpl --enable-ladspa --enable-libaom --enable-libass --enable-libbluray --enable-libdav1d --enable-libdrm --enable-libfontconfig --enable-libfreetype --enable-libfribidi --enable-libharfbuzz --enable-libjxl --enable-libmp3lame --enable-libopenmpt --enable-libopus --enable-libplacebo --enable-libpulse --enable-librav1e --enable-librist --enable-libshaderc --enable-libsoxr --enable-libsrt --enable-libssh --enable-libtheora --enable-libv4l2 --enable-libvidstab --enable-libvorbis --enable-libvpx --enable-libwebp --enable-libx264 --enable-libx265 --enable-libxcb --enable-libxml2 --enable-libxvid --enable-libzimg --enable-libzmq --enable-lto=auto --enable-lv2 --enable-openssl --enable-pic --enable-pthreads --enable-shared --enable-vaapi --enable-vdpau --enable-version3 --enable-vulkan --optflags=-O3 --enable-libsvtav1 --enable-libvpl
   libavutil      60.  8.100 / 60.  8.100
@@ -638,216 +231,428 @@ Interrupted! Exiting...
   libswscale      9.  1.100 /  9.  1.100
   libswresample   6.  1.100 /  6.  1.100
 
-2026-02-27 22:52:28 WARN [ytdlp-runner][yt-dlp stderr] [youtube] Extracting URL: https://www.youtube.com/watch?v=HciTwfuweB8
+2026-02-25 22:37:17 WARN [ytdlp-runner][yt-dlp stderr] [youtube] Extracting URL: https://www.youtube.com/watch?v=smDmy-EVXUE
 
-2026-02-27 22:52:28 WARN [ytdlp-runner][yt-dlp stderr] [youtube] HciTwfuweB8: Downloading webpage
+2026-02-25 22:37:17 WARN [ytdlp-runner][yt-dlp stderr] [youtube] smDmy-EVXUE: Downloading webpage
 
-2026-02-27 22:52:29 WARN [ytdlp-runner][yt-dlp stderr] WARNING: [youtube] No supported JavaScript runtime could be found. Only deno is enabled by default; to use another runtime add  --js-runtimes RUNTIME[:PATH]  to your command/config. YouTube extraction without a JS runtime has been deprecated, and some formats may be missing. See  https://github.com/yt-dlp/yt-dlp/wiki/EJS  for details on installing one
+2026-02-25 22:37:18 WARN [ytdlp-runner][yt-dlp stderr] WARNING: [youtube] No supported JavaScript runtime could be found. Only deno is enabled by default; to use another runtime add  --js-runtimes RUNTIME[:PATH]  to your command/config. YouTube extraction without a JS runtime has been deprecated, and some formats may be missing. See  https://github.com/yt-dlp/yt-dlp/wiki/EJS  for details on installing one
 
-2026-02-27 22:52:29 WARN [ytdlp-runner][yt-dlp stderr] [youtube] HciTwfuweB8: Downloading android vr player API JSON
+2026-02-25 22:37:18 WARN [ytdlp-runner][yt-dlp stderr] [youtube] smDmy-EVXUE: Downloading android vr player API JSON
 
-2026-02-27 22:52:29 WARN [ytdlp-runner][yt-dlp stderr] [youtube] HciTwfuweB8: Downloading m3u8 information
+2026-02-25 22:37:18 WARN [ytdlp-runner][yt-dlp stderr] [youtube] smDmy-EVXUE: Downloading MPD manifest
 
-2026-02-27 22:52:29 WARN [ytdlp-runner][yt-dlp stderr] [youtube] HciTwfuweB8: Downloading MPD manifest
+2026-02-25 22:37:19 WARN [ytdlp-runner][yt-dlp stderr] [info] smDmy-EVXUE: Downloading 1 format(s): 299+140
 
-2026-02-27 22:52:30 WARN [ytdlp-runner][yt-dlp stderr] [info] HciTwfuweB8: Downloading 1 format(s): 137+140
+2026-02-25 22:37:19 WARN [ytdlp-runner][yt-dlp stderr] [download] Destination: -
 
-2026-02-27 22:52:30 WARN [ytdlp-runner][yt-dlp stderr] [download] Destination: -
-
-2026-02-27 22:52:33 WARN [ytdlp-runner][yt-dlp stderr] Input #0, dash, from 'https://manifest.googlevideo.com/api/manifest/dash/expire/1772265149/ei/XUqiaeDLF_z11sQPg6rzuQI/ip/177.207.209.234/id/HciTwfuweB8.1/source/yt_live_broadcast/requiressl/yes/xpc/EgVo2aDSNQ%3D%3D/tx/51539831/txs/51539830%2C51539831/as/fmp4_audio_clear%2Cwebm_audio_clear%2Cwebm2_audio_clear%2Cfmp4_sd_hd_clear%2Cwebm2_sd_hd_clear/force_finished/1/sident/1/spc/6dlaFNF98lXB/vprv/1/rqh/2/reg/0/pacing/0/itag_bl/374%2C375%2C407%2C408%2C612%2C613%2C617%2C619%2C623%2C628%2C655%2C656%2C660%2C662%2C666%2C671%2C798%2C799%2C803%2C804%2C834%2C868%2C870%2C872%2C874%2C876%2C880%2C882%2C884%2C886%2C888%2C893%2C897%2C899/keepalive/yes/fexp/51552689%2C51565115%2C51565681%2C51580968%2C51791333/itag/0/playlist_type/DVR/sparams/expire%2Cei%2Cip%2Cid%2Csource%2Crequiressl%2Cxpc%2Ctx%2Ctxs%2Cas%2Cforce_finished%2Csident%2Cspc%2Cvprv%2Crqh%2Creg%2Citag%2Cplaylist_type/sig/AJEij0EwRQIgFwRlTAo0TaiAv3M6LwKHYln15uXqY4Fi66enJiGLU6UCIQCpesBzeRHevuDkNFRhSRUB2c9swz-d82_z2LyQBGhOug%3D%3D':
-  Duration: 01:09:30.00, start: 0.000000, bitrate: 0 kb/s
+2026-02-25 22:37:21 INFO [ytdlp-runner] Cliente desconectou (response-close), encerrando processos.
+2026-02-25 22:37:21 INFO [ytdlp-runner] Cliente desconectou (request-close), encerrando processos.
+2026-02-25 22:37:23 WARN [ytdlp-runner] Forçando SIGKILL em processos yt-dlp/ffmpeg para garantir limpeza.
+2026-02-25 22:37:23 WARN [ytdlp-runner] Forçando SIGKILL em processos yt-dlp/ffmpeg para garantir limpeza.
+2026-02-25 22:37:23 INFO [ytdlp-runner] ffmpeg finalizado com code=null
+2026-02-25 22:37:26 WARN [ytdlp-runner][yt-dlp stderr] Input #0, dash, from 'https://manifest.googlevideo.com/api/manifest/dash/expire/1772091438/ei/zqOfaYzaJOuO-LAPlZzwwQM/ip/177.207.209.234/id/smDmy-EVXUE.1/source/yt_live_broadcast/requiressl/yes/xpc/EgVo2aDSNQ%3D%3D/hfr/1/as/fmp4_audio_clear%2Cwebm_audio_clear%2Cwebm2_audio_clear%2Cfmp4_sd_hd_clear%2Cwebm2_sd_hd_clear/force_finished/1/gcr/br/sident/1/spc/6dlaFIGtvkyU/vprv/1/rqh/2/reg/0/pacing/0/itag_bl/374%2C375%2C407%2C408%2C612%2C613%2C617%2C619%2C623%2C628%2C655%2C656%2C660%2C662%2C666%2C671%2C798%2C799%2C803%2C804%2C834%2C868%2C870%2C872%2C874%2C876%2C880%2C882%2C884%2C886%2C888%2C893%2C897%2C899/keepalive/yes/fexp/51552689%2C51565115%2C51565681%2C51580968%2C51791333/itag/0/playlist_type/DVR/sparams/expire%2Cei%2Cip%2Cid%2Csource%2Crequiressl%2Cxpc%2Chfr%2Cas%2Cforce_finished%2Cgcr%2Csident%2Cspc%2Cvprv%2Crqh%2Creg%2Citag%2Cplaylist_type/sig/AJEij0EwRAIgWxSsPMa0Ap187QXLZQUeatwzB2JleNcXkJeVCRJrdWQCIEAoBFxzSfhqMwY6AXM0kywZS8Tp_hdn1Og5M8E6VyG4':
+  Duration: 00:00:00.00, start: 14172.903039, bitrate: N/A
   Program 0
-  Stream #0:0: Video: h264 (Main) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 426x240 [SAR 1:1 DAR 71:40], 276 kb/s, 29.97 fps, 29.97 tbr, 90k tbn (default)
+  Stream #0:0: Video: h264 (Main) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 426x240 [SAR 1:1 DAR 71:40], 3168 kb/s, 29.97 fps, 29.97 tbr, 90k tbn, start 14172.925433 (default)
     Metadata:
-      variant_bitrate : 456228
 
-2026-02-27 22:52:33 WARN [ytdlp-runner][yt-dlp stderr]       id              : 133
-  Stream #0:1: Video: h264 (Main) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 640x360 [SAR 1:1 DAR 16:9], 493 kb/s, 29.97 fps, 29.97 tbr, 90k tbn (default)
+2026-02-25 22:37:26 WARN [ytdlp-runner][yt-dlp stderr]       variant_bitrate : 419256
+      id              : 133
+  Stream #0:1: Video: h264 (Main) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 640x360 [SAR 1:1 DAR 16:9], 5612 kb/s, 29.97 fps, 29.97 tbr, 90k tbn, start 14172.925433 (default)
     Metadata:
-      variant_bitrate : 1008250
+      variant_bitrate : 772630
       id              : 134
-  Stream #0:2: Video: h264 (Main) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 854x480 [SAR 1:1 DAR 427:240], 709 kb/s, 29.97 fps, 29.97 tbr, 90k tbn (default)
+  Stream #0:2: Video: h264 (Main) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 854x480 [SAR 1:1 DAR 427:240], 8538 kb/s, 29.97 fps, 29.97 tbr, 90k tbn, start 14172.925433 (default)
     Metadata:
-      variant_bitrate : 1350025
+      variant_bitrate : 1077445
       id              : 135
-  Stream #0:3: Video: h264 (Constrained Baseline) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 256x144 [SAR 1:1 DAR 16:9], 124 kb/s, 14.99 fps, 14.99 tbr, 90k tbn (default)
+  Stream #0:3: Video: h264 (Main) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 256x144 [SAR 1:1 DAR 16:9], 1586 kb/s, 29.97 fps, 29.97 tbr, 90k tbn, start 14172.925433 (default)
     Metadata:
-      variant_bitrate : 212465
+      variant_bitrate : 192223
       id              : 160
-  Stream #0:4: Video: h264 (Main) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 1280x720 [SAR 1:1 DAR 16:9], 1220 kb/s, 29.97 fps, 29.97 tbr, 90k tbn (default)
+  Stream #0:4: Video: h264 (Main) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 1280x720 [SAR 1:1 DAR 16:9], 38413 kb/s, 59.94 fps, 59.94 tbr, 90k tbn, start 14172.925433 (default)
     Metadata:
-      variant_bitrate : 2684050
-      id              : 136
-  Stream #0:5: Video: h264 (High) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 1920x1080 [SAR 1:1 DAR 16:9], 2008 kb/s, 29.97 fps, 29.97 tbr, 90k tbn (default)
+      variant_bitrate : 2639005
+      id              : 298
+  Stream #0:5: Video: h264 (Main) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 1920x1080 [SAR 1:1 DAR 16:9], 78987 kb/s, 59.94 fps, 59.94 tbr, 90k tbn, start 14172.925433 (default)
     Metadata:
-      variant_bitrate : 5018593
-      id              : 137
-  Stream #0:6: Audio: aac (HE-AAC) (mp4a / 0x6134706D), 44100 Hz, stereo, fltp, 48 kb/s (default)
+      variant_bitrate : 5144200
+      id              : 299
+  Stream #0:6: Audio: aac (HE-AAC) (mp4a / 0x6134706D), 44100 Hz, stereo, fltp, 59 kb/s, start 14172.903039 (default)
     Metadata:
       variant_bitrate : 64000
       id              : 139
-  Stream #0:7: Audio: aac (LC) (mp4a / 0x6134706D), 44100 Hz, stereo, fltp, 128 kb/s (default)
+  Stream #0:7: Audio: aac (LC) (mp4a / 0x6134706D), 44100 Hz, stereo, fltp, 119 kb/s, start 14172.926259 (default)
     Metadata:
       variant_bitrate : 144000
       id              : 140
 
-2026-02-27 22:52:37 WARN [ytdlp-runner][yt-dlp stderr] Input #1, dash, from 'https://manifest.googlevideo.com/api/manifest/dash/expire/1772265149/ei/XUqiaeDLF_z11sQPg6rzuQI/ip/177.207.209.234/id/HciTwfuweB8.1/source/yt_live_broadcast/requiressl/yes/xpc/EgVo2aDSNQ%3D%3D/tx/51539831/txs/51539830%2C51539831/as/fmp4_audio_clear%2Cwebm_audio_clear%2Cwebm2_audio_clear%2Cfmp4_sd_hd_clear%2Cwebm2_sd_hd_clear/force_finished/1/sident/1/spc/6dlaFNF98lXB/vprv/1/rqh/2/reg/0/pacing/0/itag_bl/374%2C375%2C407%2C408%2C612%2C613%2C617%2C619%2C623%2C628%2C655%2C656%2C660%2C662%2C666%2C671%2C798%2C799%2C803%2C804%2C834%2C868%2C870%2C872%2C874%2C876%2C880%2C882%2C884%2C886%2C888%2C893%2C897%2C899/keepalive/yes/fexp/51552689%2C51565115%2C51565681%2C51580968%2C51791333/itag/0/playlist_type/DVR/sparams/expire%2Cei%2Cip%2Cid%2Csource%2Crequiressl%2Cxpc%2Ctx%2Ctxs%2Cas%2Cforce_finished%2Csident%2Cspc%2Cvprv%2Crqh%2Creg%2Citag%2Cplaylist_type/sig/AJEij0EwRQIgFwRlTAo0TaiAv3M6LwKHYln15uXqY4Fi66enJiGLU6UCIQCpesBzeRHevuDkNFRhSRUB2c9swz-d82_z2LyQBGhOug%3D%3D':
-  Duration: 01:09:30.00, start: 0.000000, bitrate: 0 kb/s
-  Program 0
-  Stream #1:0: Video: h264 (Main) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 426x240 [SAR 1:1 DAR 71:40], 276 kb/s, 29.97 fps, 29.97 tbr, 90k tbn (default)
-    Metadata:
-      variant_bitrate : 456228
-      id              : 133
+2026-02-25 22:37:29 INFO [SmartPlayer] Requisição de stream: videoId=smDmy-EVXUE
+2026-02-25 22:37:29 INFO [SmartPlayer] Stream encontrado: videoId=smDmy-EVXUE status=none
+2026-02-25 22:37:29 INFO [SmartPlayer] Usando yt-dlp para videoId=smDmy-EVXUE status=none
+2026-02-25 22:37:29 INFO [ytdlp-runner] Iniciando yt-dlp: url=https://www.youtube.com/watch?v=smDmy-EVXUE
+2026-02-25 22:37:29 WARN [ytdlp-runner][ffmpeg stderr] ffmpeg version 8.0.1
+2026-02-25 22:37:29 WARN [ytdlp-runner][ffmpeg stderr]  Copyright (c) 2000-2025 the FFmpeg developers
+2026-02-25 22:37:29 WARN [ytdlp-runner][ffmpeg stderr]
 
-2026-02-27 22:52:37 WARN [ytdlp-runner][yt-dlp stderr]   Stream #1:1: Video: h264 (Main) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 640x360 [SAR 1:1 DAR 16:9], 493 kb/s, 29.97 fps, 29.97 tbr, 90k tbn (default)
+2026-02-25 22:37:29 WARN [ytdlp-runner][ffmpeg stderr]   built with gcc 15.2.0 (Alpine 15.2.0)
+  configuration: --prefix=/usr --disable-librtmp --disable-lzma --disable-static --disable-stripping --enable-avfilter --enable-gpl --enable-ladspa --enable-libaom --enable-libass --enable-libbluray --enable-libdav1d --enable-libdrm --enable-libfontconfig --enable-libfreetype --enable-libfribidi --enable-libharfbuzz --enable-libjxl --enable-libmp3lame --enable-libopenmpt --enable-libopus --enable-libplacebo --enable-libpulse --enable-librav1e --enable-librist --enable-libshaderc --enable-libsoxr --enable-libsrt --enable-libssh --enable-libtheora --enable-libv4l2 --enable-libvidstab --enable-libvorbis --enable-libvpx --enable-libwebp --enable-libx264 --enable-libx265 --enable-libxcb --enable-libxml2 --enable-libxvid --enable-libzimg --enable-libzmq --enable-lto=auto --enable-lv2 --enable-openssl --enable-pic --enable-pthreads --enable-shared --enable-vaapi --enable-vdpau --enable-version3 --enable-vulkan --optflags=-O3 --enable-libsvtav1 --enable-libvpl
+
+2026-02-25 22:37:29 WARN [ytdlp-runner][ffmpeg stderr]   libavutil      60.  8.100 / 60.  8.100
+  libavcodec     62. 11.100 / 62. 11.100
+  libavformat    62.  3.100 / 62.  3.100
+  libavdevice    62.  1.100 / 62.  1.100
+  libavfilter    11.  4.100 / 11.  4.100
+  libswscale      9.  1.100 /  9.  1.100
+  libswresample   6.  1.100 /  6.  1.100
+
+2026-02-25 22:37:29 WARN [ytdlp-runner][yt-dlp stderr] Input #1, dash, from 'https://manifest.googlevideo.com/api/manifest/dash/expire/1772091438/ei/zqOfaYzaJOuO-LAPlZzwwQM/ip/177.207.209.234/id/smDmy-EVXUE.1/source/yt_live_broadcast/requiressl/yes/xpc/EgVo2aDSNQ%3D%3D/hfr/1/as/fmp4_audio_clear%2Cwebm_audio_clear%2Cwebm2_audio_clear%2Cfmp4_sd_hd_clear%2Cwebm2_sd_hd_clear/force_finished/1/gcr/br/sident/1/spc/6dlaFIGtvkyU/vprv/1/rqh/2/reg/0/pacing/0/itag_bl/374%2C375%2C407%2C408%2C612%2C613%2C617%2C619%2C623%2C628%2C655%2C656%2C660%2C662%2C666%2C671%2C798%2C799%2C803%2C804%2C834%2C868%2C870%2C872%2C874%2C876%2C880%2C882%2C884%2C886%2C888%2C893%2C897%2C899/keepalive/yes/fexp/51552689%2C51565115%2C51565681%2C51580968%2C51791333/itag/0/playlist_type/DVR/sparams/expire%2Cei%2Cip%2Cid%2Csource%2Crequiressl%2Cxpc%2Chfr%2Cas%2Cforce_finished%2Cgcr%2Csident%2Cspc%2Cvprv%2Crqh%2Creg%2Citag%2Cplaylist_type/sig/AJEij0EwRAIgWxSsPMa0Ap187QXLZQUeatwzB2JleNcXkJeVCRJrdWQCIEAoBFxzSfhqMwY6AXM0kywZS8Tp_hdn1Og5M8E6VyG4':
+  Duration: 00:00:00.00, start: 14172.903039, bitrate: N/A
+  Program 0
+  Stream #1:0: Video: h264 (Main) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 426x240 [SAR 1:1 DAR 71:40], 3168 kb/s, 29.97 fps, 29.97 tbr, 90k tbn
+2026-02-25 22:37:29 WARN [ytdlp-runner][yt-dlp stderr] , start 14172.925433 (default)
     Metadata:
-      variant_bitrate : 1008250
+      variant_bitrate : 419256
+      id              : 133
+  Stream #1:1: Video: h264 (Main) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 640x360 [SAR 1:1 DAR 16:9], 5612 kb/s, 29.97 fps, 29.97 tbr, 90k tbn, start 14172.925433 (default)
+    Metadata:
+      variant_bitrate : 772630
       id              : 134
-  Stream #1:2: Video: h264 (Main) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 854x480 [SAR 1:1 DAR 427:240], 709 kb/s, 29.97 fps, 29.97 tbr, 90k tbn (default)
+  Stream #1:2: Video: h264 (Main) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 854x480 [SAR 1:1 DAR 427:240], 8538 kb/s, 29.97 fps, 29.97 tbr, 90k tbn, start 14172.925433 (default)
     Metadata:
-      variant_bitrate : 1350025
+      variant_bitrate : 1077445
       id              : 135
-  Stream #1:3: Video: h264 (Constrained Baseline) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 256x144 [SAR 1:1 DAR 16:9], 124 kb/s, 14.99 fps, 14.99 tbr, 90k tbn (default)
+  Stream #1:3: Video: h264 (Main) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 256x144 [SAR 1:1 DAR 16:9], 1586 kb/s, 29.97 fps, 29.97 tbr, 90k tbn, start 14172.925433 (default)
     Metadata:
-      variant_bitrate : 212465
+      variant_bitrate : 192223
       id              : 160
-  Stream #1:4: Video: h264 (Main) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 1280x720 [SAR 1:1 DAR 16:9], 1220 kb/s, 29.97 fps, 29.97 tbr, 90k tbn (default)
+  Stream #1:4: Video: h264 (Main) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 1280x720 [SAR 1:1 DAR 16:9], 38413 kb/s, 59.94 fps, 59.94 tbr, 90k tbn, start 14172.925433 (default)
     Metadata:
-      variant_bitrate : 2684050
-      id              : 136
-  Stream #1:5: Video: h264 (High) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 1920x1080 [SAR 1:1 DAR 16:9], 2008 kb/s, 29.97 fps, 29.97 tbr, 90k tbn (default)
+      variant_bitrate : 2639005
+      id              : 298
+  Stream #1:5: Video: h264 (Main) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 1920x1080 [SAR 1:1 DAR 16:9], 78987 kb/s, 59.94 fps, 59.94 tbr, 90k tbn, start 14172.925433 (default)
     Metadata:
-      variant_bitrate : 5018593
-      id              : 137
-  Stream #1:6: Audio: aac (HE-AAC) (mp4a / 0x6134706D), 44100 Hz, stereo, fltp, 48 kb/s (default)
+      variant_bitrate : 5144200
+      id              : 299
+  Stream #1:6: Audio: aac (HE-AAC) (mp4a / 0x6134706D), 44100 Hz, stereo, fltp, 59 kb/s, start 14172.903039 (default)
     Metadata:
       variant_bitrate : 64000
       id              : 139
-  Stream #1:7: Audio: aac (LC) (mp4a / 0x6134706D), 44100 Hz, stereo, fltp, 128 kb/s (default)
+  Stream #1:7: Audio: aac (LC) (mp4a / 0x6134706D), 44100 Hz, stereo, fltp, 119 kb/s, start 14172.926259 (default)
     Metadata:
       variant_bitrate : 144000
       id              : 140
 Stream mapping:
   Stream #0:7 -> #0:0 (copy)
-2026-02-27 22:52:37 WARN [ytdlp-runner][yt-dlp stderr]
   Stream #1:1 -> #0:1 (copy)
 Output #0, mpegts, to 'pipe:':
   Metadata:
     encoder         : Lavf62.3.100
-  Stream #0:0: Audio: aac (LC) (mp4a / 0x6134706D), 44100 Hz, stereo, fltp, 128 kb/s (default)
+  Stream #0:0: Audio: aac (LC) (mp4a / 0x6134706D), 44100 Hz, stereo, fltp, 119 kb/s (default)
     Metadata:
       variant_bitrate : 144000
       id              : 140
-  Stream #0:1: Video: h264 (Main) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 640x360 [SAR 1:1 DAR 16:9], q=2-31, 493 kb/s, 29.97 fps, 29.97 tbr, 90k tbn (default)
+  Stream #0:1: Video: h264 (Main) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 640x360 [SAR 1:1 DAR 16:9], q=2-31, 5612 kb/s, 29.97 fps, 29.97 tbr, 90k tbn (default)
     Metadata:
-      variant_bitrate : 1008250
+      variant_bitrate : 772630
       id              : 134
+Press [q] to stop, [?] for help
 
-2026-02-27 22:52:37 WARN [ytdlp-runner][yt-dlp stderr] Press [q] to stop, [?] for help
+2026-02-25 22:37:29 WARN [ytdlp-runner][yt-dlp stderr] [dash @ 0x7fbe70ff4740] No longer receiving stream_index 0
 
-2026-02-27 22:52:37 WARN [ytdlp-runner][yt-dlp stderr] [dash @ 0x7f63d4546280] No longer receiving stream_index 0
+2026-02-25 22:37:29 WARN [ytdlp-runner][yt-dlp stderr] [dash @ 0x7fbe77e5e380] No longer receiving stream_index 0
 
-2026-02-27 22:52:37 WARN [ytdlp-runner][yt-dlp stderr] [dash @ 0x7f63dbbd0380] No longer receiving stream_index 0
+2026-02-25 22:37:29 WARN [ytdlp-runner][yt-dlp stderr] [dash @ 0x7fbe77e5e380] No longer receiving stream_index 1
 
-2026-02-27 22:52:37 WARN [ytdlp-runner][yt-dlp stderr] [dash @ 0x7f63d4546280] No longer receiving stream_index 2
+2026-02-25 22:37:29 WARN [ytdlp-runner][yt-dlp stderr] [dash @ 0x7fbe77e5e380] No longer receiving stream_index 2
 
-2026-02-27 22:52:37 WARN [ytdlp-runner][yt-dlp stderr] [dash @ 0x7f63dbbd0380] No longer receiving stream_index 1
+2026-02-25 22:37:29 WARN [ytdlp-runner][yt-dlp stderr] [dash @ 0x7fbe77e5e380] No longer receiving stream_index 3
 
-2026-02-27 22:52:37 WARN [ytdlp-runner][yt-dlp stderr] [dash @ 0x7f63d4546280] No longer receiving stream_index 3
+2026-02-25 22:37:29 WARN [ytdlp-runner][yt-dlp stderr] [dash @ 0x7fbe77e5e380] No longer receiving stream_index 4
 
-2026-02-27 22:52:37 WARN [ytdlp-runner][yt-dlp stderr] [dash @ 0x7f63dbbd0380] No longer receiving stream_index 2
+2026-02-25 22:37:29 WARN [ytdlp-runner][yt-dlp stderr] [dash @ 0x7fbe70ff4740] No longer receiving stream_index 2
 
-2026-02-27 22:52:37 WARN [ytdlp-runner][yt-dlp stderr] [dash @ 0x7f63d4546280] No longer receiving stream_index 4
+2026-02-25 22:37:29 WARN [ytdlp-runner][yt-dlp stderr] [dash @ 0x7fbe70ff4740] No longer receiving stream_index 3
 
-2026-02-27 22:52:37 WARN [ytdlp-runner][yt-dlp stderr] [dash @ 0x7f63dbbd0380] No longer receiving stream_index 3
+2026-02-25 22:37:29 WARN [ytdlp-runner][yt-dlp stderr] [dash @ 0x7fbe70ff4740] No longer receiving stream_index 4
 
-2026-02-27 22:52:37 WARN [ytdlp-runner][yt-dlp stderr] [dash @ 0x7f63d4546280] No longer receiving stream_index 5
+2026-02-25 22:37:29 WARN [ytdlp-runner][yt-dlp stderr] [dash @ 0x7fbe70ff4740] No longer receiving stream_index 5
 
-2026-02-27 22:52:37 WARN [ytdlp-runner][yt-dlp stderr] [dash @ 0x7f63d4546280] No longer receiving stream_index 6
+2026-02-25 22:37:29 WARN [ytdlp-runner][yt-dlp stderr] [dash @ 0x7fbe70ff4740] No longer receiving stream_index 6
 
-2026-02-27 22:52:37 WARN [ytdlp-runner][yt-dlp stderr] [dash @ 0x7f63dbbd0380] No longer receiving stream_index 4
+2026-02-25 22:37:29 WARN [ytdlp-runner][yt-dlp stderr] [dash @ 0x7fbe70ff4740] No longer receiving stream_index 7
 
-2026-02-27 22:52:37 WARN [ytdlp-runner][yt-dlp stderr] [dash @ 0x7f63d4546280] No longer receiving stream_index 7
+2026-02-25 22:37:29 WARN [ytdlp-runner][yt-dlp stderr] [dash @ 0x7fbe77e5e380] No longer receiving stream_index 5
 
-2026-02-27 22:52:37 WARN [ytdlp-runner][yt-dlp stderr] [dash @ 0x7f63dbbd0380] No longer receiving stream_index 5
+2026-02-25 22:37:29 WARN [ytdlp-runner][yt-dlp stderr] [dash @ 0x7fbe77e5e380] No longer receiving stream_index 6
 
-2026-02-27 22:52:37 WARN [ytdlp-runner][yt-dlp stderr] [dash @ 0x7f63dbbd0380] No longer receiving stream_index 6
+2026-02-25 22:37:29 WARN [ytdlp-runner][yt-dlp stderr] [youtube] Extracting URL: https://www.youtube.com/watch?v=smDmy-EVXUE
 
-2026-02-27 22:52:37 WARN [ytdlp-runner][ffmpeg stderr] Input #0, mpegts, from 'fd:':
-  Duration: N/A, start: 1.400000, bitrate: N/A
-  Program 1
+2026-02-25 22:37:29 WARN [ytdlp-runner][yt-dlp stderr] [youtube] smDmy-EVXUE: Downloading webpage
+
+2026-02-25 22:37:29 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps=0.0 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=4.18x elapsed=0:00:00.50
+2026-02-25 22:37:30 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps= 59 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=2.09x elapsed=0:00:01.00
+2026-02-25 22:37:30 WARN [ytdlp-runner][yt-dlp stderr] WARNING: [youtube] No supported JavaScript runtime could be found. Only deno is enabled by default; to use another runtime add  --js-runtimes RUNTIME[:PATH]  to your command/config. YouTube extraction without a JS runtime has been deprecated, and some formats may be missing. See  https://github.com/yt-dlp/yt-dlp/wiki/EJS  for details on installing one
+
+2026-02-25 22:37:30 WARN [ytdlp-runner][yt-dlp stderr] [youtube] smDmy-EVXUE: Downloading android vr player API JSON
+
+2026-02-25 22:37:30 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps= 39 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=1.39x elapsed=0:00:01.50
+2026-02-25 22:37:30 WARN [ytdlp-runner][yt-dlp stderr] [youtube] smDmy-EVXUE: Downloading MPD manifest
+
+2026-02-25 22:37:31 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps= 29 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=1.05x elapsed=0:00:02.00
+2026-02-25 22:37:31 WARN [ytdlp-runner][yt-dlp stderr] [info] smDmy-EVXUE: Downloading 1 format(s): 299+140
+
+2026-02-25 22:37:31 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps= 24 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.836x elapsed=0:00:02.50
+2026-02-25 22:37:31 WARN [ytdlp-runner][yt-dlp stderr] [download] Destination: -
+
+2026-02-25 22:37:32 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps= 20 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.697x elapsed=0:00:03.00
+2026-02-25 22:37:32 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps= 17 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.597x elapsed=0:00:03.50
+2026-02-25 22:37:33 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps= 15 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.523x elapsed=0:00:04.00
+2026-02-25 22:37:33 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps= 13 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.465x elapsed=0:00:04.50
+2026-02-25 22:37:34 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps= 12 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.418x elapsed=0:00:05.00
+2026-02-25 22:37:34 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps= 11 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.38x elapsed=0:00:05.50
+2026-02-25 22:37:35 WARN [ytdlp-runner][yt-dlp stderr] Input #0, dash, from 'https://manifest.googlevideo.com/api/manifest/dash/expire/1772091450/ei/2qOfacTJLvKl-LAPybSOuA0/ip/177.207.209.234/id/smDmy-EVXUE.1/source/yt_live_broadcast/requiressl/yes/xpc/EgVo2aDSNQ%3D%3D/tx/51691028/txs/51691027%2C51691028/hfr/1/as/fmp4_audio_clear%2Cwebm_audio_clear%2Cwebm2_audio_clear%2Cfmp4_sd_hd_clear%2Cwebm2_sd_hd_clear/force_finished/1/gcr/br/sident/1/spc/6dlaFH1eU6jS/vprv/1/rqh/2/reg/0/pacing/0/itag_bl/374%2C375%2C407%2C408%2C612%2C613%2C617%2C619%2C623%2C628%2C655%2C656%2C660%2C662%2C666%2C671%2C798%2C799%2C803%2C804%2C834%2C868%2C870%2C872%2C874%2C876%2C880%2C882%2C884%2C886%2C888%2C893%2C897%2C899/keepalive/yes/fexp/51552689%2C51565116%2C51565681%2C51580968%2C51791333/itag/0/playlist_type/DVR/sparams/expire%2Cei%2Cip%2Cid%2Csource%2Crequiressl%2Cxpc%2Ctx%2Ctxs%2Chfr%2Cas%2Cforce_finished%2Cgcr%2Csident%2Cspc%2Cvprv%2Crqh%2Creg%2Citag%2Cplaylist_type/sig/AJEij0EwRgIhALnVmacSBREW7czLUFX3AMk3U1dSKZ_zy1vwGp_wkvvEAiEAg4GwcBL4aJ8EOlJFzxokwPtqEacGUKDY6GFHcvpO8G8%3D':
+  Duration: 00:00:00.00, start: 14172.903039, bitrate: N/A
+  Program 0
+  Stream #0:0: Video: h264 (Main) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 426x240 [SAR 1:1 DAR 71:40], 3168 kb/s, 29.97 fps, 29.97 tbr, 90k tbn, start 14172.925433 (default)
     Metadata:
+      variant_bitrate : 419256
+      id              : 133
+
+2026-02-25 22:37:35 WARN [ytdlp-runner][yt-dlp stderr]   Stream #0:1: Video: h264 (Main) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 640x360 [SAR 1:1 DAR 16:9], 5612 kb/s, 29.97 fps, 29.97 tbr, 90k tbn, start 14172.925433 (default)
+    Metadata:
+      variant_bitrate : 772630
+      id              : 134
+  Stream #0:2: Video: h264 (Main) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 854x480 [SAR 1:1 DAR 427:240], 8538 kb/s, 29.97 fps, 29.97 tbr, 90k tbn, start 14172.925433 (default)
+    Metadata:
+      variant_bitrate : 1077445
+      id              : 135
+  Stream #0:3: Video: h264 (Main) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 256x144 [SAR 1:1 DAR 16:9], 1586 kb/s, 29.97 fps, 29.97 tbr, 90k tbn, start 14172.925433 (default)
+    Metadata:
+      variant_bitrate : 192223
+      id              : 160
+  Stream #0:4: Video: h264 (Main) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 1280x720 [SAR 1:1 DAR 16:9], 38413 kb/s, 59.94 fps, 59.94 tbr, 90k tbn, start 14172.925433 (default)
+    Metadata:
+      variant_bitrate : 2639005
+      id              : 298
+  Stream #0:5: Video: h264 (Main) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 1920x1080 [SAR 1:1 DAR 16:9], 78987 kb/s, 59.94 fps, 59.94 tbr, 90k tbn, start 14172.925433 (default)
+    Metadata:
+      variant_bitrate : 5144200
+      id              : 299
+  Stream #0:6: Audio: aac (HE-AAC) (mp4a / 0x6134706D), 44100 Hz, stereo, fltp, 59 kb/s, start 14172.903039 (default)
+    Metadata:
+      variant_bitrate : 64000
+      id              : 139
+  Stream #0:7: Audio: aac (LC) (mp4a / 0x6134706D), 44100 Hz, stereo, fltp, 119 kb/s, start 14172.926259 (default)
+    Metadata:
+      variant_bitrate : 144000
+      id              : 140
+
+2026-02-25 22:37:35 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps=9.8 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.348x elapsed=0:00:06.00
+2026-02-25 22:37:35 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps=9.1 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.322x elapsed=0:00:06.50
+2026-02-25 22:37:36 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps=8.4 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.299x elapsed=0:00:07.00
+2026-02-25 22:37:36 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps=7.9 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.279x elapsed=0:00:07.50
+2026-02-25 22:37:37 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps=7.4 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.261x elapsed=0:00:08.00
+2026-02-25 22:37:37 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps=6.9 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.246x elapsed=0:00:08.50
+2026-02-25 22:37:38 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps=6.6 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.232x elapsed=0:00:09.00
+2026-02-25 22:37:38 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps=6.2 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.22x elapsed=0:00:09.50
+2026-02-25 22:37:39 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps=5.9 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.209x elapsed=0:00:10.00
+2026-02-25 22:37:39 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps=5.6 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.199x elapsed=0:00:10.50
+2026-02-25 22:37:40 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps=5.4 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.19x elapsed=0:00:11.00
+2026-02-25 22:37:40 WARN [ytdlp-runner][yt-dlp stderr] Input #1, dash, from 'https://manifest.googlevideo.com/api/manifest/dash/expire/1772091450/ei/2qOfacTJLvKl-LAPybSOuA0/ip/177.207.209.234/id/smDmy-EVXUE.1/source/yt_live_broadcast/requiressl/yes/xpc/EgVo2aDSNQ%3D%3D/tx/51691028/txs/51691027%2C51691028/hfr/1/as/fmp4_audio_clear%2Cwebm_audio_clear%2Cwebm2_audio_clear%2Cfmp4_sd_hd_clear%2Cwebm2_sd_hd_clear/force_finished/1/gcr/br/sident/1/spc/6dlaFH1eU6jS/vprv/1/rqh/2/reg/0/pacing/0/itag_bl/374%2C375%2C407%2C408%2C612%2C613%2C617%2C619%2C623%2C628%2C655%2C656%2C660%2C662%2C666%2C671%2C798%2C799%2C803%2C804%2C834%2C868%2C870%2C872%2C874%2C876%2C880%2C882%2C884%2C886%2C888%2C893%2C897%2C899/keepalive/yes/fexp/51552689%2C51565116%2C51565681%2C51580968%2C51791333/itag/0/playlist_type/DVR/sparams/expire%2Cei%2Cip%2Cid%2Csource%2Crequiressl%2Cxpc%2Ctx%2Ctxs%2Chfr%2Cas%2Cforce_finished%2Cgcr%2Csident%2Cspc%2Cvprv%2Crqh%2Creg%2Citag%2Cplaylist_type/sig/AJEij0EwRgIhALnVmacSBREW7czLUFX3AMk3U1dSKZ_zy1vwGp_wkvvEAiEAg4GwcBL4aJ8EOlJFzxokwPtqEacGUKDY6GFHcvpO8G8%3D':
+  Duration: 00:00:00.00, start: 14172.903039, bitrate: N/A
+  Program 0
+  Stream #1:0: Video: h264 (Main) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 426x240 [SAR 1:1 DAR 71:40], 3168 kb/s, 29.97 fps, 29.97 tbr, 90k tbn, start 14172.925433 (default)
+    Metadata:
+      variant_bitrate : 419256
+2026-02-25 22:37:40 WARN [ytdlp-runner][yt-dlp stderr]
+      id              : 133
+  Stream #1:1: Video: h264 (Main) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 640x360 [SAR 1:1 DAR 16:9], 5612 kb/s, 29.97 fps, 29.97 tbr, 90k tbn, start 14172.925433 (default)
+    Metadata:
+      variant_bitrate : 772630
+      id              : 134
+  Stream #1:2: Video: h264 (Main) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 854x480 [SAR 1:1 DAR 427:240], 8538 kb/s, 29.97 fps, 29.97 tbr, 90k tbn, start 14172.925433 (default)
+    Metadata:
+      variant_bitrate : 1077445
+      id              : 135
+  Stream #1:3: Video: h264 (Main) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 256x144 [SAR 1:1 DAR 16:9], 1586 kb/s, 29.97 fps, 29.97 tbr, 90k tbn, start 14172.925433 (default)
+    Metadata:
+      variant_bitrate : 192223
+      id              : 160
+  Stream #1:4: Video: h264 (Main) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 1280x720 [SAR 1:1 DAR 16:9], 38413 kb/s, 59.94 fps, 59.94 tbr, 90k tbn, start 14172.925433 (default)
+    Metadata:
+      variant_bitrate : 2639005
+      id              : 298
+  Stream #1:5: Video: h264 (Main) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 1920x1080 [SAR 1:1 DAR 16:9], 78987 kb/s, 59.94 fps, 59.94 tbr, 90k tbn, start 14172.925433 (default)
+    Metadata:
+      variant_bitrate : 5144200
+      id              : 299
+  Stream #1:6: Audio: aac (HE-AAC) (mp4a / 0x6134706D), 44100 Hz, stereo, fltp, 59 kb/s, start 14172.903039 (default)
+    Metadata:
+      variant_bitrate : 64000
+      id              : 139
+  Stream #1:7: Audio: aac (LC) (mp4a / 0x6134706D), 44100 Hz, stereo, fltp, 119 kb/s, start 14172.926259 (default)
+    Metadata:
+      variant_bitrate : 144000
+      id              : 140
+Stream mapping:
+  Stream #0:7 -> #0:0 (copy)
+  Stream #1:1 -> #0:1 (copy)
+Output #0, mpegts, to 'pipe:':
+  Metadata:
+    encoder         : Lavf62.3.100
+  Stream #0:0: Audio: aac (LC) (mp4a / 0x6134706D), 44100 Hz, stereo, fltp, 119 kb/s (default)
+    Metadata:
+      variant_bitrate : 144000
+      id              : 140
+
+2026-02-25 22:37:40 WARN [ytdlp-runner][yt-dlp stderr]   Stream #0:1: Video: h264 (Main) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 640x360 [SAR 1:1 DAR 16:9], q=2-31, 5612 kb/s, 29.97 fps, 29.97 tbr, 90k tbn (default)
+    Metadata:
+      variant_bitrate : 772630
+      id              : 134
+Press [q] to stop, [?] for help
+
+2026-02-25 22:37:40 WARN [ytdlp-runner][yt-dlp stderr] [dash @ 0x7f8b9675d380] No longer receiving stream_index 0
+[dash @ 0x7f8b8f8e7740] No longer receiving stream_index 0
+[dash @ 0x7f8b8f8e7740] No longer receiving stream_index 2
+[dash @ 0x7f8b9675d380] No longer receiving stream_index 1
+[dash @ 0x7f8b8f8e7740] No longer receiving stream_index 3
+[dash @ 0x7f8b9675d380] No longer receiving stream_index 2
+[dash @ 0x7f8b8f8e7740] No longer receiving stream_index 4
+[dash @ 0x7f8b9675d380] No longer receiving stream_index 3
+
+2026-02-25 22:37:40 WARN [ytdlp-runner][yt-dlp stderr] [dash @ 0x7f8b8f8e7740]
+2026-02-25 22:37:40 WARN [ytdlp-runner][yt-dlp stderr] No longer receiving stream_index 5
+
+2026-02-25 22:37:40 WARN [ytdlp-runner][yt-dlp stderr] [dash @ 0x7f8b9675d380] No longer receiving stream_index 4
+[dash @ 0x7f8b8f8e7740] No longer receiving stream_index 6
+
+2026-02-25 22:37:40 WARN [ytdlp-runner][yt-dlp stderr] [dash @ 0x7f8b9675d380] No longer receiving stream_index 5
+
+2026-02-25 22:37:40 WARN [ytdlp-runner][yt-dlp stderr] [dash @ 0x7f8b9675d380] No longer receiving stream_index 6
+[dash @ 0x7f8b8f8e7740] No longer receiving stream_index 7
+
+2026-02-25 22:37:40 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps=5.1 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.182x elapsed=0:00:11.50
+2026-02-25 22:37:40 WARN [ytdlp-runner][ffmpeg stderr] Input #0, mpegts, from 'fd:':
+  Duration: N/A, start: 1.422389, bitrate: N/A
+  Program 1
+
+2026-02-25 22:37:40 WARN [ytdlp-runner][ffmpeg stderr]     Metadata:
       service_name    : Service01
       service_provider: FFmpeg
-  Stream #0:0[0x100]: Audio: aac (LC) ([15][0][0][0] / 0x000F), 44100 Hz, stereo, fltp, 130 kb/s, start 1.400000
-
-2026-02-27 22:52:37 WARN [ytdlp-runner][ffmpeg stderr]   Stream #0:1[0x101]: Video: h264 (Main) ([27][0][0][0] / 0x001B), yuv420p(tv, bt709, progressive), 640x360 [SAR 1:1 DAR 16:9], 29.97 fps, 29.97 tbr, 90k tbn, start 1.400000
+  Stream #0:0[0x100]: Audio: aac (LC) ([15][0][0][0] / 0x000F), 44100 Hz, stereo, fltp, 130 kb/s, start 1.423222
+  Stream #0:1[0x101]: Video: h264 (Main) ([27][0][0][0] / 0x001B), yuv420p(tv, bt709, progressive), 640x360 [SAR 1:1 DAR 16:9], 29.97 fps, 29.97 tbr, 90k tbn, start 1.422389
 Stream mapping:
   Stream #0:1 -> #0:0 (copy)
-
-2026-02-27 22:52:37 WARN [ytdlp-runner][ffmpeg stderr]   Stream #0:0 -> #0:1 (copy)
+  Stream #0:0 -> #0:1 (copy)
 Output #0, mpegts, to 'pipe:1':
   Metadata:
     encoder         : Lavf62.3.100
   Stream #0:0: Video: h264 (Main) ([27][0][0][0] / 0x001B), yuv420p(tv, bt709, progressive), 640x360 [SAR 1:1 DAR 16:9], q=2-31, 29.97 fps, 29.97 tbr, 90k tbn
   Stream #0:1: Audio: aac (LC) ([15][0][0][0] / 0x000F), 44100 Hz, stereo, fltp, 130 kb/s
 
-2026-02-27 22:52:37 WARN [ytdlp-runner][yt-dlp stderr] frame=  302 fps=0.0 q=-1.0 size=     868KiB time=00:00:10.07 bitrate= 705.5kbits/s speed=20.1x elapsed=0:00:00.50
-2026-02-27 22:52:37 WARN [ytdlp-runner][ffmpeg stderr] frame=  250 fps=0.0 q=-1.0 size=     717KiB time=00:00:08.38 bitrate= 700.3kbits/s speed=16.8x elapsed=0:00:00.50
-2026-02-27 22:52:38 WARN [ytdlp-runner][yt-dlp stderr] frame=  302 fps=302 q=-1.0 size=     868KiB time=00:00:10.07 bitrate= 705.5kbits/s speed=10.1x elapsed=0:00:01.00
-2026-02-27 22:52:38 WARN [ytdlp-runner][ffmpeg stderr] frame=  300 fps=300 q=-1.0 size=     860KiB time=00:00:10.01 bitrate= 703.8kbits/s speed=  10x elapsed=0:00:01.00
-2026-02-27 22:52:38 WARN [ytdlp-runner][yt-dlp stderr] frame=  302 fps=201 q=-1.0 size=     868KiB time=00:00:10.07 bitrate= 705.5kbits/s speed=6.72x elapsed=0:00:01.50
-2026-02-27 22:52:38 WARN [ytdlp-runner][ffmpeg stderr] frame=  300 fps=200 q=-1.0 size=     860KiB time=00:00:10.01 bitrate= 703.8kbits/s speed=6.67x elapsed=0:00:01.50
-2026-02-27 22:52:39 WARN [ytdlp-runner][yt-dlp stderr] frame=  302 fps=151 q=-1.0 size=     868KiB time=00:00:10.07 bitrate= 705.5kbits/s speed=5.04x elapsed=0:00:02.00
-2026-02-27 22:52:39 WARN [ytdlp-runner][ffmpeg stderr] frame=  300 fps=150 q=-1.0 size=     860KiB time=00:00:10.01 bitrate= 703.8kbits/s speed=   5x elapsed=0:00:02.00
-2026-02-27 22:52:39 WARN [ytdlp-runner][yt-dlp stderr] frame=  302 fps=121 q=-1.0 size=     868KiB time=00:00:10.07 bitrate= 705.5kbits/s speed=4.03x elapsed=0:00:02.50
-2026-02-27 22:52:39 WARN [ytdlp-runner][ffmpeg stderr] frame=  300 fps=120 q=-1.0 size=     860KiB time=00:00:10.01 bitrate= 703.8kbits/s speed=   4x elapsed=0:00:02.50
-2026-02-27 22:52:40 WARN [ytdlp-runner][yt-dlp stderr] frame=  602 fps=201 q=-1.0 size=    1550KiB time=00:00:20.08 bitrate= 631.9kbits/s speed=6.69x elapsed=0:00:03.00
-2026-02-27 22:52:40 WARN [ytdlp-runner][ffmpeg stderr] frame=  750 fps=250 q=-1.0 size=    1927KiB time=00:00:24.98 bitrate= 631.7kbits/s speed=8.32x elapsed=0:00:03.00
-2026-02-27 22:52:40 WARN [ytdlp-runner][yt-dlp stderr] frame=  752 fps=215 q=-1.0 size=    1934KiB time=00:00:25.09 bitrate= 631.3kbits/s speed=7.17x elapsed=0:00:03.50
-2026-02-27 22:52:40 WARN [ytdlp-runner][ffmpeg stderr] frame=  900 fps=257 q=-1.0 size=    2222KiB time=00:00:30.03 bitrate= 606.3kbits/s speed=8.58x elapsed=0:00:03.50
-2026-02-27 22:52:41 WARN [ytdlp-runner][yt-dlp stderr] frame= 1052 fps=263 q=-1.0 size=    2499KiB time=00:00:35.10 bitrate= 583.1kbits/s speed=8.77x elapsed=0:00:04.00
-2026-02-27 22:52:41 WARN [ytdlp-runner][ffmpeg stderr] frame= 1200 fps=300 q=-1.0 size=    2797KiB time=00:00:40.00 bitrate= 572.8kbits/s speed=  10x elapsed=0:00:04.00
-2026-02-27 22:52:41 WARN [ytdlp-runner][yt-dlp stderr] frame= 1352 fps=300 q=-1.0 size=    3090KiB time=00:00:45.11 bitrate= 561.2kbits/s speed=  10x elapsed=0:00:04.50
-2026-02-27 22:52:41 WARN [ytdlp-runner][ffmpeg stderr] frame= 1650 fps=367 q=-1.0 size=    3767KiB time=00:00:54.93 bitrate= 561.7kbits/s speed=12.2x elapsed=0:00:04.50
-2026-02-27 22:52:42 WARN [ytdlp-runner][yt-dlp stderr] frame= 1775 fps=355 q=-1.0 size=    4062KiB time=00:00:59.09 bitrate= 563.1kbits/s speed=11.8x elapsed=0:00:05.00
-2026-02-27 22:52:42 WARN [ytdlp-runner][ffmpeg stderr] frame= 1950 fps=390 q=-1.0 size=    4409KiB time=00:01:05.03 bitrate= 555.4kbits/s speed=  13x elapsed=0:00:05.00
-2026-02-27 22:52:42 WARN [ytdlp-runner][yt-dlp stderr] frame= 2102 fps=382 q=-1.0 size=    4666KiB time=00:01:10.13 bitrate= 545.0kbits/s speed=12.7x elapsed=0:00:05.50
-2026-02-27 22:52:42 WARN [ytdlp-runner][ffmpeg stderr] frame= 2390 fps=434 q=-1.0 size=    5276KiB time=00:01:19.71 bitrate= 542.2kbits/s speed=14.5x elapsed=0:00:05.50
-2026-02-27 22:52:43 WARN [ytdlp-runner][yt-dlp stderr] frame= 2550 fps=425 q=-1.0 size=    5621KiB time=00:01:25.08 bitrate= 541.2kbits/s speed=14.2x elapsed=0:00:06.00
-2026-02-27 22:52:43 WARN [ytdlp-runner][ffmpeg stderr] frame= 2698 fps=450 q=-1.0 size=    6037KiB time=00:01:29.90 bitrate= 550.0kbits/s speed=  15x elapsed=0:00:06.00
-2026-02-27 22:52:43 WARN [ytdlp-runner][yt-dlp stderr] frame= 2850 fps=438 q=-1.0 size=    6393KiB time=00:01:35.09 bitrate= 550.7kbits/s speed=14.6x elapsed=0:00:06.50
-2026-02-27 22:52:43 WARN [ytdlp-runner][ffmpeg stderr] frame= 2848 fps=438 q=-1.0 size=    6386KiB time=00:01:34.92 bitrate= 551.1kbits/s speed=14.6x elapsed=0:00:06.50
-2026-02-27 22:52:44 WARN [ytdlp-runner][yt-dlp stderr] frame= 3150 fps=450 q=-1.0 size=    7176KiB time=00:01:45.10 bitrate= 559.3kbits/s speed=  15x elapsed=0:00:07.00
-2026-02-27 22:52:44 WARN [ytdlp-runner][ffmpeg stderr] frame= 3298 fps=471 q=-1.0 size=    7633KiB time=00:01:50.01 bitrate= 568.3kbits/s speed=15.7x elapsed=0:00:07.00
-2026-02-27 22:52:44 INFO [ytdlp-runner] Iniciando limpeza (origem: response-close)...
-2026-02-27 22:52:44 INFO [ytdlp-runner] Iniciando limpeza (origem: request-close)...
-2026-02-27 22:52:44 WARN [ytdlp-runner][ffmpeg stderr] [aost#0:1/copy @ 0x7f859721c3c0] Error submitting a packet to the muxer: Broken pipe
-    Last message repeated 1 times
-[out#0/mpegts @ 0x7f859d3f77c0] Error muxing a packet
-[out#0/mpegts @ 0x7f859d3f77c0] Task finished with error code: -32 (Broken pipe)
-[out#0/mpegts @ 0x7f859d3f77c0] Terminating thread with return code -32 (Broken pipe)
-[out#0/mpegts @ 0x7f859d3f77c0] Error writing trailer: Broken pipe
-[out#0/mpegts @ 0x7f859d3f77c0] Error closing file: Broken pipe
-[out#0/mpegts @ 0x7f859d3f77c0] video:5060KiB audio:1817KiB subtitle:0KiB other streams:0KiB global headers:0KiB muxing overhead: 15.319588%
-frame= 3424 fps=473 q=-1.0 Lsize=    7931KiB time=00:01:54.28 bitrate= 568.5kbits/s speed=15.8x elapsed=0:00:07.23
-
-2026-02-27 22:52:44 WARN [ytdlp-runner][ffmpeg stderr] Exiting normally, received signal 15.
-
-2026-02-27 22:52:44 WARN [ytdlp-runner][yt-dlp stderr] frame= 3450 fps=460 q=-1.0 size=    7987KiB time=00:01:55.11 bitrate= 568.4kbits/s speed=15.3x elapsed=0:00:07.50
-2026-02-27 22:52:44 INFO [ytdlp-runner] ffmpeg finalizado com code=255
-2026-02-27 22:52:44 WARN [ytdlp-runner][yt-dlp stderr] [vost#0:1/copy @ 0x7f63d0ac4d00] Error submitting a packet to the muxer: Broken pipe
-    Last message repeated 1 times
-[out#0/mpegts @ 0x7f63d2a84600] Error muxing a packet
-[out#0/mpegts @ 0x7f63d2a84600] Task finished with error code: -32 (Broken pipe)
-[out#0/mpegts @ 0x7f63d2a84600] Terminating thread with return code -32 (Broken pipe)
-
-2026-02-27 22:52:44 WARN [ytdlp-runner][yt-dlp stderr] [out#0/mpegts @ 0x7f63d2a84600] Error writing trailer: Broken pipe
-[out#0/mpegts @ 0x7f63d2a84600] Error closing file: Broken pipe
-[out#0/mpegts @ 0x7f63d2a84600] video:5127KiB audio:1800KiB subtitle:0KiB other streams:0KiB global headers:0KiB muxing overhead: 15.295945%
-frame= 3451 fps=459 q=-1.0 Lsize=    7987KiB time=00:01:55.24 bitrate= 567.7kbits/s speed=15.3x elapsed=0:00:07.52
-
-2026-02-27 22:52:44 WARN [ytdlp-runner][yt-dlp stderr] Conversion failed!
-
-2026-02-27 22:52:52 INFO [HTTP] GET /health → 200 (1ms) [anon]
-
+2026-02-25 22:37:41 WARN [ytdlp-runner][yt-dlp stderr] frame=  360 fps=0.0 q=-1.0 size=     885KiB time=00:00:12.03 bitrate= 602.1kbits/s speed=24.1x elapsed=0:00:00.50
+2026-02-25 22:37:41 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps=4.9 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.174x elapsed=0:00:12.00
+2026-02-25 22:37:41 WARN [ytdlp-runner][ffmpeg stderr] frame=  378 fps=0.0 q=-1.0 size=     965KiB time=00:00:12.71 bitrate= 622.1kbits/s speed=25.4x elapsed=0:00:00.50
+2026-02-25 22:37:41 WARN [ytdlp-runner][yt-dlp stderr] frame=  599 fps=599 q=-1.0 size=    1486KiB time=00:00:20.00 bitrate= 608.2kbits/s speed=  20x elapsed=0:00:01.00
+2026-02-25 22:37:41 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps=4.7 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.167x elapsed=0:00:12.50
+2026-02-25 22:37:41 WARN [ytdlp-runner][ffmpeg stderr] frame=  597 fps=597 q=-1.0 size=    1468KiB time=00:00:19.91 bitrate= 603.8kbits/s speed=19.9x elapsed=0:00:01.00
+2026-02-25 22:37:42 WARN [ytdlp-runner][yt-dlp stderr] frame=  779 fps=519 q=-1.0 size=    2274KiB time=00:00:26.01 bitrate= 716.1kbits/s speed=17.3x elapsed=0:00:01.50
+2026-02-25 22:37:42 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps=4.5 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.161x elapsed=0:00:13.00
+2026-02-25 22:37:42 WARN [ytdlp-runner][ffmpeg stderr] frame=  777 fps=518 q=-1.0 size=    2259KiB time=00:00:25.89 bitrate= 714.8kbits/s speed=17.3x elapsed=0:00:01.50
+2026-02-25 22:37:42 WARN [ytdlp-runner][yt-dlp stderr] frame=  959 fps=479 q=-1.0 size=    2911KiB time=00:00:32.02 bitrate= 744.7kbits/s speed=  16x elapsed=0:00:02.00
+2026-02-25 22:37:42 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps=4.4 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.155x elapsed=0:00:13.50
+2026-02-25 22:37:42 WARN [ytdlp-runner][ffmpeg stderr] frame= 1017 fps=508 q=-1.0 size=    3065KiB time=00:00:33.85 bitrate= 741.6kbits/s speed=16.9x elapsed=0:00:02.00
+2026-02-25 22:37:43 WARN [ytdlp-runner][yt-dlp stderr] frame= 1019 fps=408 q=-1.0 size=    3072KiB time=00:00:34.02 bitrate= 739.8kbits/s speed=13.6x elapsed=0:00:02.50
+2026-02-25 22:37:43 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps=4.2 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.149x elapsed=0:00:14.00
+2026-02-25 22:37:43 WARN [ytdlp-runner][ffmpeg stderr] frame= 1077 fps=431 q=-1.0 size=    3266KiB time=00:00:35.85 bitrate= 746.2kbits/s speed=14.3x elapsed=0:00:02.50
+2026-02-25 22:37:43 WARN [ytdlp-runner][yt-dlp stderr] frame= 1259 fps=420 q=-1.0 size=    3855KiB time=00:00:42.03 bitrate= 751.3kbits/s speed=  14x elapsed=0:00:03.00
+2026-02-25 22:37:43 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps=4.1 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.144x elapsed=0:00:14.50
+2026-02-25 22:37:43 WARN [ytdlp-runner][ffmpeg stderr] frame= 1377 fps=459 q=-1.0 size=    4211KiB time=00:00:45.90 bitrate= 751.4kbits/s speed=15.3x elapsed=0:00:03.00
+2026-02-25 22:37:44 WARN [ytdlp-runner][yt-dlp stderr] frame= 1558 fps=445 q=-1.0 size=    4738KiB time=00:00:52.00 bitrate= 746.4kbits/s speed=14.9x elapsed=0:00:03.50
+2026-02-25 22:37:44 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps=3.9 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.139x elapsed=0:00:15.00
+2026-02-25 22:37:44 WARN [ytdlp-runner][ffmpeg stderr] frame= 1676 fps=479 q=-1.0 size=    5030KiB time=00:00:55.86 bitrate= 737.6kbits/s speed=  16x elapsed=0:00:03.50
+2026-02-25 22:37:44 WARN [ytdlp-runner][yt-dlp stderr] frame= 1798 fps=449 q=-1.0 size=    5408KiB time=00:01:00.01 bitrate= 738.1kbits/s speed=  15x elapsed=0:00:04.00
+2026-02-25 22:37:44 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps=3.8 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.135x elapsed=0:00:15.50
+2026-02-25 22:37:44 WARN [ytdlp-runner][ffmpeg stderr] frame= 1916 fps=479 q=-1.0 size=    5764KiB time=00:01:03.87 bitrate= 739.2kbits/s speed=  16x elapsed=0:00:04.00
+2026-02-25 22:37:45 WARN [ytdlp-runner][yt-dlp stderr] frame= 2158 fps=479 q=-1.0 size=    6462KiB time=00:01:12.02 bitrate= 734.9kbits/s speed=  16x elapsed=0:00:04.50
+2026-02-25 22:37:45 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps=3.7 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.131x elapsed=0:00:16.00
+2026-02-25 22:37:45 WARN [ytdlp-runner][ffmpeg stderr] frame= 2216 fps=492 q=-1.0 size=    6620KiB time=00:01:13.81 bitrate= 734.7kbits/s speed=16.4x elapsed=0:00:04.50
+2026-02-25 22:37:45 WARN [ytdlp-runner][yt-dlp stderr] frame= 2338 fps=468 q=-1.0 size=    6898KiB time=00:01:18.03 bitrate= 724.2kbits/s speed=15.6x elapsed=0:00:05.00
+2026-02-25 22:37:45 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps=3.6 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.127x elapsed=0:00:16.50
+2026-02-25 22:37:45 WARN [ytdlp-runner][ffmpeg stderr] frame= 2396 fps=479 q=-1.0 size=    7073KiB time=00:01:19.92 bitrate= 724.9kbits/s speed=  16x elapsed=0:00:05.00
+2026-02-25 22:37:46 WARN [ytdlp-runner][yt-dlp stderr] frame= 2517 fps=458 q=-1.0 size=    7450KiB time=00:01:24.00 bitrate= 726.5kbits/s speed=15.3x elapsed=0:00:05.50
+2026-02-25 22:37:46 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps=3.5 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.123x elapsed=0:00:17.00
+2026-02-25 22:37:46 WARN [ytdlp-runner][ffmpeg stderr] frame= 2635 fps=479 q=-1.0 size=    7742KiB time=00:01:27.79 bitrate= 722.4kbits/s speed=  16x elapsed=0:00:05.50
+2026-02-25 22:37:46 WARN [ytdlp-runner][yt-dlp stderr] frame= 2785 fps=464 q=-1.0 size=    8343KiB time=00:01:32.94 bitrate= 735.3kbits/s speed=15.5x elapsed=0:00:06.00
+2026-02-25 22:37:46 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps=3.4 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.119x elapsed=0:00:17.50
+2026-02-25 22:37:46 WARN [ytdlp-runner][ffmpeg stderr] frame= 2875 fps=479 q=-1.0 size=    8619KiB time=00:01:35.85 bitrate= 736.6kbits/s speed=  16x elapsed=0:00:06.00
+2026-02-25 22:37:47 WARN [ytdlp-runner][yt-dlp stderr] frame= 3057 fps=470 q=-1.0 size=    8995KiB time=00:01:42.02 bitrate= 722.3kbits/s speed=15.7x elapsed=0:00:06.50
+2026-02-25 22:37:47 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps=3.3 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.116x elapsed=0:00:18.00
+2026-02-25 22:37:47 INFO [ytdlp-runner] Cliente desconectou (response-close), encerrando processos.
+2026-02-25 22:37:47 INFO [ytdlp-runner] Cliente desconectou (request-close), encerrando processos.
+2026-02-25 22:37:47 WARN [ytdlp-runner][yt-dlp stderr] frame= 3177 fps=454 q=-1.0 size=    9195KiB time=00:01:46.02 bitrate= 710.4kbits/s speed=15.1x elapsed=0:00:07.00
+2026-02-25 22:37:47 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps=3.2 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.113x elapsed=0:00:18.50
+2026-02-25 22:37:48 WARN [ytdlp-runner][yt-dlp stderr] frame= 3177 fps=424 q=-1.0 size=    9195KiB time=00:01:46.02 bitrate= 710.4kbits/s speed=14.1x elapsed=0:00:07.50
+2026-02-25 22:37:48 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps=3.1 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.11x elapsed=0:00:19.00
+2026-02-25 22:37:48 WARN [ytdlp-runner][yt-dlp stderr] frame= 3177 fps=397 q=-1.0 size=    9195KiB time=00:01:46.02 bitrate= 710.4kbits/s speed=13.3x elapsed=0:00:08.00
+2026-02-25 22:37:48 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps=3.0 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.107x elapsed=0:00:19.50
+2026-02-25 22:37:49 WARN [ytdlp-runner][yt-dlp stderr] frame= 3177 fps=374 q=-1.0 size=    9195KiB time=00:01:46.02 bitrate= 710.4kbits/s speed=12.5x elapsed=0:00:08.50
+2026-02-25 22:37:49 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps=2.9 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.105x elapsed=0:00:20.00
+2026-02-25 22:37:49 WARN [ytdlp-runner] Forçando SIGKILL em processos yt-dlp/ffmpeg para garantir limpeza.
+2026-02-25 22:37:49 WARN [ytdlp-runner] Forçando SIGKILL em processos yt-dlp/ffmpeg para garantir limpeza.
+2026-02-25 22:37:49 INFO [ytdlp-runner] ffmpeg finalizado com code=null
+2026-02-25 22:37:49 WARN [ytdlp-runner][yt-dlp stderr] frame= 3177 fps=353 q=-1.0 size=    9195KiB time=00:01:46.02 bitrate= 710.4kbits/s speed=11.8x elapsed=0:00:09.00
+2026-02-25 22:37:49 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps=2.9 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.102x elapsed=0:00:20.50
+2026-02-25 22:37:50 WARN [ytdlp-runner][yt-dlp stderr] frame= 3263 fps=343 q=-1.0 size=    9333KiB time=00:01:48.99 bitrate= 701.4kbits/s speed=11.5x elapsed=0:00:09.50
+2026-02-25 22:37:50 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps=2.8 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.0996x elapsed=0:00:21.00
+2026-02-25 22:37:50 WARN [ytdlp-runner][yt-dlp stderr] frame= 3263 fps=326 q=-1.0 size=    9333KiB time=00:01:48.99 bitrate= 701.4kbits/s speed=10.9x elapsed=0:00:10.00
+2026-02-25 22:37:50 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps=2.7 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.0972x elapsed=0:00:21.50
+2026-02-25 22:37:51 WARN [ytdlp-runner][yt-dlp stderr] frame= 3263 fps=311 q=-1.0 size=    9333KiB time=00:01:48.99 bitrate= 701.4kbits/s speed=10.4x elapsed=0:00:10.50
+2026-02-25 22:37:51 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps=2.7 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.095x elapsed=0:00:22.00
+2026-02-25 22:37:51 WARN [ytdlp-runner][yt-dlp stderr] frame= 3263 fps=297 q=-1.0 size=    9333KiB time=00:01:48.99 bitrate= 701.4kbits/s speed=9.91x elapsed=0:00:11.00
+2026-02-25 22:37:51 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps=2.6 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.0929x elapsed=0:00:22.50
+2026-02-25 22:37:52 WARN [ytdlp-runner][yt-dlp stderr] frame= 3263 fps=284 q=-1.0 size=    9333KiB time=00:01:48.99 bitrate= 701.4kbits/s speed=9.48x elapsed=0:00:11.50
+2026-02-25 22:37:52 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps=2.6 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.0909x elapsed=0:00:23.00
+2026-02-25 22:37:52 WARN [ytdlp-runner][yt-dlp stderr] frame= 3263 fps=272 q=-1.0 size=    9333KiB time=00:01:48.99 bitrate= 701.4kbits/s speed=9.08x elapsed=0:00:12.00
+2026-02-25 22:37:52 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps=2.5 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.089x elapsed=0:00:23.50
+2026-02-25 22:37:53 WARN [ytdlp-runner][yt-dlp stderr] frame= 3263 fps=261 q=-1.0 size=    9333KiB time=00:01:48.99 bitrate= 701.4kbits/s speed=8.72x elapsed=0:00:12.50
+2026-02-25 22:37:53 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps=2.5 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.0871x elapsed=0:00:24.00
+2026-02-25 22:37:53 WARN [ytdlp-runner][yt-dlp stderr] frame= 3263 fps=251 q=-1.0 size=    9333KiB time=00:01:48.99 bitrate= 701.4kbits/s speed=8.38x elapsed=0:00:13.00
+2026-02-25 22:37:53 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps=2.4 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.0853x elapsed=0:00:24.50
+2026-02-25 22:37:54 WARN [ytdlp-runner][yt-dlp stderr] frame= 3263 fps=242 q=-1.0 size=    9333KiB time=00:01:48.99 bitrate= 701.4kbits/s speed=8.07x elapsed=0:00:13.50
+2026-02-25 22:37:54 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps=2.4 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.0836x elapsed=0:00:25.00
+2026-02-25 22:37:54 WARN [ytdlp-runner][yt-dlp stderr] frame= 3263 fps=233 q=-1.0 size=    9333KiB time=00:01:48.99 bitrate= 701.4kbits/s speed=7.78x elapsed=0:00:14.00
+2026-02-25 22:37:54 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps=2.3 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.082x elapsed=0:00:25.50
+2026-02-25 22:37:55 WARN [ytdlp-runner][yt-dlp stderr] frame= 3263 fps=225 q=-1.0 size=    9333KiB time=00:01:48.99 bitrate= 701.4kbits/s speed=7.52x elapsed=0:00:14.50
+2026-02-25 22:37:55 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps=2.3 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.0804x elapsed=0:00:26.00
+2026-02-25 22:37:55 WARN [ytdlp-runner][yt-dlp stderr] frame= 3263 fps=217 q=-1.0 size=    9333KiB time=00:01:48.99 bitrate= 701.4kbits/s speed=7.26x elapsed=0:00:15.00
+2026-02-25 22:37:55 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps=2.2 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.0789x elapsed=0:00:26.50
+2026-02-25 22:37:56 WARN [ytdlp-runner][yt-dlp stderr] frame= 3263 fps=210 q=-1.0 size=    9333KiB time=00:01:48.99 bitrate= 701.4kbits/s speed=7.03x elapsed=0:00:15.50
+2026-02-25 22:37:56 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps=2.2 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.0774x elapsed=0:00:27.00
+2026-02-25 22:37:56 WARN [ytdlp-runner][yt-dlp stderr] frame= 3263 fps=204 q=-1.0 size=    9333KiB time=00:01:48.99 bitrate= 701.4kbits/s speed=6.81x elapsed=0:00:16.00
+2026-02-25 22:37:56 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps=2.1 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.076x elapsed=0:00:27.50
+2026-02-25 22:37:57 WARN [ytdlp-runner][yt-dlp stderr] frame= 3263 fps=198 q=-1.0 size=    9333KiB time=00:01:48.99 bitrate= 701.4kbits/s speed= 6.6x elapsed=0:00:16.50
+2026-02-25 22:37:57 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps=2.1 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.0747x elapsed=0:00:28.00
+2026-02-25 22:37:57 WARN [ytdlp-runner][yt-dlp stderr] frame= 3263 fps=192 q=-1.0 size=    9333KiB time=00:01:48.99 bitrate= 701.4kbits/s speed=6.41x elapsed=0:00:17.00
+2026-02-25 22:37:57 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps=2.1 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.0734x elapsed=0:00:28.50
+2026-02-25 22:37:58 WARN [ytdlp-runner][yt-dlp stderr] frame= 3263 fps=186 q=-1.0 size=    9333KiB time=00:01:48.99 bitrate= 701.4kbits/s speed=6.23x elapsed=0:00:17.50
+2026-02-25 22:37:58 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps=2.0 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.0721x elapsed=0:00:29.00
+2026-02-25 22:37:58 WARN [ytdlp-runner][yt-dlp stderr] frame= 3263 fps=181 q=-1.0 size=    9333KiB time=00:01:48.99 bitrate= 701.4kbits/s speed=6.05x elapsed=0:00:18.00
+2026-02-25 22:37:58 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps=2.0 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.0709x elapsed=0:00:29.50
+2026-02-25 22:37:59 WARN [ytdlp-runner][yt-dlp stderr] frame= 3263 fps=176 q=-1.0 size=    9333KiB time=00:01:48.99 bitrate= 701.4kbits/s speed=5.89x elapsed=0:00:18.50
+2026-02-25 22:37:59 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps=2.0 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.0697x elapsed=0:00:30.00
+2026-02-25 22:37:59 WARN [ytdlp-runner][yt-dlp stderr] frame= 3263 fps=172 q=-1.0 size=    9333KiB time=00:01:48.99 bitrate= 701.4kbits/s speed=5.74x elapsed=0:00:19.00
+2026-02-25 22:37:59 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps=1.9 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.0685x elapsed=0:00:30.50
+2026-02-25 22:38:00 WARN [ytdlp-runner][yt-dlp stderr] frame= 3263 fps=167 q=-1.0 size=    9333KiB time=00:01:48.99 bitrate= 701.4kbits/s speed=5.59x elapsed=0:00:19.50
+2026-02-25 22:38:00 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps=1.9 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.0674x elapsed=0:00:31.00
+2026-02-25 22:38:00 WARN [ytdlp-runner][yt-dlp stderr] frame= 3263 fps=163 q=-1.0 size=    9333KiB time=00:01:48.99 bitrate= 701.4kbits/s speed=5.45x elapsed=0:00:20.00
+2026-02-25 22:38:00 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps=1.9 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.0664x elapsed=0:00:31.50
+2026-02-25 22:38:01 WARN [ytdlp-runner][yt-dlp stderr] frame= 3263 fps=159 q=-1.0 size=    9333KiB time=00:01:48.99 bitrate= 701.4kbits/s speed=5.32x elapsed=0:00:20.50
+2026-02-25 22:38:01 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps=1.8 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.0653x elapsed=0:00:32.00
+2026-02-25 22:38:01 WARN [ytdlp-runner][yt-dlp stderr] frame= 3263 fps=155 q=-1.0 size=    9333KiB time=00:01:48.99 bitrate= 701.4kbits/s speed=5.19x elapsed=0:00:21.00
+2026-02-25 22:38:01 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps=1.8 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.0643x elapsed=0:00:32.50
+2026-02-25 22:38:02 WARN [ytdlp-runner][yt-dlp stderr] frame= 3263 fps=152 q=-1.0 size=    9333KiB time=00:01:48.99 bitrate= 701.4kbits/s speed=5.07x elapsed=0:00:21.50
+2026-02-25 22:38:02 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps=1.8 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.0634x elapsed=0:00:33.00
+2026-02-25 22:38:02 WARN [ytdlp-runner][yt-dlp stderr] frame= 3263 fps=148 q=-1.0 size=    9333KiB time=00:01:48.99 bitrate= 701.4kbits/s speed=4.95x elapsed=0:00:22.00
+2026-02-25 22:38:02 WARN [ytdlp-runner][yt-dlp stderr] frame=   59 fps=1.8 q=-1.0 size=     144KiB time=00:00:02.09 bitrate= 566.0kbits/s speed=0.0624x elapsed=0:00:33.50

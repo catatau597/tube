@@ -2,28 +2,31 @@ import { Response } from 'express';
 import { logger } from '../core/logger';
 
 /**
- * Kill idle clients (and the stream if all are idle) after this many ms.
- * This protects against VLC bug where it doesn't send TCP FIN when closing,
- * leaving phantom connections that never trigger 'close' event.
+ * How long a client may remain in a stuck/draining state without a successful
+ * drain event before being forcibly removed.
+ * Protects against VLC (and other players) that close the TCP connection
+ * without sending FIN, leaving phantom connections that never trigger 'close'.
  */
 const IDLE_CLIENT_TIMEOUT_MS = 30_000;
 
 /**
  * How many consecutive backpressure events a client may trigger before being
  * dropped. A single false return from res.write() is normal at connection
- * start (TCP slow-start, VLC buffering). Only persistent inability to drain
- * indicates a truly slow/stuck client.
+ * start (TCP slow-start / player buffering). Only persistent inability to
+ * drain indicates a truly slow or stuck client.
  */
 const BACKPRESSURE_DROP_THRESHOLD = 3;
 
 interface ClientState {
   res: Response;
-  /** Consecutive chunks dropped due to backpressure (buffer full). */
+  /** Consecutive write() calls that returned false without an intervening drain. */
   backpressureCount: number;
-  /** True while waiting for the 'drain' event. */
+  /** True while waiting for the socket to drain after a false write(). */
   draining: boolean;
-  /** Timestamp (Date.now()) of the last successful write to this client. */
-  lastSuccessfulWrite: number;
+  /** Date.now() of the last successful drain event (or connection start). */
+  lastDrainTimestamp: number;
+  /** Set by the 'error' event handler — client will be removed on next broadcast. */
+  markedForRemoval: boolean;
 }
 
 interface StreamSession {
@@ -36,15 +39,13 @@ interface StreamSession {
 /**
  * Global registry of active media streams.
  *
- * Features:
- *  - Fan-out / tee: multiple HTTP clients share a single child process.
- *  - Auto-kill: when the last client disconnects, the process is terminated.
- *  - Idle watchdog: periodically removes clients that haven't read data for
- *    IDLE_CLIENT_TIMEOUT_MS. If all clients are removed, the stream is killed.
- *    This handles VLC's bug where it doesn't send TCP FIN when closing.
- *  - Backpressure: when res.write() returns false the chunk is skipped for
- *    that client and we wait for 'drain'. After BACKPRESSURE_DROP_THRESHOLD
- *    consecutive misses the client is dropped to protect memory.
+ * Responsibilities:
+ *  - Fan-out (tee): multiple HTTP clients share one child process output.
+ *  - Auto-kill: stream is torn down when all clients disconnect.
+ *  - Idle watchdog: removes clients that have been stuck draining for
+ *    IDLE_CLIENT_TIMEOUT_MS (covers VLC phantom connections without TCP FIN).
+ *  - Backpressure: slow clients skip chunks and wait for drain; after
+ *    BACKPRESSURE_DROP_THRESHOLD consecutive misses they are dropped.
  */
 class StreamRegistry {
   private readonly sessions = new Map<string, StreamSession>();
@@ -56,16 +57,10 @@ class StreamRegistry {
   /**
    * Register a new stream session.
    * Must be called before addClient() or broadcast().
-   *
-   * IMPORTANT: killFn may be invoked as part of kill(), which can be
-   * triggered immediately (for example when the last client is removed),
-   * so callers must not rely on it being deferred to a later event loop tick.
-   * See SmartPlayer spawn helpers for the safe deferred-proc pattern.
-   *
-   * @param killFn  Async callback that terminates the underlying process.
+   * killFn may be invoked synchronously (see SmartPlayer deferred-proc pattern).
    */
   create(key: string, killFn: () => Promise<void>): void {
-    if (this.sessions.has(key)) return; // guard against double-create
+    if (this.sessions.has(key)) return;
     this.sessions.set(key, { clients: new Map(), killFn, idleWatchdogTimer: null, killed: false });
     this.startIdleWatchdog(key);
     logger.info(`[stream-registry] Sessão criada: key=${key}`);
@@ -78,9 +73,13 @@ class StreamRegistry {
       res,
       backpressureCount: 0,
       draining: false,
-      lastSuccessfulWrite: Date.now(),
+      lastDrainTimestamp: Date.now(),
+      markedForRemoval: false,
     };
     s.clients.set(res, state);
+    // Socket-level error (EPIPE / ECONNRESET) marks the client for removal
+    // so it is cleaned up on the next broadcast cycle.
+    res.on('error', () => { state.markedForRemoval = true; });
     logger.info(`[stream-registry] +cliente key=${key} total=${s.clients.size}`);
     return true;
   }
@@ -88,23 +87,11 @@ class StreamRegistry {
   removeClient(key: string, res: Response): void {
     const s = this.sessions.get(key);
     if (!s) return;
-    if (!s.clients.delete(res)) return; // wasn't in set
+    if (!s.clients.delete(res)) return;
     logger.info(`[stream-registry] -cliente key=${key} restantes=${s.clients.size}`);
     if (s.clients.size === 0) void this.kill(key);
   }
 
-  /**
-   * Fan-out: write chunk to every live client.
-   *
-   * Backpressure strategy:
-   *  - If res.write() returns false, the socket buffer is full. We skip this
-   *    chunk for that client and wait for 'drain' before writing again.
-   *  - After BACKPRESSURE_DROP_THRESHOLD consecutive skips the client is
-   *    dropped — it is genuinely too slow to keep up.
-   *  - Draining clients simply skip the chunk (no drop, no error).
-   *
-   * Dead/closed clients are removed automatically.
-   */
   broadcast(key: string, chunk: Buffer): void {
     const s = this.sessions.get(key);
     if (!s) return;
@@ -112,19 +99,18 @@ class StreamRegistry {
     const dead: Response[] = [];
 
     for (const [res, state] of s.clients) {
-      if (res.writableEnded || res.destroyed) { dead.push(res); continue; }
+      if (state.markedForRemoval || res.writableEnded || res.destroyed) {
+        dead.push(res);
+        continue;
+      }
 
-      // While draining, skip this chunk (do not count as backpressure hit)
       if (state.draining) continue;
 
       try {
         const ok = res.write(chunk);
         if (ok) {
-          // Write succeeded — reset backpressure counter and update timestamp
           state.backpressureCount = 0;
-          state.lastSuccessfulWrite = Date.now();
         } else {
-          // Buffer full — start draining
           state.backpressureCount++;
           if (state.backpressureCount >= BACKPRESSURE_DROP_THRESHOLD) {
             logger.warn(
@@ -133,12 +119,11 @@ class StreamRegistry {
             dead.push(res);
             try { res.end(); } catch { /* */ }
           } else {
-            // Wait for drain before writing to this client again
             state.draining = true;
             res.once('drain', () => {
               state.draining = false;
               state.backpressureCount = 0;
-              state.lastSuccessfulWrite = Date.now();
+              state.lastDrainTimestamp = Date.now();
             });
           }
         }
@@ -155,10 +140,9 @@ class StreamRegistry {
     }
   }
 
-  /** Tear down the session: cancel watchdog, end all clients, invoke killFn. */
   async kill(key: string): Promise<void> {
     const s = this.sessions.get(key);
-    if (!s || s.killed) return; // idempotent
+    if (!s || s.killed) return;
     s.killed = true;
 
     if (s.idleWatchdogTimer) { clearTimeout(s.idleWatchdogTimer); s.idleWatchdogTimer = null; }
@@ -177,11 +161,12 @@ class StreamRegistry {
   }
 
   /**
-   * Idle watchdog: checks every IDLE_CLIENT_TIMEOUT_MS for clients that
-   * haven't successfully read data in that time window. Those clients are
-   * forcibly removed (VLC phantom connections that never sent TCP FIN).
+   * Idle watchdog: every IDLE_CLIENT_TIMEOUT_MS, find clients that are stuck
+   * in draining state (writableNeedDrain) without a recent drain event, and
+   * forcibly remove them. If all clients are removed, the stream is killed.
    *
-   * If all clients are removed by this process, the stream is killed.
+   * This is the safety net for VLC (and similar players) that abandon TCP
+   * connections without sending FIN, leaving the server unaware of the disconnect.
    */
   private startIdleWatchdog(key: string): void {
     const s = this.sessions.get(key);
@@ -193,30 +178,25 @@ class StreamRegistry {
       const now = Date.now();
       const toRemove: Response[] = [];
 
-      // Find all idle clients (haven't read in IDLE_CLIENT_TIMEOUT_MS)
       for (const [res, state] of s.clients) {
-        if (now - state.lastSuccessfulWrite >= IDLE_CLIENT_TIMEOUT_MS) {
+        const idleMs = now - state.lastDrainTimestamp;
+        const isDraining = (res as unknown as { writableNeedDrain?: boolean }).writableNeedDrain ?? false;
+
+        if (state.markedForRemoval || (isDraining && idleMs >= IDLE_CLIENT_TIMEOUT_MS)) {
           logger.warn(
-            `[stream-registry] Cliente idle por ${IDLE_CLIENT_TIMEOUT_MS / 1000}s, removendo: key=${key}`,
+            `[stream-registry] Cliente stuck (draining=${isDraining}, idleMs=${idleMs}), removendo: key=${key}`,
           );
           toRemove.push(res);
           try { res.end(); } catch { /* */ }
         }
       }
 
-      // Remove all idle clients
-      for (const res of toRemove) {
-        s.clients.delete(res);
-      }
+      for (const res of toRemove) s.clients.delete(res);
 
-      // If no clients remain, kill the stream
       if (s.clients.size === 0 && toRemove.length > 0) {
-        logger.info(
-          `[stream-registry] Todos os clientes removidos por idle, encerrando: key=${key}`,
-        );
+        logger.info(`[stream-registry] Todos os clientes removidos por idle, encerrando: key=${key}`);
         void this.kill(key);
       } else {
-        // Re-schedule check
         s.idleWatchdogTimer = setTimeout(check, IDLE_CLIENT_TIMEOUT_MS);
       }
     };
