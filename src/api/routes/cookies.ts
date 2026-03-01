@@ -8,7 +8,12 @@ import { logger } from '../../core/logger';
 const COOKIES_DIR = '/data/cookies';
 fs.mkdirSync(COOKIES_DIR, { recursive: true });
 
-const upload = multer({ dest: '/tmp' });
+// Salva diretamente em /data/cookies evitando problema EXDEV entre filesystems
+const storage = multer.diskStorage({
+  destination: (_req, _file, cb) => cb(null, COOKIES_DIR),
+  filename: (_req, file, cb) => cb(null, `${Date.now()}_${path.basename(file.originalname || 'cookies.txt')}`),
+});
+const upload = multer({ storage });
 
 interface CookieRow {
   id: number;
@@ -45,13 +50,7 @@ router.post('/', upload.single('file'), (req, res) => {
     }
 
     const safeProvider = (provider?.trim() || 'youtube').toLowerCase();
-    const filename = `${Date.now()}_${path.basename(req.file.originalname || 'cookies.txt')}`;
-    const finalPath = path.join(COOKIES_DIR, filename);
-
-    /* Usar copy+unlink em vez de rename para evitar erro EXDEV
-       (cross-device: /tmp e /data podem estar em filesystems diferentes no Docker) */
-    fs.copyFileSync(req.file.path, finalPath);
-    try { fs.unlinkSync(req.file.path); } catch { /* limpeza do temp — não crítico */ }
+    const finalPath = req.file.path; // multer já salvou em COOKIES_DIR
 
     const result = getDb()
       .prepare('INSERT INTO cookies (name, provider, file_path, active) VALUES (?, ?, ?, 1)')

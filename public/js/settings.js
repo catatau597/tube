@@ -33,18 +33,11 @@ const sectionMeta = {
   },
 };
 
-/* ---------- Templates de flags por ferramenta ---------- */
-
-const TOOL_FLAG_TEMPLATES = {
-  streamlink: '--retry-streams 5 --retry-max 5 --stream-segment-timeout 60 --hls-live-restart',
-  'yt-dlp':   '--no-playlist --live-from-start --retries 5 --fragment-retries 5',
-  ffmpeg:     '-c copy -bsf:a aac_adtstoasc',
-};
-
-const TOOL_FLAG_HINTS = {
-  streamlink: 'retry, timeout e restart de segmentos HLS',
-  'yt-dlp':   'sem playlist, do início, com retries',
-  ffmpeg:     'cópia direta de stream com fix de ADTS',
+/* ---------- templates por ferramenta ---------- */
+const TOOL_TEMPLATES = {
+  'streamlink': '--retry-streams 5 --stream-segment-threads 2 --hls-live-edge 4',
+  'yt-dlp':     '--concurrent-fragments 4 --buffer-size 16k --retries 5',
+  'ffmpeg':     '-reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 5',
 };
 
 /* ---------- helpers ---------- */
@@ -93,6 +86,81 @@ function timezoneSelect(current) {
     (tz) => `<option value="${tz}" ${tz === cur ? 'selected' : ''}>${tz}</option>`,
   ).join('');
   return `<select name="LOCAL_TIMEZONE">${opts}</select>`;
+}
+
+/* ---------- row renderers (reutilizados em render inicial + updates parciais) ---------- */
+
+function renderCookieRows(cookies) {
+  if (cookies.length === 0)
+    return '<tr><td colspan="5" style="opacity:0.5;text-align:center">Nenhum cookie cadastrado</td></tr>';
+  return cookies.map((c) => `
+    <tr>
+      <td>${escapeHtml(c.name)}</td>
+      <td>${escapeHtml(c.provider)}</td>
+      <td style="font-size:0.8rem;opacity:0.7">${escapeHtml(String(c.file_path).split('/').pop() || '-')}</td>
+      <td>${c.active === 1 ? '🟢 ativo' : '🔴 inativo'}</td>
+      <td>
+        <button data-cookie-toggle="${c.id}" class="action-btn">${c.active === 1 ? 'Inativar' : 'Ativar'}</button>
+        <button data-cookie-del="${c.id}" class="action-btn danger-btn">🗑️</button>
+      </td>
+    </tr>`).join('');
+}
+
+function renderUARows(userAgents) {
+  if (userAgents.length === 0)
+    return '<tr><td colspan="4" style="opacity:0.5;text-align:center">Nenhum UA cadastrado</td></tr>';
+  return userAgents.map((ua) => `
+    <tr>
+      <td>${escapeHtml(ua.label || '-')}</td>
+      <td style="word-break:break-all;max-width:260px;font-size:0.8rem">${escapeHtml(ua.value || '-')}</td>
+      <td style="text-align:center">${ua.is_default === 1 ? '⭐' : '-'}</td>
+      <td>
+        <button data-ua-default="${ua.id}" class="action-btn" ${ua.is_default === 1 ? 'disabled' : ''}>⭐</button>
+        <button data-ua-del="${ua.id}" class="action-btn danger-btn">🗑️</button>
+      </td>
+    </tr>`).join('');
+}
+
+function renderToolProfileRows(toolProfiles) {
+  return toolProfiles.map((p) => {
+    const isDefault = p.is_default === true;
+    return `
+      <tr data-profile-id="${p.id}"
+          data-p-name="${escapeAttr(p.name)}"
+          data-p-flags="${escapeAttr(p.flags || '')}"
+          data-p-cookie="${p.cookie_id || ''}"
+          data-p-ua="${p.ua_id || ''}"
+          ${isDefault ? 'style="opacity:0.65"' : ''}>
+        <td>${escapeHtml(p.name)}</td>
+        <td><code>${escapeHtml(p.tool)}</code></td>
+        <td style="font-size:0.8rem;max-width:160px;word-break:break-all">${escapeHtml(p.flags || '-')}</td>
+        <td style="font-size:0.8rem">${escapeHtml(p.cookie_name || '-')}</td>
+        <td style="font-size:0.8rem">${escapeHtml(p.ua_label || '-')}</td>
+        <td style="text-align:center">${p.is_active === 1 ? '✅' : '-'}</td>
+        <td>
+          ${!isDefault && p.is_active !== 1
+            ? `<button data-tool-activate="${p.id}" class="action-btn">✅ Ativar</button>`
+            : ''}
+          ${!isDefault && p.is_active === 1
+            ? `<button data-tool-deactivate="${p.id}" class="action-btn" style="background:#7f1d1d;border-color:#ef4444">🔴 Desativar</button>`
+            : ''}
+          ${!isDefault
+            ? `<button data-tool-edit="${p.id}" class="action-btn">✏️</button>
+               <button data-tool-del="${p.id}" class="action-btn danger-btn">🗑️</button>`
+            : '<span style="opacity:0.4;font-size:0.8rem">sistema</span>'}
+        </td>
+      </tr>`;
+  }).join('');
+}
+
+function buildUAOptions(userAgents) {
+  return `<option value="">(sem UA)</option>` +
+    userAgents.map((ua) => `<option value="${ua.id}">${escapeHtml(ua.label || ua.value.slice(0, 40))}</option>`).join('');
+}
+
+function buildCookieOptions(cookies) {
+  return `<option value="">(sem cookie)</option>` +
+    cookies.map((c) => `<option value="${c.id}">${escapeHtml(c.name)} (${escapeHtml(c.provider)})</option>`).join('');
 }
 
 /* ---------- configFields por seção ---------- */
@@ -220,7 +288,7 @@ function configFields(section, config) {
         </div>
         <div style="display:flex;align-items:center;gap:0.5rem">
           ${toggleSwitch('PROXY_ENABLE_ANALYTICS', proxyAnalytics)}
-          <label style="margin:0" title="Logs de requisições HTTP ao proxy HLS (/stream/:videoId)">Proxy Analytics (logs de requisições ao proxy HLS)</label>
+          <label style="margin:0" title="Logs de requisições HTTP ao proxy HLS (/stream/:videoId). Não são logs de yt-dlp/ffmpeg/streamlink.">Proxy Analytics (logs de requisições ao proxy HLS) ℹ️</label>
         </div>
       </div>
       <label>Porta HTTP
@@ -248,14 +316,13 @@ function configFields(section, config) {
       </label>`;
   }
 
-  /* section === 'api' — NÃO renderizar campo aqui, só em apiCards() */
+  /* section === 'api' — campos tratados em apiCards() */
   return '';
 }
 
 /* ---------- payload de salvamento por seção ---------- */
 
 function settingsPayloadBySection(section, formData) {
-  /* FIX: checkbox desmarcado não aparece no FormData → tratar como 'false' */
   const bool = (key) => formData.get(key) === 'on' ? 'true' : 'false';
   const pick = (key, fallback = '') => String(formData.get(key) ?? fallback).trim();
 
@@ -311,31 +378,15 @@ function settingsPayloadBySection(section, formData) {
     };
   }
   if (section === 'cache') {
-    return {
-      PROXY_THUMBNAIL_CACHE_HOURS: pick('PROXY_THUMBNAIL_CACHE_HOURS', '24'),
-    };
+    return { PROXY_THUMBNAIL_CACHE_HOURS: pick('PROXY_THUMBNAIL_CACHE_HOURS', '24') };
   }
-  /* api */
   return { YOUTUBE_API_KEY: pick('YOUTUBE_API_KEY', '') };
 }
 
-/* ---------- API section cards (cookies, UAs, tool profiles) ---------- */
+/* ---------- API section HTML ---------- */
 
 function apiCards(config, cookies, userAgents, toolProfiles) {
-  const cookieOptions = cookies.map(
-    (c) => `<option value="${c.id}">${escapeHtml(c.name)} (${escapeHtml(c.provider)})</option>`,
-  ).join('');
-  const uaOptions = userAgents.map(
-    (ua) => `<option value="${ua.id}">${escapeHtml(ua.label || ua.value.slice(0, 40))}</option>`,
-  ).join('');
-
-  // Gerar hint inicial para a ferramenta padrão (streamlink)
-  const defaultTool = 'streamlink';
-  const defaultTemplate = TOOL_FLAG_TEMPLATES[defaultTool];
-  const defaultHint = TOOL_FLAG_HINTS[defaultTool];
-
   return `
-    <!-- API Key inline -->
     <div class="card">
       <h3>API Key YouTube</h3>
       <div style="display:flex;gap:0.5rem">
@@ -344,7 +395,6 @@ function apiCards(config, cookies, userAgents, toolProfiles) {
       </div>
     </div>
 
-    <!-- Cookies -->
     <div class="card">
       <h3>🍪 Cookies</h3>
       <form id="cookie-upload-form" class="toolbar" style="flex-wrap:wrap;gap:0.5rem;margin-bottom:1rem">
@@ -355,26 +405,10 @@ function apiCards(config, cookies, userAgents, toolProfiles) {
       </form>
       <table>
         <thead><tr><th>Nome</th><th>Provider</th><th>Arquivo</th><th>Status</th><th>Ações</th></tr></thead>
-        <tbody id="cookies-tbody">
-          ${cookies.length === 0
-            ? '<tr><td colspan="5" style="opacity:0.5;text-align:center">Nenhum cookie cadastrado</td></tr>'
-            : cookies.map((c) => `
-              <tr data-cookie-id="${c.id}">
-                <td>${escapeHtml(c.name)}</td>
-                <td>${escapeHtml(c.provider)}</td>
-                <td style="font-size:0.8rem;opacity:0.7">${escapeHtml(String(c.file_path).split('/').pop() || '-')}</td>
-                <td>${c.active === 1 ? '🟢 ativo' : '🔴 inativo'}</td>
-                <td>
-                  <button data-cookie-toggle="${c.id}" class="action-btn">${c.active === 1 ? 'Inativar' : 'Ativar'}</button>
-                  <button data-cookie-del="${c.id}" class="action-btn danger-btn">🗑️</button>
-                </td>
-              </tr>`).join('')
-          }
-        </tbody>
+        <tbody id="cookies-tbody">${renderCookieRows(cookies)}</tbody>
       </table>
     </div>
 
-    <!-- User-Agents -->
     <div class="card">
       <h3>🌐 User-Agents</h3>
       <form id="ua-form" class="toolbar" style="flex-wrap:wrap;gap:0.5rem;margin-bottom:1rem">
@@ -384,80 +418,30 @@ function apiCards(config, cookies, userAgents, toolProfiles) {
       </form>
       <table>
         <thead><tr><th>Nome</th><th>UA</th><th>Padrão</th><th>Ações</th></tr></thead>
-        <tbody id="ua-tbody">
-          ${userAgents.length === 0
-            ? '<tr><td colspan="4" style="opacity:0.5;text-align:center">Nenhum UA cadastrado</td></tr>'
-            : userAgents.map((ua) => `
-              <tr data-ua-id="${ua.id}">
-                <td>${escapeHtml(ua.label || '-')}</td>
-                <td style="word-break:break-all;max-width:260px;font-size:0.8rem">${escapeHtml(ua.value || '-')}</td>
-                <td style="text-align:center">${ua.is_default === 1 ? '⭐' : '-'}</td>
-                <td>
-                  <button data-ua-default="${ua.id}" class="action-btn" ${ua.is_default===1?'disabled':''}>⭐</button>
-                  <button data-ua-del="${ua.id}" class="action-btn danger-btn">🗑️</button>
-                </td>
-              </tr>`).join('')
-          }
-        </tbody>
+        <tbody id="ua-tbody">${renderUARows(userAgents)}</tbody>
       </table>
     </div>
 
-    <!-- Perfis de Ferramenta -->
     <div class="card">
       <h3>⚙️ Perfis de Ferramenta</h3>
-      <form id="tool-profile-form" style="display:flex;flex-direction:column;gap:0.6rem;margin-bottom:1rem">
-        <div class="toolbar" style="flex-wrap:wrap;gap:0.5rem">
-          <input name="name" placeholder="Nome do perfil" required />
-          <select id="tool-select" name="tool" required>
-            <option value="streamlink">streamlink</option>
-            <option value="yt-dlp">yt-dlp</option>
-            <option value="ffmpeg">ffmpeg</option>
-          </select>
-          <select name="cookie_id">
-            <option value="">(sem cookie)</option>
-            ${cookieOptions}
-          </select>
-          <select name="ua_id">
-            <option value="">(sem UA)</option>
-            ${uaOptions}
-          </select>
-          <button type="submit" class="action-btn">➕ Adicionar</button>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:0.25rem">
-          <div style="display:flex;gap:0.4rem;align-items:center">
-            <input id="flags-input" name="flags" value="${escapeAttr(defaultTemplate)}" style="flex:1;font-family:monospace;font-size:0.85rem" />
-            <button type="button" id="flags-reset-btn" class="action-btn" title="Restaurar template padrão da ferramenta">🔄 Template</button>
-          </div>
-          <p id="flags-hint" style="margin:0;font-size:0.78rem;opacity:0.5">💡 Template: ${escapeHtml(defaultHint)}</p>
-        </div>
+      <form id="tool-profile-form" class="toolbar" style="flex-wrap:wrap;gap:0.5rem;margin-bottom:1rem">
+        <input name="name" placeholder="Nome do perfil" required />
+        <select id="tool-select" name="tool" required>
+          <option value="streamlink">streamlink</option>
+          <option value="yt-dlp">yt-dlp</option>
+          <option value="ffmpeg">ffmpeg</option>
+        </select>
+        <input id="flags-input" name="flags" placeholder="Flags extras" style="flex:1;min-width:180px" />
+        <select id="cookie-select" name="cookie_id">${buildCookieOptions(cookies)}</select>
+        <select id="ua-select" name="ua_id">${buildUAOptions(userAgents)}</select>
+        <button type="submit" class="action-btn">➕ Adicionar</button>
       </form>
       <table>
         <thead><tr><th>Nome</th><th>Ferramenta</th><th>Flags</th><th>Cookie</th><th>UA</th><th>Ativo</th><th>Ações</th></tr></thead>
-        <tbody id="tool-profiles-tbody">
-          ${toolProfiles.map((p) => {
-            const isDefault = p.is_default === true;
-            return `
-              <tr data-profile-id="${p.id}" ${isDefault ? 'style="opacity:0.65"' : ''}>
-                <td>${escapeHtml(p.name)}</td>
-                <td><code>${escapeHtml(p.tool)}</code></td>
-                <td style="font-size:0.8rem;max-width:160px;word-break:break-all">${escapeHtml(p.flags || '-')}</td>
-                <td style="font-size:0.8rem">${escapeHtml(p.cookie_name || '-')}</td>
-                <td style="font-size:0.8rem">${escapeHtml(p.ua_label || '-')}</td>
-                <td style="text-align:center">${p.is_active === 1 ? '✅' : '-'}</td>
-                <td>
-                  ${!isDefault && p.is_active !== 1
-                    ? `<button data-tool-activate="${p.id}" class="action-btn">✅ Ativar</button>`
-                    : ''}
-                  ${!isDefault
-                    ? `<button data-tool-del="${p.id}" class="action-btn danger-btn">🗑️</button>`
-                    : '<span style="opacity:0.4;font-size:0.8rem">sistema</span>'}
-                </td>
-              </tr>`;
-          }).join('')}
-        </tbody>
+        <tbody id="tool-profiles-tbody">${renderToolProfileRows(toolProfiles)}</tbody>
       </table>
       <p style="font-size:0.8rem;opacity:0.55;margin-top:0.5rem">
-        Perfis "Default (Sistema)" são virtuais e sempre visíveis. Eles usam o UA padrão + cookie ativo quando nenhum perfil real está ativo para a ferramenta.
+        Perfis "Default (Sistema)" são virtuais e sempre visíveis. Usam o UA padrão + cookie ativo quando nenhum perfil real está ativo para a ferramenta.
       </p>
     </div>`;
 }
@@ -466,17 +450,13 @@ function apiCards(config, cookies, userAgents, toolProfiles) {
 
 async function cacheCards(api, config) {
   let stats = { total: 0, expired: 0, sizeMB: '0.00' };
-  try {
-    stats = await requestJson(api, '/api/thumbnail-cache/stats', undefined, '');
-  } catch { /* ignora */ }
-
+  try { stats = await requestJson(api, '/api/thumbnail-cache/stats', undefined, ''); } catch { /* ignora */ }
   return `
     <div class="card">
       <h3>Configuração de TTL</h3>
       <form id="cache-config-form" class="settings-grid">
         <label>Cache Thumbnail Proxy (h)
-          <input name="PROXY_THUMBNAIL_CACHE_HOURS" type="number" min="1" max="168"
-            value="${config.PROXY_THUMBNAIL_CACHE_HOURS || 24}" />
+          <input name="PROXY_THUMBNAIL_CACHE_HOURS" type="number" min="1" max="168" value="${config.PROXY_THUMBNAIL_CACHE_HOURS || 24}" />
         </label>
         <div style="display:flex;align-items:flex-end">
           <button type="submit" class="action-btn">💾 Salvar</button>
@@ -485,13 +465,11 @@ async function cacheCards(api, config) {
     </div>
     <div class="card">
       <h3>Estatísticas do Cache de Thumbnails</h3>
-      <table>
-        <tbody>
-          <tr><th>Total de thumbnails</th><td id="cache-total">${stats.total}</td></tr>
-          <tr><th>Expirados</th><td id="cache-expired">${stats.expired}</td></tr>
-          <tr><th>Tamanho em disco</th><td id="cache-size">${stats.sizeMB} MB</td></tr>
-        </tbody>
-      </table>
+      <table><tbody>
+        <tr><th>Total de thumbnails</th><td id="cache-total">${stats.total}</td></tr>
+        <tr><th>Expirados</th><td id="cache-expired">${stats.expired}</td></tr>
+        <tr><th>Tamanho em disco</th><td id="cache-size">${stats.sizeMB} MB</td></tr>
+      </tbody></table>
       <div class="toolbar" style="margin-top:1rem">
         <button id="cache-refresh" class="action-btn">🔄 Atualizar</button>
         <button id="cache-prune"   class="action-btn">🧹 Limpar Expirados</button>
@@ -551,7 +529,6 @@ export async function renderSettings(root, api, hash = '/settings') {
               <button type="submit" class="action-btn">💾 Salvar</button>
             </div>
           </form>` : ''}
-        ${isApi ? `<div class="settings-grid">${configFields(section, config)}</div>` : ''}
       </div>
       ${isApi   ? apiCards(config, cookies, userAgents, toolProfiles) : ''}
       ${isCache ? cacheHTML : ''}
@@ -574,7 +551,8 @@ export async function renderSettings(root, api, hash = '/settings') {
       messageNode.textContent = text;
     };
 
-    /* ---- Generic form submit ---- */
+    /* ---- Generic form (scheduler, content, retention, media, tech) ---- */
+    /* Mantém await load() para re-renderizar campos condicionais corretamente */
     if (hasForm) {
       document.getElementById('settings-form').addEventListener('submit', async (event) => {
         event.preventDefault();
@@ -586,6 +564,7 @@ export async function renderSettings(root, api, hash = '/settings') {
             body: JSON.stringify(settingsPayloadBySection(section, formData)),
           }, 'Falha ao salvar configurações.');
           setNotice('success', 'Configurações salvas com sucesso.');
+          await load(); // necessário para re-renderizar campos condicionais
         } catch (err) {
           setNotice('error', err instanceof Error ? err.message : 'Falha ao salvar.');
         }
@@ -649,7 +628,6 @@ export async function renderSettings(root, api, hash = '/settings') {
         set('cache-expired', stats.expired);
         set('cache-size',   `${stats.sizeMB} MB`);
       }
-
       document.getElementById('cache-config-form')?.addEventListener('submit', async (event) => {
         event.preventDefault();
         const formData = new FormData(event.target);
@@ -657,23 +635,18 @@ export async function renderSettings(root, api, hash = '/settings') {
           await requestJson(api, '/api/config', {
             method: 'PATCH', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(settingsPayloadBySection('cache', formData)),
-          }, 'Falha ao salvar.');
-          setNotice('success', 'TTL de cache salvo.');
+          }, 'Falha ao salvar.'); setNotice('success', 'TTL de cache salvo.');
         } catch (err) { setNotice('error', err instanceof Error ? err.message : 'Falha ao salvar.'); }
       });
-
       document.getElementById('cache-refresh')?.addEventListener('click', async () => {
         await refreshCacheStats(); setNotice('success', 'Stats atualizadas.');
       });
-
       document.getElementById('cache-prune')?.addEventListener('click', async () => {
         try {
           const r = await requestJson(api, '/api/thumbnail-cache/prune', { method: 'POST' }, 'Falha.');
-          setNotice('success', `${r.removed} item(s) expirado(s) removido(s).`);
-          await refreshCacheStats();
+          setNotice('success', `${r.removed} item(s) expirado(s) removido(s).`); await refreshCacheStats();
         } catch (err) { setNotice('error', err instanceof Error ? err.message : 'Falha.'); }
       });
-
       document.getElementById('cache-clear')?.addEventListener('click', async () => {
         if (!confirm('Limpar TODO o cache de thumbnails?')) return;
         try {
@@ -683,235 +656,284 @@ export async function renderSettings(root, api, hash = '/settings') {
       });
     }
 
-    /* ---- API section ---- */
-    if (isApi) {
-      /* ---- Template auto-fill ao trocar ferramenta ---- */
-      const toolSelect  = document.getElementById('tool-select');
-      const flagsInput  = document.getElementById('flags-input');
-      const flagsHint   = document.getElementById('flags-hint');
-      const flagsReset  = document.getElementById('flags-reset-btn');
+    /* ======== API section ======== */
+    if (!isApi) return;
 
-      function applyTemplate(tool) {
-        if (!flagsInput || !flagsHint) return;
-        const tpl  = TOOL_FLAG_TEMPLATES[tool] || '';
-        const hint = TOOL_FLAG_HINTS[tool]     || '';
-        flagsInput.value = tpl;
-        flagsHint.textContent = `💡 Template: ${hint}`;
-      }
+    /* --- Helpers para atualização parcial --- */
 
-      toolSelect?.addEventListener('change', (e) => applyTemplate(e.target.value));
-      flagsReset?.addEventListener('click',  ()  => applyTemplate(toolSelect?.value || 'streamlink'));
+    function updateCookieSelect(newCookies) {
+      const sel = document.getElementById('cookie-select');
+      if (sel) sel.innerHTML = buildCookieOptions(newCookies);
+    }
 
-      /* API Key save */
-      document.getElementById('api-key-save')?.addEventListener('click', async () => {
-        const val = document.getElementById('api-key-input')?.value.trim() || '';
-        try {
-          await requestJson(api, '/api/config', {
-            method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ YOUTUBE_API_KEY: val }),
-          }, 'Falha ao salvar API Key.');
-          setNotice('success', 'API Key salva.');
-        } catch (err) { setNotice('error', err instanceof Error ? err.message : 'Falha.'); }
+    function updateUASelect(newUAs) {
+      const sel = document.getElementById('ua-select');
+      if (sel) sel.innerHTML = buildUAOptions(newUAs);
+    }
+
+    function updateCookiesSection(newCookies) {
+      const tbody = document.getElementById('cookies-tbody');
+      if (tbody) tbody.innerHTML = renderCookieRows(newCookies);
+      updateCookieSelect(newCookies);
+      attachCookieListeners();
+    }
+
+    function updateUASection(newUAs) {
+      const tbody = document.getElementById('ua-tbody');
+      if (tbody) tbody.innerHTML = renderUARows(newUAs);
+      updateUASelect(newUAs);
+      attachUAListeners();
+    }
+
+    function updateToolProfilesSection(newProfiles) {
+      const tbody = document.getElementById('tool-profiles-tbody');
+      if (tbody) tbody.innerHTML = renderToolProfileRows(newProfiles);
+      attachToolProfileListeners();
+    }
+
+    /* --- Cookie listeners --- */
+    function attachCookieListeners() {
+      document.querySelectorAll('[data-cookie-toggle]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const id = btn.getAttribute('data-cookie-toggle');
+          try {
+            await requestJson(api, `/api/cookies/${id}/toggle`, { method: 'PATCH' }, 'Falha ao alternar.');
+            const newCookies = await requestJson(api, '/api/cookies', undefined, '');
+            updateCookiesSection(newCookies);
+            setNotice('success', 'Status do cookie alterado.');
+          } catch (err) { setNotice('error', err instanceof Error ? err.message : 'Falha.'); }
+        });
       });
+      document.querySelectorAll('[data-cookie-del]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const id = btn.getAttribute('data-cookie-del');
+          if (!confirm('Remover este cookie?')) return;
+          try {
+            await requestJson(api, `/api/cookies/${id}`, { method: 'DELETE' }, 'Falha ao remover.');
+            const newCookies = await requestJson(api, '/api/cookies', undefined, '');
+            updateCookiesSection(newCookies);
+            setNotice('success', 'Cookie removido.');
+          } catch (err) { setNotice('error', err instanceof Error ? err.message : 'Falha.'); }
+        });
+      });
+    }
 
-      /* Cookie upload */
-      document.getElementById('cookie-upload-form')?.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        const fd = new FormData(event.target);
+    /* --- UA listeners --- */
+    function attachUAListeners() {
+      document.querySelectorAll('[data-ua-default]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const id = btn.getAttribute('data-ua-default');
+          try {
+            await requestJson(api, `/api/credentials/ua/${id}/default`, { method: 'PATCH' }, 'Falha.');
+            const newUAs = await requestJson(api, '/api/credentials', undefined, '');
+            updateUASection(newUAs);
+            setNotice('success', 'UA padrão definido.');
+          } catch (err) { setNotice('error', err instanceof Error ? err.message : 'Falha.'); }
+        });
+      });
+      document.querySelectorAll('[data-ua-del]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const id = btn.getAttribute('data-ua-del');
+          try {
+            await requestJson(api, `/api/credentials/ua/${id}`, { method: 'DELETE' }, 'Falha.');
+            const newUAs = await requestJson(api, '/api/credentials', undefined, '');
+            updateUASection(newUAs);
+            setNotice('success', 'UA removido.');
+          } catch (err) { setNotice('error', err instanceof Error ? err.message : 'Falha.'); }
+        });
+      });
+    }
+
+    /* --- Tool profile listeners --- */
+    function attachToolProfileListeners() {
+      /* Activate */
+      document.querySelectorAll('[data-tool-activate]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const id = btn.getAttribute('data-tool-activate');
+          try {
+            await requestJson(api, `/api/tool-profiles/${id}/activate`, { method: 'PATCH' }, 'Falha.');
+            const newProfiles = await requestJson(api, '/api/tool-profiles', undefined, '');
+            updateToolProfilesSection(newProfiles);
+            setNotice('success', 'Perfil ativado.');
+          } catch (err) { setNotice('error', err instanceof Error ? err.message : 'Falha.'); }
+        });
+      });
+      /* Deactivate */
+      document.querySelectorAll('[data-tool-deactivate]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const id = btn.getAttribute('data-tool-deactivate');
+          try {
+            await requestJson(api, `/api/tool-profiles/${id}/deactivate`, { method: 'PATCH' }, 'Falha.');
+            const newProfiles = await requestJson(api, '/api/tool-profiles', undefined, '');
+            updateToolProfilesSection(newProfiles);
+            setNotice('success', 'Perfil desativado. Sistema usando fallback padrão.');
+          } catch (err) { setNotice('error', err instanceof Error ? err.message : 'Falha.'); }
+        });
+      });
+      /* Delete */
+      document.querySelectorAll('[data-tool-del]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const id = btn.getAttribute('data-tool-del');
+          if (!confirm('Remover este perfil de ferramenta?')) return;
+          try {
+            await requestJson(api, `/api/tool-profiles/${id}`, { method: 'DELETE' }, 'Falha.');
+            const newProfiles = await requestJson(api, '/api/tool-profiles', undefined, '');
+            updateToolProfilesSection(newProfiles);
+            setNotice('success', 'Perfil removido.');
+          } catch (err) { setNotice('error', err instanceof Error ? err.message : 'Falha.'); }
+        });
+      });
+      /* Edit inline */
+      document.querySelectorAll('[data-tool-edit]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-tool-edit');
+          const tr = btn.closest('tr');
+          if (!tr) return;
+          const name   = tr.getAttribute('data-p-name')  || '';
+          const flags  = tr.getAttribute('data-p-flags') || '';
+          const cookie = tr.getAttribute('data-p-cookie') || '';
+          const ua     = tr.getAttribute('data-p-ua')    || '';
+          const tool   = tr.querySelector('code')?.textContent || '';
+
+          const cookieSel = document.getElementById('cookie-select')?.innerHTML || '';
+          const uaSel     = document.getElementById('ua-select')?.innerHTML     || '';
+
+          // Recria as options com o valor atual selecionado
+          function reselect(optionsHtml, selectedVal) {
+            return optionsHtml.replace(
+              new RegExp(`value="${selectedVal}"`),
+              `value="${selectedVal}" selected`
+            );
+          }
+
+          tr.innerHTML = `
+            <td><input data-edit-name style="width:100%" value="${escapeAttr(name)}" /></td>
+            <td><code>${escapeHtml(tool)}</code></td>
+            <td><input data-edit-flags style="width:100%" value="${escapeAttr(flags)}" /></td>
+            <td colspan="2">
+              <select data-edit-cookie style="width:100%">${reselect(cookieSel, cookie)}</select>
+              <select data-edit-ua style="width:100%;margin-top:2px">${reselect(uaSel, ua)}</select>
+            </td>
+            <td></td>
+            <td>
+              <button data-save-edit="${id}" class="action-btn">💾</button>
+              <button data-cancel-edit class="action-btn">✖</button>
+            </td>`;
+
+          tr.querySelector('[data-cancel-edit]').addEventListener('click', async () => {
+            const newProfiles = await requestJson(api, '/api/tool-profiles', undefined, '').catch(() => []);
+            updateToolProfilesSection(newProfiles);
+          });
+
+          tr.querySelector('[data-save-edit]').addEventListener('click', async () => {
+            const newName   = tr.querySelector('[data-edit-name]').value.trim();
+            const newFlags  = tr.querySelector('[data-edit-flags]').value.trim();
+            const newCookie = Number(tr.querySelector('[data-edit-cookie]').value) || null;
+            const newUA     = Number(tr.querySelector('[data-edit-ua]').value)     || null;
+            try {
+              await requestJson(api, `/api/tool-profiles/${id}`, {
+                method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: newName, flags: newFlags, cookie_id: newCookie, ua_id: newUA }),
+              }, 'Falha ao salvar.');
+              const newProfiles = await requestJson(api, '/api/tool-profiles', undefined, '');
+              updateToolProfilesSection(newProfiles);
+              setNotice('success', 'Perfil atualizado.');
+            } catch (err) { setNotice('error', err instanceof Error ? err.message : 'Falha.'); }
+          });
+        });
+      });
+    }
+
+    /* --- Initial listener attachment --- */
+    attachCookieListeners();
+    attachUAListeners();
+    attachToolProfileListeners();
+
+    /* --- API Key --- */
+    document.getElementById('api-key-save')?.addEventListener('click', async () => {
+      const val = document.getElementById('api-key-input')?.value.trim() || '';
+      try {
+        await requestJson(api, '/api/config', {
+          method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ YOUTUBE_API_KEY: val }),
+        }, 'Falha ao salvar API Key.');
+        setNotice('success', 'API Key salva.');
+      } catch (err) { setNotice('error', err instanceof Error ? err.message : 'Falha.'); }
+    });
+
+    /* --- Cookie upload --- */
+    document.getElementById('cookie-upload-form')?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const fd = new FormData(event.target);
+      try {
         const resp = await api('/api/cookies', { method: 'POST', body: fd });
         const body = await resp.json().catch(() => ({}));
         if (!resp.ok) { setNotice('error', textFromError(body, 'Falha no upload.')); return; }
         const newCookies = await requestJson(api, '/api/cookies', undefined, '');
-        updateCookiesTable(newCookies);
+        updateCookiesSection(newCookies);
         setNotice('success', 'Cookie adicionado.');
         event.target.reset();
-      });
+      } catch (err) { setNotice('error', err instanceof Error ? err.message : 'Falha.'); }
+    });
 
-      /* Cookie toggle */
-      root.addEventListener('click', async (e) => {
-        const btn = e.target.closest('[data-cookie-toggle]');
-        if (!btn) return;
-        const id = btn.getAttribute('data-cookie-toggle');
-        try {
-          await requestJson(api, `/api/cookies/${id}/toggle`, { method: 'PATCH' }, 'Falha ao alternar.');
-          const newCookies = await requestJson(api, '/api/cookies', undefined, '');
-          updateCookiesTable(newCookies);
-          setNotice('success', 'Status do cookie alterado.');
-        } catch (err) { setNotice('error', err instanceof Error ? err.message : 'Falha.'); }
-      });
+    /* --- UA add --- */
+    document.getElementById('ua-form')?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const fd = new FormData(event.target);
+      try {
+        await requestJson(api, '/api/credentials/ua', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            label:     String(fd.get('label')     || '').trim(),
+            userAgent: String(fd.get('userAgent') || '').trim(),
+          }),
+        }, 'Falha ao adicionar UA.');
+        const newUAs = await requestJson(api, '/api/credentials', undefined, '');
+        updateUASection(newUAs);
+        setNotice('success', 'User-Agent adicionado.');
+        event.target.reset();
+      } catch (err) { setNotice('error', err instanceof Error ? err.message : 'Falha.'); }
+    });
 
-      /* Cookie delete */
-      root.addEventListener('click', async (e) => {
-        const btn = e.target.closest('[data-cookie-del]');
-        if (!btn) return;
-        const id = btn.getAttribute('data-cookie-del');
-        if (!confirm('Remover este cookie?')) return;
-        try {
-          await requestJson(api, `/api/cookies/${id}`, { method: 'DELETE' }, 'Falha ao remover.');
-          const newCookies = await requestJson(api, '/api/cookies', undefined, '');
-          updateCookiesTable(newCookies);
-          setNotice('success', 'Cookie removido.');
-        } catch (err) { setNotice('error', err instanceof Error ? err.message : 'Falha.'); }
-      });
+    /* --- Tool profile add --- */
+    document.getElementById('tool-profile-form')?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const fd = new FormData(event.target);
+      try {
+        await requestJson(api, '/api/tool-profiles', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name:      String(fd.get('name')      || '').trim(),
+            tool:      String(fd.get('tool')      || '').trim(),
+            flags:     String(fd.get('flags')     || '').trim(),
+            cookie_id: Number(fd.get('cookie_id')) || null,
+            ua_id:     Number(fd.get('ua_id'))     || null,
+          }),
+        }, 'Falha ao adicionar perfil.');
+        const newProfiles = await requestJson(api, '/api/tool-profiles', undefined, '');
+        updateToolProfilesSection(newProfiles);
+        setNotice('success', 'Perfil adicionado.');
+        event.target.reset();
+        // Restaurar template após reset
+        const flagsInput = document.getElementById('flags-input');
+        if (flagsInput) flagsInput.value = '';
+      } catch (err) { setNotice('error', err instanceof Error ? err.message : 'Falha.'); }
+    });
 
-      /* UA add */
-      document.getElementById('ua-form')?.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        const fd = new FormData(event.target);
-        try {
-          await requestJson(api, '/api/credentials/ua', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              label:     String(fd.get('label')     || '').trim(),
-              userAgent: String(fd.get('userAgent') || '').trim(),
-            }),
-          }, 'Falha ao adicionar UA.');
-          const newUAs = await requestJson(api, '/api/credentials', undefined, '');
-          updateUATable(newUAs);
-          setNotice('success', 'User-Agent adicionado.');
-          event.target.reset();
-        } catch (err) { setNotice('error', err instanceof Error ? err.message : 'Falha.'); }
-      });
-
-      /* UA default */
-      root.addEventListener('click', async (e) => {
-        const btn = e.target.closest('[data-ua-default]');
-        if (!btn) return;
-        const id = btn.getAttribute('data-ua-default');
-        try {
-          await requestJson(api, `/api/credentials/ua/${id}/default`, { method: 'PATCH' }, 'Falha.');
-          const newUAs = await requestJson(api, '/api/credentials', undefined, '');
-          updateUATable(newUAs);
-          setNotice('success', 'UA padrão definido.');
-        } catch (err) { setNotice('error', err instanceof Error ? err.message : 'Falha.'); }
-      });
-
-      /* UA delete */
-      root.addEventListener('click', async (e) => {
-        const btn = e.target.closest('[data-ua-del]');
-        if (!btn) return;
-        const id = btn.getAttribute('data-ua-del');
-        try {
-          await requestJson(api, `/api/credentials/ua/${id}`, { method: 'DELETE' }, 'Falha.');
-          const newUAs = await requestJson(api, '/api/credentials', undefined, '');
-          updateUATable(newUAs);
-          setNotice('success', 'UA removido.');
-        } catch (err) { setNotice('error', err instanceof Error ? err.message : 'Falha.'); }
-      });
-
-      /* Tool profile add */
-      document.getElementById('tool-profile-form')?.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        const fd = new FormData(event.target);
-        try {
-          await requestJson(api, '/api/tool-profiles', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              name:      String(fd.get('name')      || '').trim(),
-              tool:      String(fd.get('tool')      || '').trim(),
-              flags:     String(fd.get('flags')     || '').trim(),
-              cookie_id: Number(fd.get('cookie_id')) || null,
-              ua_id:     Number(fd.get('ua_id'))     || null,
-            }),
-          }, 'Falha ao adicionar perfil.');
-          const newProfiles = await requestJson(api, '/api/tool-profiles', undefined, '');
-          updateToolProfilesTable(newProfiles);
-          setNotice('success', 'Perfil adicionado.');
-          // Reset form e restaurar template da ferramenta selecionada
-          const currentTool = toolSelect?.value || 'streamlink';
-          event.target.reset();
-          applyTemplate(currentTool);
-        } catch (err) { setNotice('error', err instanceof Error ? err.message : 'Falha.'); }
-      });
-
-      /* Tool profile activate */
-      root.addEventListener('click', async (e) => {
-        const btn = e.target.closest('[data-tool-activate]');
-        if (!btn) return;
-        const id = btn.getAttribute('data-tool-activate');
-        try {
-          await requestJson(api, `/api/tool-profiles/${id}/activate`, { method: 'PATCH' }, 'Falha.');
-          const newProfiles = await requestJson(api, '/api/tool-profiles', undefined, '');
-          updateToolProfilesTable(newProfiles);
-          setNotice('success', 'Perfil ativado.');
-        } catch (err) { setNotice('error', err instanceof Error ? err.message : 'Falha.'); }
-      });
-
-      /* Tool profile delete */
-      root.addEventListener('click', async (e) => {
-        const btn = e.target.closest('[data-tool-del]');
-        if (!btn) return;
-        const id = btn.getAttribute('data-tool-del');
-        if (!confirm('Remover este perfil de ferramenta?')) return;
-        try {
-          await requestJson(api, `/api/tool-profiles/${id}`, { method: 'DELETE' }, 'Falha.');
-          const newProfiles = await requestJson(api, '/api/tool-profiles', undefined, '');
-          updateToolProfilesTable(newProfiles);
-          setNotice('success', 'Perfil removido.');
-        } catch (err) { setNotice('error', err instanceof Error ? err.message : 'Falha.'); }
-      });
-    }
-
-    /* ---- Helper: atualizações parciais de tabelas ---- */
-    function updateCookiesTable(cookies) {
-      const tbody = document.getElementById('cookies-tbody');
-      if (!tbody) return;
-      tbody.innerHTML = cookies.length === 0
-        ? '<tr><td colspan="5" style="opacity:0.5;text-align:center">Nenhum cookie cadastrado</td></tr>'
-        : cookies.map((c) => `
-          <tr data-cookie-id="${c.id}">
-            <td>${escapeHtml(c.name)}</td>
-            <td>${escapeHtml(c.provider)}</td>
-            <td style="font-size:0.8rem;opacity:0.7">${escapeHtml(String(c.file_path).split('/').pop() || '-')}</td>
-            <td>${c.active === 1 ? '🟢 ativo' : '🔴 inativo'}</td>
-            <td>
-              <button data-cookie-toggle="${c.id}" class="action-btn">${c.active === 1 ? 'Inativar' : 'Ativar'}</button>
-              <button data-cookie-del="${c.id}" class="action-btn danger-btn">🗑️</button>
-            </td>
-          </tr>`).join('');
-    }
-
-    function updateUATable(userAgents) {
-      const tbody = document.getElementById('ua-tbody');
-      if (!tbody) return;
-      tbody.innerHTML = userAgents.length === 0
-        ? '<tr><td colspan="4" style="opacity:0.5;text-align:center">Nenhum UA cadastrado</td></tr>'
-        : userAgents.map((ua) => `
-          <tr data-ua-id="${ua.id}">
-            <td>${escapeHtml(ua.label || '-')}</td>
-            <td style="word-break:break-all;max-width:260px;font-size:0.8rem">${escapeHtml(ua.value || '-')}</td>
-            <td style="text-align:center">${ua.is_default === 1 ? '⭐' : '-'}</td>
-            <td>
-              <button data-ua-default="${ua.id}" class="action-btn" ${ua.is_default===1?'disabled':''}>⭐</button>
-              <button data-ua-del="${ua.id}" class="action-btn danger-btn">🗑️</button>
-            </td>
-          </tr>`).join('');
-    }
-
-    function updateToolProfilesTable(toolProfiles) {
-      const tbody = document.getElementById('tool-profiles-tbody');
-      if (!tbody) return;
-      tbody.innerHTML = toolProfiles.map((p) => {
-        const isDefault = p.is_default === true;
-        return `
-          <tr data-profile-id="${p.id}" ${isDefault ? 'style="opacity:0.65"' : ''}>
-            <td>${escapeHtml(p.name)}</td>
-            <td><code>${escapeHtml(p.tool)}</code></td>
-            <td style="font-size:0.8rem;max-width:160px;word-break:break-all">${escapeHtml(p.flags || '-')}</td>
-            <td style="font-size:0.8rem">${escapeHtml(p.cookie_name || '-')}</td>
-            <td style="font-size:0.8rem">${escapeHtml(p.ua_label || '-')}</td>
-            <td style="text-align:center">${p.is_active === 1 ? '✅' : '-'}</td>
-            <td>
-              ${!isDefault && p.is_active !== 1
-                ? `<button data-tool-activate="${p.id}" class="action-btn">✅ Ativar</button>`
-                : ''}
-              ${!isDefault
-                ? `<button data-tool-del="${p.id}" class="action-btn danger-btn">🗑️</button>`
-                : '<span style="opacity:0.4;font-size:0.8rem">sistema</span>'}
-            </td>
-          </tr>`;
-      }).join('');
-    }
+    /* --- Template pré-preenchido ao selecionar ferramenta --- */
+    document.getElementById('tool-select')?.addEventListener('change', (e) => {
+      const flagsInput = document.getElementById('flags-input');
+      if (!flagsInput || flagsInput.value.trim() !== '') return; // só preenche se estiver vazio
+      flagsInput.value = TOOL_TEMPLATES[e.target.value] || '';
+    });
+    // Inicializar com template da ferramenta selecionada por padrão
+    (() => {
+      const toolSel = document.getElementById('tool-select');
+      const flagsInput = document.getElementById('flags-input');
+      if (toolSel && flagsInput && !flagsInput.value.trim()) {
+        flagsInput.value = TOOL_TEMPLATES[toolSel.value] || '';
+      }
+    })();
   }
 
   await load();
