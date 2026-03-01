@@ -33,6 +33,20 @@ const sectionMeta = {
   },
 };
 
+/* ---------- Templates de flags por ferramenta ---------- */
+
+const TOOL_FLAG_TEMPLATES = {
+  streamlink: '--retry-streams 5 --retry-max 5 --stream-segment-timeout 60 --hls-live-restart',
+  'yt-dlp':   '--no-playlist --live-from-start --retries 5 --fragment-retries 5',
+  ffmpeg:     '-c copy -bsf:a aac_adtstoasc',
+};
+
+const TOOL_FLAG_HINTS = {
+  streamlink: 'retry, timeout e restart de segmentos HLS',
+  'yt-dlp':   'sem playlist, do início, com retries',
+  ffmpeg:     'cópia direta de stream com fix de ADTS',
+};
+
 /* ---------- helpers ---------- */
 
 function textFromError(payload, fallback) {
@@ -315,6 +329,11 @@ function apiCards(config, cookies, userAgents, toolProfiles) {
     (ua) => `<option value="${ua.id}">${escapeHtml(ua.label || ua.value.slice(0, 40))}</option>`,
   ).join('');
 
+  // Gerar hint inicial para a ferramenta padrão (streamlink)
+  const defaultTool = 'streamlink';
+  const defaultTemplate = TOOL_FLAG_TEMPLATES[defaultTool];
+  const defaultHint = TOOL_FLAG_HINTS[defaultTool];
+
   return `
     <!-- API Key inline -->
     <div class="card">
@@ -386,23 +405,31 @@ function apiCards(config, cookies, userAgents, toolProfiles) {
     <!-- Perfis de Ferramenta -->
     <div class="card">
       <h3>⚙️ Perfis de Ferramenta</h3>
-      <form id="tool-profile-form" class="toolbar" style="flex-wrap:wrap;gap:0.5rem;margin-bottom:1rem">
-        <input name="name" placeholder="Nome do perfil" required />
-        <select name="tool" required>
-          <option value="streamlink">streamlink</option>
-          <option value="yt-dlp">yt-dlp</option>
-          <option value="ffmpeg">ffmpeg</option>
-        </select>
-        <input name="flags" placeholder="Flags extras (ex: --retry-streams 5)" style="flex:1;min-width:180px" />
-        <select name="cookie_id">
-          <option value="">(sem cookie)</option>
-          ${cookieOptions}
-        </select>
-        <select name="ua_id">
-          <option value="">(sem UA)</option>
-          ${uaOptions}
-        </select>
-        <button type="submit" class="action-btn">➕ Adicionar</button>
+      <form id="tool-profile-form" style="display:flex;flex-direction:column;gap:0.6rem;margin-bottom:1rem">
+        <div class="toolbar" style="flex-wrap:wrap;gap:0.5rem">
+          <input name="name" placeholder="Nome do perfil" required />
+          <select id="tool-select" name="tool" required>
+            <option value="streamlink">streamlink</option>
+            <option value="yt-dlp">yt-dlp</option>
+            <option value="ffmpeg">ffmpeg</option>
+          </select>
+          <select name="cookie_id">
+            <option value="">(sem cookie)</option>
+            ${cookieOptions}
+          </select>
+          <select name="ua_id">
+            <option value="">(sem UA)</option>
+            ${uaOptions}
+          </select>
+          <button type="submit" class="action-btn">➕ Adicionar</button>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:0.25rem">
+          <div style="display:flex;gap:0.4rem;align-items:center">
+            <input id="flags-input" name="flags" value="${escapeAttr(defaultTemplate)}" style="flex:1;font-family:monospace;font-size:0.85rem" />
+            <button type="button" id="flags-reset-btn" class="action-btn" title="Restaurar template padrão da ferramenta">🔄 Template</button>
+          </div>
+          <p id="flags-hint" style="margin:0;font-size:0.78rem;opacity:0.5">💡 Template: ${escapeHtml(defaultHint)}</p>
+        </div>
       </form>
       <table>
         <thead><tr><th>Nome</th><th>Ferramenta</th><th>Flags</th><th>Cookie</th><th>UA</th><th>Ativo</th><th>Ações</th></tr></thead>
@@ -567,7 +594,6 @@ export async function renderSettings(root, api, hash = '/settings') {
 
     /* ---- Tech section ---- */
     if (section === 'tech') {
-      /* Detectar URL */
       document.getElementById('detect-base-url')?.addEventListener('click', async () => {
         try {
           const result = await requestJson(api, '/api/base-url', undefined, 'Falha ao detectar URL.');
@@ -659,6 +685,23 @@ export async function renderSettings(root, api, hash = '/settings') {
 
     /* ---- API section ---- */
     if (isApi) {
+      /* ---- Template auto-fill ao trocar ferramenta ---- */
+      const toolSelect  = document.getElementById('tool-select');
+      const flagsInput  = document.getElementById('flags-input');
+      const flagsHint   = document.getElementById('flags-hint');
+      const flagsReset  = document.getElementById('flags-reset-btn');
+
+      function applyTemplate(tool) {
+        if (!flagsInput || !flagsHint) return;
+        const tpl  = TOOL_FLAG_TEMPLATES[tool] || '';
+        const hint = TOOL_FLAG_HINTS[tool]     || '';
+        flagsInput.value = tpl;
+        flagsHint.textContent = `💡 Template: ${hint}`;
+      }
+
+      toolSelect?.addEventListener('change', (e) => applyTemplate(e.target.value));
+      flagsReset?.addEventListener('click',  ()  => applyTemplate(toolSelect?.value || 'streamlink'));
+
       /* API Key save */
       document.getElementById('api-key-save')?.addEventListener('click', async () => {
         const val = document.getElementById('api-key-input')?.value.trim() || '';
@@ -678,8 +721,6 @@ export async function renderSettings(root, api, hash = '/settings') {
         const resp = await api('/api/cookies', { method: 'POST', body: fd });
         const body = await resp.json().catch(() => ({}));
         if (!resp.ok) { setNotice('error', textFromError(body, 'Falha no upload.')); return; }
-        
-        // Apenas atualizar a tabela de cookies
         const newCookies = await requestJson(api, '/api/cookies', undefined, '');
         updateCookiesTable(newCookies);
         setNotice('success', 'Cookie adicionado.');
@@ -776,7 +817,10 @@ export async function renderSettings(root, api, hash = '/settings') {
           const newProfiles = await requestJson(api, '/api/tool-profiles', undefined, '');
           updateToolProfilesTable(newProfiles);
           setNotice('success', 'Perfil adicionado.');
+          // Reset form e restaurar template da ferramenta selecionada
+          const currentTool = toolSelect?.value || 'streamlink';
           event.target.reset();
+          applyTemplate(currentTool);
         } catch (err) { setNotice('error', err instanceof Error ? err.message : 'Falha.'); }
       });
 
@@ -808,7 +852,7 @@ export async function renderSettings(root, api, hash = '/settings') {
       });
     }
 
-    // Helper functions for partial updates
+    /* ---- Helper: atualizações parciais de tabelas ---- */
     function updateCookiesTable(cookies) {
       const tbody = document.getElementById('cookies-tbody');
       if (!tbody) return;
