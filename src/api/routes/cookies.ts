@@ -48,7 +48,10 @@ router.post('/', upload.single('file'), (req, res) => {
     const filename = `${Date.now()}_${path.basename(req.file.originalname || 'cookies.txt')}`;
     const finalPath = path.join(COOKIES_DIR, filename);
 
-    fs.renameSync(req.file.path, finalPath);
+    /* Usar copy+unlink em vez de rename para evitar erro EXDEV
+       (cross-device: /tmp e /data podem estar em filesystems diferentes no Docker) */
+    fs.copyFileSync(req.file.path, finalPath);
+    try { fs.unlinkSync(req.file.path); } catch { /* limpeza do temp — não crítico */ }
 
     const result = getDb()
       .prepare('INSERT INTO cookies (name, provider, file_path, active) VALUES (?, ?, ?, 1)')
@@ -92,12 +95,10 @@ router.delete('/:id', (req, res) => {
       return res.status(404).json({ error: 'Cookie não encontrado.' });
     }
 
-    /* Remove arquivo do disco se existir */
     if (row.file_path && fs.existsSync(row.file_path)) {
       try { fs.unlinkSync(row.file_path); } catch { /* continua mesmo se falhar */ }
     }
 
-    /* Remove referências em perfis antes de excluir */
     getDb().prepare('UPDATE tool_profiles SET cookie_id = NULL WHERE cookie_id = ?').run(id);
     getDb().prepare('DELETE FROM cookies WHERE id = ?').run(id);
 
