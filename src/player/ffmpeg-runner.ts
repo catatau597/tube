@@ -58,7 +58,10 @@ export function startFfmpegPlaceholder(params: FfmpegPlaceholderParams): Managed
     '-filter_complex', filterComplex,
     '-map', '[v]', '-map', '1:a',
     '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '45',
-    '-b:v', '150k', '-r', '1', '-g', '120', '-pix_fmt', 'yuv420p',
+    '-b:v', '150k',
+    '-r', '1',           // 1 frame/s (still image)
+    '-g', '2',           // GOP size = 2 frames → keyframe every 2s
+    '-pix_fmt', 'yuv420p',
     '-tune', 'stillimage',
     '-c:a', 'aac', '-b:a', '24k', '-ac', '1',
     '-f', 'mpegts', 'pipe:1',
