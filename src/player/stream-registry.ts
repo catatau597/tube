@@ -4,8 +4,24 @@ import { logger } from '../core/logger';
 /** Kill the stream after this many ms without any data being broadcast to clients. */
 const WATCHDOG_MS = 30_000;
 
+/**
+ * How many consecutive backpressure events a client may trigger before being
+ * dropped. A single false return from res.write() is normal at connection
+ * start (TCP slow-start, VLC buffering). Only persistent inability to drain
+ * indicates a truly slow/stuck client.
+ */
+const BACKPRESSURE_DROP_THRESHOLD = 3;
+
+interface ClientState {
+  res: Response;
+  /** Consecutive chunks dropped due to backpressure (buffer full). */
+  backpressureCount: number;
+  /** True while waiting for the 'drain' event. */
+  draining: boolean;
+}
+
 interface StreamSession {
-  clients: Set<Response>;
+  clients: Map<Response, ClientState>;
   killFn: () => Promise<void>;
   watchdogTimer: ReturnType<typeof setTimeout> | null;
   killed: boolean;
@@ -19,9 +35,10 @@ interface StreamSession {
  *  - Auto-kill: when the last client disconnects, the process is terminated.
  *  - Watchdog: if no data is broadcast for WATCHDOG_MS, the stream is killed
  *    (handles network-drop clients that never close the socket cleanly).
- *  - Backpressure: slow clients that cannot keep up are dropped immediately
- *    to prevent unbounded memory growth (each write returning false means the
- *    socket buffer is full; we end the response rather than buffer forever).
+ *  - Backpressure: when res.write() returns false the chunk is skipped for
+ *    that client and we wait for 'drain'. After BACKPRESSURE_DROP_THRESHOLD
+ *    consecutive misses the client is dropped to protect memory.
+ *    A single false return at connection start is normal and is NOT counted.
  */
 class StreamRegistry {
   private readonly sessions = new Map<string, StreamSession>();
@@ -43,7 +60,7 @@ class StreamRegistry {
    */
   create(key: string, killFn: () => Promise<void>): void {
     if (this.sessions.has(key)) return; // guard against double-create
-    this.sessions.set(key, { clients: new Set(), killFn, watchdogTimer: null, killed: false });
+    this.sessions.set(key, { clients: new Map(), killFn, watchdogTimer: null, killed: false });
     this.resetWatchdog(key);
     logger.info(`[stream-registry] Sessão criada: key=${key}`);
   }
@@ -51,7 +68,8 @@ class StreamRegistry {
   addClient(key: string, res: Response): boolean {
     const s = this.sessions.get(key);
     if (!s || s.killed) return false;
-    s.clients.add(res);
+    const state: ClientState = { res, backpressureCount: 0, draining: false };
+    s.clients.set(res, state);
     this.resetWatchdog(key);
     logger.info(`[stream-registry] +cliente key=${key} total=${s.clients.size}`);
     return true;
@@ -68,12 +86,14 @@ class StreamRegistry {
   /**
    * Fan-out: write chunk to every live client.
    *
-   * Backpressure handling: if res.write() returns false, the client's socket
-   * buffer is full and cannot keep up with the stream. We drop that client
-   * immediately (res.end()) to prevent unbounded memory buffering that would
-   * affect all other clients sharing the same process.
+   * Backpressure strategy:
+   *  - If res.write() returns false, the socket buffer is full. We skip this
+   *    chunk for that client and wait for 'drain' before writing again.
+   *  - After BACKPRESSURE_DROP_THRESHOLD consecutive skips the client is
+   *    dropped — it is genuinely too slow to keep up.
+   *  - Draining clients simply skip the chunk (no drop, no error).
    *
-   * Dead/closed clients are also removed automatically.
+   * Dead/closed clients are removed automatically.
    */
   broadcast(key: string, chunk: Buffer): void {
     const s = this.sessions.get(key);
@@ -82,15 +102,34 @@ class StreamRegistry {
     this.resetWatchdog(key);
     const dead: Response[] = [];
 
-    for (const res of s.clients) {
+    for (const [res, state] of s.clients) {
       if (res.writableEnded || res.destroyed) { dead.push(res); continue; }
+
+      // While draining, skip this chunk (do not count as backpressure hit)
+      if (state.draining) continue;
+
       try {
         const ok = res.write(chunk);
-        if (!ok) {
-          // Backpressure: client cannot keep up — drop it
-          logger.warn(`[stream-registry] Backpressure: encerrando cliente lento key=${key}`);
-          dead.push(res);
-          try { res.end(); } catch { /* */ }
+        if (ok) {
+          // Write succeeded — reset backpressure counter
+          state.backpressureCount = 0;
+        } else {
+          // Buffer full — start draining
+          state.backpressureCount++;
+          if (state.backpressureCount >= BACKPRESSURE_DROP_THRESHOLD) {
+            logger.warn(
+              `[stream-registry] Backpressure threshold (${BACKPRESSURE_DROP_THRESHOLD}) atingido, encerrando cliente lento key=${key}`,
+            );
+            dead.push(res);
+            try { res.end(); } catch { /* */ }
+          } else {
+            // Wait for drain before writing to this client again
+            state.draining = true;
+            res.once('drain', () => {
+              state.draining = false;
+              state.backpressureCount = 0;
+            });
+          }
         }
       } catch {
         dead.push(res);
@@ -113,7 +152,7 @@ class StreamRegistry {
 
     if (s.watchdogTimer) { clearTimeout(s.watchdogTimer); s.watchdogTimer = null; }
 
-    for (const res of s.clients) {
+    for (const res of s.clients.keys()) {
       try { if (!res.writableEnded) res.end(); } catch { /* */ }
     }
     s.clients.clear();
