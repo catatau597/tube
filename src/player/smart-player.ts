@@ -23,28 +23,29 @@ interface CacheFile {
   streams: Record<string, CacheStream>;
 }
 
+/**
+ * Tempo máximo (ms) após o início do streamlink para considerar uma saída
+ * com erro como "fast fail" e acionar o fallback para yt-dlp.
+ * Erros como 400 Bad Request / youtubei retornam em ~1s.
+ */
+const STREAMLINK_FAST_FAIL_MS = 8_000;
+
 export class SmartPlayer {
   private readonly statePath = path.join('/data', 'state_cache.json');
   private readonly textsPath = path.join('/data', 'textos_epg.json');
   private readonly toolProfiles = new ToolProfileManager();
 
-  /**
-   * Guards against duplicate process spawns when two clients request the
-   * same stream simultaneously during the initialization window.
-   */
   private readonly pendingInits = new Map<string, Promise<void>>();
 
   async serveVideo(videoId: string, req: Request, res: Response): Promise<void> {
     const key = videoId;
 
-    // ── Fast path: stream already running ────────────────────────────────────
     if (streamRegistry.has(key)) {
       logger.info(`[SmartPlayer] Stream ativo, subscrevendo cliente: key=${key}`);
       this.subscribeClient(key, req, res);
       return;
     }
 
-    // ── Init in progress: wait then subscribe ────────────────────────────────
     if (this.pendingInits.has(key)) {
       logger.info(`[SmartPlayer] Init em andamento, aguardando: key=${key}`);
       await this.pendingInits.get(key);
@@ -56,7 +57,6 @@ export class SmartPlayer {
       return;
     }
 
-    // ── Cold start ───────────────────────────────────────────────────────────
     const initPromise = this.initStream(key, videoId, req, res);
     this.pendingInits.set(key, initPromise.catch(() => { /* absorbed */ }));
     try {
@@ -114,10 +114,11 @@ export class SmartPlayer {
         stream.watchUrl, slProfile.userAgent, slProfile.cookieFile, slProfile.flags,
       );
       if (playable) {
-        this.spawnStreamlink(key, stream.watchUrl, slProfile, req, firstClient);
+        // Passa ytProfile e ffProfile para permitir fallback automático
+        this.spawnStreamlink(key, stream.watchUrl, slProfile, ytProfile, ffProfile, req, firstClient);
         return;
       }
-      logger.info(`[SmartPlayer] Streamlink indisponível, usando yt-dlp: key=${key}`);
+      logger.info(`[SmartPlayer] Streamlink indisponível no probe, usando yt-dlp: key=${key}`);
     }
 
     await this.spawnYtDlp(key, stream.watchUrl, ytProfile, ffProfile, req, firstClient);
@@ -139,7 +140,8 @@ export class SmartPlayer {
 
     streamRegistry.create(key, async () => {
       const proc = await procPromise;
-      await proc.kill();
+      // ffmpeg com loop=-1 ignora SIGTERM; usa timeout curto para ir direto ao SIGKILL
+      await proc.kill(500);
     });
 
     if (!this.subscribeClient(key, req, firstClient)) return;
@@ -157,33 +159,95 @@ export class SmartPlayer {
     logger.info(`[SmartPlayer] Placeholder iniciado: key=${key} PID=${proc.pid}`);
   }
 
+  /**
+   * Inicia streamlink como fonte principal.
+   *
+   * Se o processo sair com erro dentro de STREAMLINK_FAST_FAIL_MS (ex: 400 Bad
+   * Request do youtubei/v1/player), aciona fallback automático para yt-dlp
+   * sem derrubar a sessão nem os clientes já conectados.
+   *
+   * O `procHolder` permite que o killFn sempre mate o processo atual,
+   * seja ele streamlink ou o yt-dlp que eventualmente o substituiu.
+   */
   private spawnStreamlink(
     key: string,
     url: string,
     sl: ResolvedToolProfile,
+    yt: ResolvedToolProfile,
+    ff: ResolvedToolProfile,
     req: Request,
     firstClient: Response,
   ): void {
-    let resolveProc!: (p: ManagedProcess) => void;
-    const procPromise = new Promise<ManagedProcess>(r => { resolveProc = r; });
+    const procHolder: { current: ManagedProcess | null } = { current: null };
 
     streamRegistry.create(key, async () => {
-      const proc = await procPromise;
-      await proc.kill();
+      if (procHolder.current) await procHolder.current.kill();
     });
 
     if (!this.subscribeClient(key, req, firstClient)) return;
 
+    const startTime = Date.now();
     const proc = startStreamlink({
       url,
       userAgent:  sl.userAgent,
       cookieFile: sl.cookieFile,
       extraFlags: sl.flags,
       onData: (chunk) => streamRegistry.broadcast(key, chunk),
+      onExit: (code) => {
+        const elapsed = Date.now() - startTime;
+        const isFastFail = code !== 0 && elapsed < STREAMLINK_FAST_FAIL_MS;
+
+        if (isFastFail && streamRegistry.has(key)) {
+          logger.warn(
+            `[SmartPlayer] Streamlink fast fail (${elapsed}ms, code=${code}), ` +
+            `iniciando fallback yt-dlp: key=${key}`,
+          );
+          procHolder.current = null;
+          void this.switchToYtDlp(key, url, yt, ff, procHolder);
+        } else {
+          void streamRegistry.kill(key);
+        }
+      },
+    });
+    procHolder.current = proc;
+    logger.info(`[SmartPlayer] Streamlink iniciado: key=${key} PID=${proc.pid}`);
+  }
+
+  /**
+   * Fallback: substitui o streamlink por yt-dlp na sessão existente.
+   * Clientes conectados continuam na mesma sessão sem reconectar.
+   */
+  private async switchToYtDlp(
+    key: string,
+    url: string,
+    yt: ResolvedToolProfile,
+    ff: ResolvedToolProfile,
+    procHolder: { current: ManagedProcess | null },
+  ): Promise<void> {
+    let urls: string[];
+    try {
+      urls = await resolveYtDlpUrls(url, yt.userAgent, yt.cookieFile, yt.flags);
+    } catch (err) {
+      logger.error(`[SmartPlayer] Fallback yt-dlp: falha na resolução de URL: ${err}`);
+      void streamRegistry.kill(key);
+      return;
+    }
+
+    // Se todos os clientes já desconectaram enquanto resolvemos a URL, abort.
+    if (!streamRegistry.has(key)) {
+      logger.info(`[SmartPlayer] Fallback yt-dlp abortado: sessão já encerrada: key=${key}`);
+      return;
+    }
+
+    const proc = startYtDlpFfmpeg({
+      urls,
+      userAgent:        yt.userAgent,
+      extraFfmpegFlags: ff.flags,
+      onData: (chunk) => streamRegistry.broadcast(key, chunk),
       onExit: ()      => void streamRegistry.kill(key),
     });
-    resolveProc(proc);
-    logger.info(`[SmartPlayer] Streamlink iniciado: key=${key} PID=${proc.pid}`);
+    procHolder.current = proc;
+    logger.info(`[SmartPlayer] Fallback yt-dlp→ffmpeg iniciado: key=${key} PID=${proc.pid}`);
   }
 
   private async spawnYtDlp(
@@ -237,8 +301,7 @@ export class SmartPlayer {
    *  3. req.on('close')  — HTTP connection dropped (most reliable for VLC
    *                         which doesn’t send TCP FIN on stop)
    *
-   * Returns false if the session no longer exists (killed between
-   * create() and subscribeClient()), so callers can abort.
+   * Returns false if the session no longer exists, so callers can abort.
    */
   private subscribeClient(key: string, req: Request, res: Response): boolean {
     res.setHeader('Content-Type', 'video/mp2t');
