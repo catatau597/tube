@@ -45,6 +45,18 @@ export class ManagedProcess {
   get stderr() { return this.proc.stderr; }
   get stdin()  { return this.proc.stdin;  }
 
+  pauseOutput(): void {
+    try {
+      if (this.proc.stdout && !this.proc.stdout.destroyed) this.proc.stdout.pause();
+    } catch { /* */ }
+  }
+
+  resumeOutput(): void {
+    try {
+      if (this.proc.stdout && !this.proc.stdout.destroyed) this.proc.stdout.resume();
+    } catch { /* */ }
+  }
+
   onClose(handler: (code: number | null, signal: string | null) => void): this {
     this.proc.on('close', handler);
     return this;

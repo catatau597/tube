@@ -39,12 +39,19 @@ interface ClientState {
   markedForRemoval: boolean;
 }
 
+interface SessionFlowControl {
+  pause: () => void;
+  resume: () => void;
+}
+
 interface StreamSession {
   clients: Map<Response, ClientState>;
   killFn: () => Promise<void>;
   idleWatchdogTimer: ReturnType<typeof setTimeout> | null;
   killed: boolean;
   nextClientId: number;
+  flowControl: SessionFlowControl | null;
+  flowPaused: boolean;
 }
 
 /**
@@ -74,6 +81,8 @@ class StreamRegistry {
       idleWatchdogTimer: null,
       killed: false,
       nextClientId: 1,
+      flowControl: null,
+      flowPaused: false,
     });
     this.startIdleWatchdog(key);
     logger.info(`[stream-registry] Sessao criada: key=${key}`);
@@ -94,8 +103,20 @@ class StreamRegistry {
     };
     s.clients.set(res, state);
     res.on('error', () => { state.markedForRemoval = true; });
+    this.maybeResumeFlow(key, s);
     logger.info(`[stream-registry] +cliente key=${key} client=${state.id} total=${s.clients.size}`);
     return true;
+  }
+
+  setFlowControl(key: string, flowControl: SessionFlowControl): void {
+    const s = this.sessions.get(key);
+    if (!s || s.killed) return;
+    s.flowControl = flowControl;
+
+    // Se já está pausado por backpressure, aplica pause no novo controlador.
+    if (s.flowPaused) {
+      try { flowControl.pause(); } catch { /* */ }
+    }
   }
 
   removeClient(key: string, res: Response): void {
@@ -107,6 +128,7 @@ class StreamRegistry {
       state.drainingTimer = null;
     }
     if (!s.clients.delete(res)) return;
+    this.maybeResumeFlow(key, s);
     logger.info(`[stream-registry] -cliente key=${key} client=${state?.id ?? '?'} reason=disconnect restantes=${s.clients.size}`);
     if (s.clients.size === 0) void this.kill(key);
   }
@@ -125,9 +147,10 @@ class StreamRegistry {
 
       // Cliente ainda esta drenando: pula chunk para nao estourar buffer.
       if (state.draining) {
-        state.backpressureCount++;
+        if (s.clients.size > 1) state.backpressureCount++;
         const drainingMs = state.drainingAt ? now - state.drainingAt : 0;
-        if (drainingMs >= DRAINING_DROP_TIMEOUT_MS && state.backpressureCount >= BACKPRESSURE_DROP_THRESHOLD) {
+        const shouldDropMulti = s.clients.size > 1 && drainingMs >= DRAINING_DROP_TIMEOUT_MS && state.backpressureCount >= BACKPRESSURE_DROP_THRESHOLD;
+        if (shouldDropMulti) {
           this.removeClientByReason(key, s, res, `backpressure>${drainingMs}ms`);
         }
         continue;
@@ -143,6 +166,7 @@ class StreamRegistry {
           // Entrou em draining: marca, atualiza timestamp e starta timer individual.
           state.draining = true;
           state.drainingAt = now;
+          this.maybePauseFlow(key, s, state);
           this.armDrainingTimer(key, res);
 
           res.once('drain', () => {
@@ -155,6 +179,7 @@ class StreamRegistry {
             state.drainingAt = null;
             state.backpressureCount = 0;
             state.lastDrainTimestamp = Date.now();
+            this.maybeResumeFlow(key, s);
           });
         }
       } catch {
@@ -174,6 +199,7 @@ class StreamRegistry {
     s.killed = true;
 
     if (s.idleWatchdogTimer) { clearTimeout(s.idleWatchdogTimer); s.idleWatchdogTimer = null; }
+    s.flowPaused = false;
 
     for (const [res, state] of s.clients) {
       // Limpa timers de draining antes de encerrar.
@@ -204,7 +230,9 @@ class StreamRegistry {
       if (!st || !st.draining) return; // Ja drenou antes do timer
 
       const drainingMs = st.drainingAt ? Date.now() - st.drainingAt : DRAINING_DROP_TIMEOUT_MS;
-      if (st.backpressureCount >= BACKPRESSURE_DROP_THRESHOLD) {
+      const shouldDropSingle = s2.clients.size === 1;
+      const shouldDropMulti = st.backpressureCount >= BACKPRESSURE_DROP_THRESHOLD;
+      if (shouldDropSingle || shouldDropMulti) {
         logger.warn(
           `[stream-registry] Cliente draining prolongado, encerrando: key=${key} client=${st.id} drainingMs=${drainingMs} backpressure=${st.backpressureCount}`,
         );
@@ -236,8 +264,34 @@ class StreamRegistry {
       state.drainingTimer = null;
     }
     session.clients.delete(res);
+    this.maybeResumeFlow(key, session);
     logger.info(`[stream-registry] -cliente key=${key} client=${state.id} reason=${reason} restantes=${session.clients.size}`);
     try { if (!res.writableEnded) res.end(); } catch { /* */ }
+  }
+
+  private hasDrainingClient(session: StreamSession): boolean {
+    for (const state of session.clients.values()) {
+      if (state.draining) return true;
+    }
+    return false;
+  }
+
+  private maybePauseFlow(key: string, session: StreamSession, state: ClientState): void {
+    // Fase atual: estabilizar 1 cliente sem dropar chunks.
+    // Em modo 1 cliente, pausamos a origem ao entrar em draining para aplicar
+    // backpressure real no processo filho (stdout.pause()).
+    if (session.clients.size !== 1 || session.flowPaused || !session.flowControl) return;
+    session.flowPaused = true;
+    try { session.flowControl.pause(); } catch { /* */ }
+    logger.warn(`[stream-registry] Pausando origem por backpressure: key=${key} client=${state.id}`);
+  }
+
+  private maybeResumeFlow(key: string, session: StreamSession): void {
+    if (!session.flowPaused || !session.flowControl) return;
+    if (this.hasDrainingClient(session)) return;
+    session.flowPaused = false;
+    try { session.flowControl.resume(); } catch { /* */ }
+    logger.info(`[stream-registry] Retomando origem: key=${key}`);
   }
 
   /**

@@ -174,7 +174,7 @@ export class SmartPlayer {
     let procRef: ManagedProcess | null = null;
 
     streamRegistry.create(key, async () => {
-      if (procRef) await procRef.kill(500);
+      if (procRef) await procRef.kill(3000);
     });
 
     if (!this.subscribeClient(key, req, firstClient)) {
@@ -192,6 +192,10 @@ export class SmartPlayer {
       onExit: ()      => void streamRegistry.kill(key),
     });
     procRef = proc;
+    streamRegistry.setFlowControl(key, {
+      pause: () => proc.pauseOutput(),
+      resume: () => proc.resumeOutput(),
+    });
     logger.info(`[SmartPlayer] Placeholder iniciado: key=${key} PID=${proc.pid}`);
   }
 
@@ -253,6 +257,10 @@ export class SmartPlayer {
       },
     });
     procHolder.current = proc;
+    streamRegistry.setFlowControl(key, {
+      pause: () => proc.pauseOutput(),
+      resume: () => proc.resumeOutput(),
+    });
     logger.info(`[SmartPlayer] Streamlink iniciado: key=${key} PID=${proc.pid}`);
   }
 
@@ -285,10 +293,15 @@ export class SmartPlayer {
       urls,
       userAgent:        yt.userAgent,
       extraFfmpegFlags: ff.flags,
+      paceInput: false,
       onData: (chunk) => streamRegistry.broadcast(key, chunk),
       onExit: ()      => void streamRegistry.kill(key),
     });
     procHolder.current = proc;
+    streamRegistry.setFlowControl(key, {
+      pause: () => proc.pauseOutput(),
+      resume: () => proc.resumeOutput(),
+    });
     logger.info(`[SmartPlayer] Fallback yt-dlp->ffmpeg iniciado: key=${key} PID=${proc.pid}`);
   }
 
@@ -314,7 +327,7 @@ export class SmartPlayer {
     let procRef: ManagedProcess | null = null;
 
     streamRegistry.create(key, async () => {
-      if (procRef) await procRef.kill(500);
+      if (procRef) await procRef.kill(3000);
     });
 
     if (!this.subscribeClient(key, req, firstClient)) {
@@ -326,10 +339,15 @@ export class SmartPlayer {
       urls,
       userAgent:        yt.userAgent,
       extraFfmpegFlags: ff.flags,
+      paceInput: true,
       onData: (chunk) => streamRegistry.broadcast(key, chunk),
       onExit: ()      => void streamRegistry.kill(key),
     });
     procRef = proc;
+    streamRegistry.setFlowControl(key, {
+      pause: () => proc.pauseOutput(),
+      resume: () => proc.resumeOutput(),
+    });
     logger.info(`[SmartPlayer] yt-dlp->ffmpeg iniciado: key=${key} PID=${proc.pid}`);
   }
 

@@ -93,3 +93,10 @@
   - Build no host indisponível (`npm` ausente).
   - Build via Docker executado com sucesso no estágio de imagem (incluindo `RUN npm run build` no stage builder).
   - Execução de `npm run build` dentro do container runtime falha por ausência esperada de `tsc` (imagem de produção usa `npm ci --omit=dev`).
+
+- ✅ Ajuste focado em estabilidade com 1 cliente (`2026-03-02`):
+  - `stream-registry`: adicionado controle de fluxo por sessão (`pause/resume` da origem) quando há `draining` com cliente único, para reduzir perda de chunks por backpressure contínuo.
+  - `smart-player`: sessão passa a registrar `flowControl` de cada processo (`streamlink`, `yt-dlp->ffmpeg`, `placeholder`) no registry.
+  - `ytdlp-runner`: `ffmpeg` para VOD em modo pacing (`-re`) para evitar burst acima da taxa de reprodução.
+  - `process-manager`: expostos `pauseOutput()`/`resumeOutput()` para backpressure cooperativo.
+  - Build validado via `docker compose build` (stage builder com `tsc` concluído).
