@@ -134,3 +134,9 @@
   - `hls-runner`: `vod` deixou de usar pacing de entrada (`-re`) e passou a manter janela maior sem `delete_segments`, reduzindo demora de abertura e microtravadas do cliente inicial.
   - `hls-runner`: `upcoming` trocou o placeholder baseado em `loop` de filtro por entrada de imagem em loop real (`-loop 1 -framerate 1 -re`), evitando que os numeros de segmentos disparem e causem `404`/pulo de canal.
   - Validação: `docker compose build` concluido com sucesso apos os ajustes.
+
+- ✅ Correção do congelamento de VOD na branch `hls` (`2026-03-02`):
+  - Causa identificada em log: `ffmpeg` do VOD encerrava com `code=0` e a sessao HLS era destruida imediatamente, congelando todos os clientes apesar do termino normal do gerador.
+  - `hls-runner`: VOD passou a usar playlist HLS do tipo `event` e `hls_list_size=0`, abandonando o modelo de janela deslizante para comportamento de VOD estatico.
+  - `smart-player`: saida normal (`code=0`) do pipeline VOD agora preserva a sessao/segmentos; destruicao automatica ficou restrita a saida anormal.
+  - Validação: `docker compose build` concluido com sucesso apos a correção.

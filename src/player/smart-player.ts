@@ -327,8 +327,12 @@ export class SmartPlayer {
       urls,
       userAgent: yt.userAgent,
       paceInput: false,
-      onExit: () => {
-        void hlsSessionRegistry.destroy(session.key, 'vod-exit');
+      onExit: (code) => {
+        if (code === 0) {
+          logger.info(`[SmartPlayer] VOD HLS concluido: key=${session.key}`);
+          return;
+        }
+        void hlsSessionRegistry.destroy(session.key, `vod-exit-${code ?? 'null'}`);
       },
     });
 
