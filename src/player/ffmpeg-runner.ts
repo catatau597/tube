@@ -63,6 +63,12 @@ export function startFfmpegPlaceholder(params: FfmpegPlaceholderParams): Managed
   const proc = new ManagedProcess('ffmpeg-placeholder', 'ffmpeg', args, {
     stdio: ['ignore', 'pipe', 'pipe'],
   });
+  let finished = false;
+  const finish = (code: number | null) => {
+    if (finished) return;
+    finished = true;
+    onExit(code);
+  };
 
   proc.stdout?.on('data', (chunk: Buffer) => onData(chunk));
   proc.stderr?.on('data', (chunk: Buffer) =>
@@ -70,11 +76,11 @@ export function startFfmpegPlaceholder(params: FfmpegPlaceholderParams): Managed
   );
   proc.onClose((code) => {
     logger.info(`[ffmpeg-runner] Placeholder finalizado code=${code}`);
-    onExit(code);
+    finish(code);
   });
   proc.onError((err) => {
     logger.error(`[ffmpeg-runner] Erro: ${err}`);
-    onExit(null);
+    finish(null);
   });
 
   return proc;

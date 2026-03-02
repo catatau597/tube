@@ -35,9 +35,9 @@ const sectionMeta = {
 
 /* ---------- templates por ferramenta ---------- */
 const TOOL_TEMPLATES = {
-  'streamlink': '--retry-streams 5 --stream-segment-threads 2 --hls-live-edge 4',
-  'yt-dlp':     '--concurrent-fragments 4 --buffer-size 16k --retries 5',
-  'ffmpeg':     '-reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 5',
+  'streamlink': '--hls-live-edge 4 --stream-timeout 30',
+  'yt-dlp':     '--retries 5 --fragment-retries 5',
+  'ffmpeg':     '',
 };
 
 /* ---------- helpers ---------- */

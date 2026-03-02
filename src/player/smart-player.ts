@@ -24,17 +24,10 @@ interface CacheFile {
 }
 
 /**
- * Tempo maximo (ms) apos o inicio do streamlink para considerar uma saida
- * com erro como "fast fail" e acionar o fallback para yt-dlp.
- * Erros 400 Bad Request do youtubei retornam em ~1s.
- */
-const STREAMLINK_FAST_FAIL_MS = 8_000;
-
-/**
  * Tempo maximo (ms) para initStream() completar (subir processo + subscrever
  * primeiro cliente). Se exceder, retorna 503 ao cliente em vez de travar.
  */
-const INIT_STREAM_TIMEOUT_MS = 5_000;
+const INIT_STREAM_TIMEOUT_MS = 15_000;
 
 export class SmartPlayer {
   private readonly statePath = path.join('/data', 'state_cache.json');
@@ -55,6 +48,7 @@ export class SmartPlayer {
     if (this.pendingInits.has(key)) {
       logger.info(`[SmartPlayer] Init em andamento, aguardando: key=${key}`);
       let timer1: ReturnType<typeof setTimeout> | null = null;
+      let timedOut = false;
       try {
         await Promise.race([
           this.pendingInits.get(key)!,
@@ -63,15 +57,31 @@ export class SmartPlayer {
           }),
         ]);
       } catch (err) {
+        timedOut = true;
         logger.warn(`[SmartPlayer] Timeout aguardando init: key=${key} err=${err}`);
-        if (!res.writableEnded) res.status(503).end();
-        return;
       } finally {
         if (timer1 !== null) clearTimeout(timer1);
       }
 
       if (streamRegistry.has(key)) {
         this.subscribeClient(key, req, res);
+      } else if (timedOut && this.pendingInits.has(key)) {
+        logger.warn(`[SmartPlayer] Init ainda em andamento apos timeout, aguardando janela de graca: key=${key}`);
+        try {
+          await Promise.race([
+            this.pendingInits.get(key)!,
+            new Promise<never>((_, reject) => {
+              setTimeout(() => reject(new Error('Init grace timeout')), 5_000);
+            }),
+          ]);
+        } catch (err) {
+          logger.warn(`[SmartPlayer] Janela de graca expirada: key=${key} err=${err}`);
+        }
+        if (streamRegistry.has(key)) {
+          this.subscribeClient(key, req, res);
+        } else if (!res.writableEnded) {
+          res.status(503).end();
+        }
       } else {
         if (!res.writableEnded) res.status(503).end();
       }
@@ -90,7 +100,7 @@ export class SmartPlayer {
       ]);
     } catch (err) {
       logger.warn(`[SmartPlayer] Init timeout: key=${key} err=${err}`);
-      if (!res.writableEnded) res.status(503).end();
+      if (!streamRegistry.has(key) && !res.writableEnded) res.status(503).end();
     } finally {
       if (timer2 !== null) clearTimeout(timer2);
       this.pendingInits.delete(key);
@@ -141,8 +151,7 @@ export class SmartPlayer {
 
     if (stream.status === 'live' && this.isGenuinelyLive(stream)) {
       // Sem probe: a probe usa --stream-url que tem comportamento diferente do
-      // --stdout real, gerando falsos positivos e negativos. O fast-fail
-      // (STREAMLINK_FAST_FAIL_MS) cuida do fallback automaticamente.
+      // --stdout real, gerando falsos positivos e negativos.
       logger.info(`[SmartPlayer] Iniciando streamlink diretamente: key=${key}`);
       this.spawnStreamlink(key, stream.watchUrl, slProfile, ytProfile, ffProfile, req, firstClient);
       return;
@@ -189,7 +198,7 @@ export class SmartPlayer {
   /**
    * Inicia streamlink como fonte principal.
    *
-   * Se o processo sair com erro dentro de STREAMLINK_FAST_FAIL_MS (ex: 400 Bad
+   * Se streamlink falhar antes de entregar o primeiro byte util (ex: 400 Bad
    * Request do youtubei/v1/player), aciona fallback automatico para yt-dlp
    * sem derrubar a sessao nem os clientes ja conectados.
    */
@@ -214,20 +223,27 @@ export class SmartPlayer {
     }
 
     const startTime = Date.now();
+    let firstByteAt: number | null = null;
     const proc = startStreamlink({
       url,
       userAgent:  sl.userAgent,
       cookieFile: sl.cookieFile,
       extraFlags: sl.flags,
-      onData: (chunk) => streamRegistry.broadcast(key, chunk),
+      onData: (chunk) => {
+        if (firstByteAt === null) {
+          firstByteAt = Date.now();
+          logger.info(`[SmartPlayer] Streamlink primeiro byte: key=${key} t=${firstByteAt - startTime}ms`);
+        }
+        streamRegistry.broadcast(key, chunk);
+      },
       onExit: (code) => {
         const elapsed = Date.now() - startTime;
-        const isFastFail = code !== 0 && elapsed < STREAMLINK_FAST_FAIL_MS;
+        const hasStreamOutput = firstByteAt !== null;
+        const shouldFallback = code !== 0 && !hasStreamOutput && streamRegistry.has(key);
 
-        if (isFastFail && streamRegistry.has(key)) {
+        if (shouldFallback) {
           logger.warn(
-            `[SmartPlayer] Streamlink fast fail (${elapsed}ms, code=${code}), ` +
-            `iniciando fallback yt-dlp: key=${key}`,
+            `[SmartPlayer] Streamlink falhou sem output (${elapsed}ms, code=${code}), iniciando fallback yt-dlp: key=${key}`,
           );
           procHolder.current = null;
           void this.switchToYtDlp(key, url, yt, ff, procHolder);

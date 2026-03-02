@@ -16,6 +16,7 @@ import { logger } from '../core/logger';
  */
 export class ManagedProcess {
   private readonly proc: ChildProcess;
+  private killPromise: Promise<void> | null = null;
 
   /** Resolves as soon as the child emits 'close' or 'exit', for any reason. */
   private readonly exitPromise: Promise<void>;
@@ -55,6 +56,12 @@ export class ManagedProcess {
   }
 
   async kill(timeoutMs = 3000): Promise<void> {
+    if (this.killPromise) return this.killPromise;
+    this.killPromise = this.doKill(timeoutMs);
+    return this.killPromise;
+  }
+
+  private async doKill(timeoutMs: number): Promise<void> {
     if (this.alreadyExited) {
       logger.info(`[${this.tag}] PID ${this.proc.pid} já encerrado, skip kill`);
       return;

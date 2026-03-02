@@ -19,18 +19,22 @@ function buildArgs(
   extraFlags: string[],
 ): string[] {
   const args = [
-    ...extraFlags,
-    '--http-header', `User-Agent=${userAgent}`,
     // Garante que nenhum config externo (/root/.config/streamlink/config ou similar)
     // cause conflito de flags ou erros de parsing (exit code=2).
     '--no-config',
     '--no-plugin-sideloading',
     '--loglevel', 'info',
-    '--stdout',
-    url,
-    'best',
+    '--stream-timeout', '30',
+    '--retry-streams', '1',
+    '--retry-max', '3',
+    '--http-header', `User-Agent=${userAgent}`,
   ];
   if (cookieFile) args.push('--http-cookie-jar', cookieFile);
+
+  // Flags de perfil devem ficar antes dos argumentos posicionais (URL/qualidade).
+  // Isso evita parser ambiguity e garante override explícito do usuário.
+  args.push(...extraFlags);
+  args.push('--stdout', url, 'best');
   return args;
 }
 
@@ -48,17 +52,28 @@ const STDERR_TAIL_MAX = 6_000;
 
 export function startStreamlink(params: StreamlinkParams): ManagedProcess {
   const { url, userAgent, cookieFile, extraFlags, onData, onExit } = params;
-  logger.info(`[streamlink-runner] Iniciando stream: url=${url}`);
+  const args = buildArgs(url, userAgent, cookieFile, extraFlags);
+  const sanitizedCmd = args
+    .map((part) => sanitizeStreamlinkLog(part))
+    .join(' ')
+    .slice(0, 500);
+  logger.info(`[streamlink-runner] Iniciando stream: url=${url} args=${sanitizedCmd}`);
 
   const proc = new ManagedProcess(
     'streamlink',
     'streamlink',
-    buildArgs(url, userAgent, cookieFile, extraFlags),
+    args,
     { stdio: ['ignore', 'pipe', 'pipe'] },
   );
 
   // Acumula stderr sanitizado para diagnostico em caso de falha.
   let stderrTail = '';
+  let finished = false;
+  const finish = (code: number | null) => {
+    if (finished) return;
+    finished = true;
+    onExit(code);
+  };
 
   proc.stdout?.on('data', (chunk: Buffer) => onData(chunk));
 
@@ -91,12 +106,12 @@ export function startStreamlink(params: StreamlinkParams): ManagedProcess {
     } else {
       logger.info(`[streamlink-runner] Processo finalizado code=${code}`);
     }
-    onExit(code);
+    finish(code);
   });
 
   proc.onError((err) => {
     logger.error(`[streamlink-runner] Erro: ${err}`);
-    onExit(null);
+    finish(null);
   });
 
   return proc;

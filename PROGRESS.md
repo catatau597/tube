@@ -81,3 +81,15 @@
 
 
 ## Revisão Cloude 4.6
+
+- ✅ Estabilização de proxy/stream (`src/player`) em `2026-03-02`:
+  - `stream-registry`: ajuste de tolerância para clientes lentos (`draining` de 3s → 25s), aumento de threshold de backpressure, e logs de remoção com `client id` + motivo.
+  - `smart-player`: timeout de init ampliado (5s → 15s), janela de graça para clientes concorrentes durante init e fallback de live baseado em "falhou sem primeiro byte" (mais confiável para erro `youtubei 400`).
+  - `streamlink-runner`: ordem de argumentos corrigida (cookies/headers/opções antes de URL), retries base para live e log sanitizado do comando.
+  - `ytdlp-runner`: resolução de URL mantida no modelo curto (`yt-dlp` resolve e sai), troca para `--print "%(url)s"`, parser de saída mais rígido, timeout/erro idempotentes e logs sanitizados.
+  - `process-manager` + runners: `onExit` e `kill()` idempotentes para evitar limpeza duplicada/race.
+  - Perfis/flags: parser de flags com suporte a aspas em `tool-profile-manager` e templates padrão do frontend revisados para defaults mais conservadores.
+- ⚠️ Validação:
+  - Build no host indisponível (`npm` ausente).
+  - Build via Docker executado com sucesso no estágio de imagem (incluindo `RUN npm run build` no stage builder).
+  - Execução de `npm run build` dentro do container runtime falha por ausência esperada de `tsc` (imagem de produção usa `npm ci --omit=dev`).

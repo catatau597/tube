@@ -11,6 +11,26 @@ export interface ResolvedToolProfile {
 
 const DEFAULT_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
+function parseFlags(raw: string): string[] {
+  const text = raw.trim();
+  if (!text) return [];
+
+  // Parse simples de argv com suporte a aspas simples e duplas.
+  // Evita quebrar flags como: --http-header "User-Agent=..."
+  const argv: string[] = [];
+  const re = /"([^"\\]*(?:\\.[^"\\]*)*)"|'([^'\\]*(?:\\.[^'\\]*)*)'|(\S+)/g;
+  let match: RegExpExecArray | null;
+
+  while ((match = re.exec(text)) !== null) {
+    const token = (match[1] ?? match[2] ?? match[3] ?? '').trim();
+    if (!token) continue;
+    argv.push(token.replace(/\\(["'\\])/g, '$1'));
+  }
+
+  if (argv.length > 0) return argv;
+  return text.split(/\s+/).filter(Boolean);
+}
+
 export class ToolProfileManager {
   /**
    * Resolve o perfil ativo para uma ferramenta.
@@ -32,7 +52,7 @@ export class ToolProfileManager {
       if (row) {
         logger.info(`[ToolProfileManager] Usando perfil ativo para tool=${tool}`);
         return {
-          flags: row.flags ? row.flags.split(/\s+/).filter(Boolean) : [],
+          flags: row.flags ? parseFlags(row.flags) : [],
           cookieFile: row.cookie_file || null,
           userAgent: row.ua_value || DEFAULT_UA,
         };

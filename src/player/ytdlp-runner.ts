@@ -3,6 +3,14 @@ import { ManagedProcess } from './process-manager';
 import { logger } from '../core/logger';
 
 const URL_RESOLVE_TIMEOUT_MS = 30_000;
+const STDERR_TAIL_MAX = 4_000;
+
+function sanitizeYtDlpLog(text: string): string {
+  return text
+    .replace(/key=AIza[A-Za-z0-9_-]+/gi, 'key=***REDACTED***')
+    .replace(/oauth_token=[^&\s]+/gi, 'oauth_token=***REDACTED***')
+    .replace(/Authorization: Bearer [^\s]+/gi, 'Authorization: Bearer ***REDACTED***');
+}
 
 export async function resolveYtDlpUrls(
   url: string,
@@ -16,47 +24,68 @@ export async function resolveYtDlpUrls(
       '--user-agent', userAgent,
       '--extractor-args', 'youtube:player_client=android',
       '--no-playlist',
-      '--get-url',
+      '--print', '%(url)s',
       ...extraFlags,
     ];
     if (cookieFile) args.push('--cookies', cookieFile);
     args.push(url);
 
-    logger.info(`[ytdlp-runner] Resolvendo URL: ${url}`);
+    const sanitizedCmd = args
+      .map((part) => sanitizeYtDlpLog(part))
+      .join(' ')
+      .slice(0, 500);
+    logger.info(`[ytdlp-runner] Resolvendo URL: ${url} args=${sanitizedCmd}`);
     const proc = spawn('yt-dlp', args, { stdio: ['ignore', 'pipe', 'pipe'] });
 
+    let settled = false;
     let stdout = '';
-    let stderr = '';
+    let stderrTail = '';
+
+    const finish = (fn: () => void) => {
+      if (settled) return;
+      settled = true;
+      fn();
+    };
 
     const timer = setTimeout(() => {
       logger.warn('[ytdlp-runner] Timeout na resolução de URL — matando yt-dlp');
       try { proc.kill('SIGKILL'); } catch { /* */ }
-      reject(new Error('yt-dlp URL resolution timeout'));
+      finish(() => reject(new Error('yt-dlp URL resolution timeout')));
     }, URL_RESOLVE_TIMEOUT_MS);
 
     proc.stdout?.on('data', (chunk: Buffer) => { stdout += chunk.toString(); });
     proc.stderr?.on('data', (chunk: Buffer) => {
-      stderr += chunk.toString();
-      logger.debug(`[ytdlp-runner][resolve] ${chunk.toString().trim()}`);
+      const line = sanitizeYtDlpLog(chunk.toString());
+      stderrTail = (stderrTail + line).slice(-STDERR_TAIL_MAX);
+      logger.debug(`[ytdlp-runner][resolve] ${line.trim()}`);
     });
 
     proc.on('close', (code) => {
       clearTimeout(timer);
-      if (code !== 0) {
-        logger.warn(`[ytdlp-runner] Resolução falhou code=${code} stderr=${stderr.slice(0, 300)}`);
-        reject(new Error(`yt-dlp exited ${code}`));
-        return;
-      }
-      const urls = stdout.trim().split('\n').map(u => u.trim()).filter(Boolean);
-      if (urls.length === 0) {
-        reject(new Error('yt-dlp: nenhuma URL retornada'));
-        return;
-      }
-      logger.info(`[ytdlp-runner] ${urls.length} URL(s) resolvida(s)`);
-      resolve(urls);
+      finish(() => {
+        if (code !== 0) {
+          logger.warn(`[ytdlp-runner] Resolução falhou code=${code} stderr=${stderrTail.trim().slice(-400)}`);
+          reject(new Error(`yt-dlp exited ${code}`));
+          return;
+        }
+        const urls = stdout
+          .trim()
+          .split('\n')
+          .map(u => u.trim())
+          .filter((u) => /^https?:\/\//i.test(u));
+        if (urls.length === 0) {
+          reject(new Error('yt-dlp: nenhuma URL retornada'));
+          return;
+        }
+        logger.info(`[ytdlp-runner] ${urls.length} URL(s) resolvida(s)`);
+        resolve(urls);
+      });
     });
 
-    proc.on('error', (err) => { clearTimeout(timer); reject(err); });
+    proc.on('error', (err) => {
+      clearTimeout(timer);
+      finish(() => reject(err));
+    });
   });
 }
 
@@ -100,6 +129,12 @@ export function startYtDlpFfmpeg(params: YtDlpFfmpegParams): ManagedProcess {
   const proc = new ManagedProcess('ytdlp-ffmpeg', 'ffmpeg', args, {
     stdio: ['ignore', 'pipe', 'pipe'],
   });
+  let finished = false;
+  const finish = (code: number | null) => {
+    if (finished) return;
+    finished = true;
+    onExit(code);
+  };
 
   proc.stdout?.on('data', (chunk: Buffer) => onData(chunk));
   proc.stderr?.on('data', (chunk: Buffer) =>
@@ -107,11 +142,11 @@ export function startYtDlpFfmpeg(params: YtDlpFfmpegParams): ManagedProcess {
   );
   proc.onClose((code) => {
     logger.info(`[ytdlp-runner] ffmpeg finalizado code=${code}`);
-    onExit(code);
+    finish(code);
   });
   proc.onError((err) => {
     logger.error(`[ytdlp-runner] Erro ffmpeg: ${err}`);
-    onExit(null);
+    finish(null);
   });
 
   return proc;
