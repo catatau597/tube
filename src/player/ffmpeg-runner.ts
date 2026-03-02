@@ -43,6 +43,9 @@ export function startFfmpegPlaceholder(params: FfmpegPlaceholderParams): Managed
   const args: string[] = [
     ...extraFlags,
     '-loglevel', 'error',
+    // Sem pacing o placeholder pode despejar TS o mais rapido possivel,
+    // saturando o fan-out e disparando backpressure mesmo com imagem estatica.
+    '-re',
     '-user_agent', userAgent,
     '-i', imageUrl,
     '-f', 'lavfi', '-i', 'anullsrc=r=44100:cl=mono',

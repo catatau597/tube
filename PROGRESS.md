@@ -110,3 +110,8 @@
   - `stream-registry`: adicionado cooldown (`FLOW_RESUME_COOLDOWN_MS`) para evitar oscilação rápida de `pause/resume` em cliente único.
   - `stream-registry`: logs de `pause/resume` movidos para `debug` (deixam de poluir com centenas de `WARN` em condição normal de adaptação).
   - `smart-player`: timeout de encerramento de `ffmpeg-placeholder` ampliado para 5s antes de SIGKILL, reduzindo warnings de teardown.
+
+- ✅ Ajuste de pacing/qualidade para live/upcoming (`2026-03-02`):
+  - `ffmpeg-runner`: placeholder voltou a usar leitura em tempo real (`-re`) para evitar flood de `mpegts` e disparos de backpressure/watchdog em streams upcoming.
+  - `streamlink-runner`: qualidade default reduzida para `720p,480p,best`, mitigando gargalo de fan-out com 2+ clientes sem impedir override por perfil via `--default-stream`.
+  - `streamlink-runner`: encerramento normal por `SIGTERM` (`code=130`) passou a ser logado como `info`, reduzindo falso positivo de warning no teardown.

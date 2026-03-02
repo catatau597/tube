@@ -12,6 +12,12 @@ function sanitizeStreamlinkLog(text: string): string {
     .replace(/Authorization: Bearer [^\s]+/gi, 'Authorization: Bearer ***REDACTED***');
 }
 
+const DEFAULT_STREAM_SELECTION = '720p,480p,best';
+
+function hasFlag(extraFlags: string[], flagName: string): boolean {
+  return extraFlags.some((flag) => flag === flagName || flag.startsWith(`${flagName}=`));
+}
+
 function buildArgs(
   url: string,
   userAgent: string,
@@ -34,7 +40,14 @@ function buildArgs(
   // Flags de perfil devem ficar antes dos argumentos posicionais (URL/qualidade).
   // Isso evita parser ambiguity e garante override explícito do usuário.
   args.push(...extraFlags);
-  args.push('--stdout', url, 'best');
+
+  // Usa 720p por padrao para reduzir bitrate no fan-out, mas respeita override
+  // explicito por perfil via --default-stream.
+  if (hasFlag(extraFlags, '--default-stream')) {
+    args.push('--stdout', url);
+  } else {
+    args.push('--stdout', url, DEFAULT_STREAM_SELECTION);
+  }
   return args;
 }
 
@@ -95,7 +108,9 @@ export function startStreamlink(params: StreamlinkParams): ManagedProcess {
   });
 
   proc.onClose((code) => {
-    if (code !== 0) {
+    if (code === 130) {
+      logger.info(`[streamlink-runner] Processo finalizado code=${code} (encerramento solicitado)`);
+    } else if (code !== 0) {
       // Loga tail do stderr para identificar o motivo real da falha
       // (ex.: "unrecognized arguments", "400 Bad Request", etc.).
       // Normaliza para uma unica linha: substitui quebras/controles para evitar log-forging.
