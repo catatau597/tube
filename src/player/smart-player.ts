@@ -54,17 +54,20 @@ export class SmartPlayer {
 
     if (this.pendingInits.has(key)) {
       logger.info(`[SmartPlayer] Init em andamento, aguardando: key=${key}`);
+      let pendingTimer: ReturnType<typeof setTimeout> | undefined;
       try {
         await Promise.race([
           this.pendingInits.get(key)!,
-          new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Init timeout')), INIT_STREAM_TIMEOUT_MS),
-          ),
+          new Promise((_, reject) => {
+            pendingTimer = setTimeout(() => reject(new Error('Init timeout')), INIT_STREAM_TIMEOUT_MS);
+          }),
         ]);
       } catch (err) {
         logger.warn(`[SmartPlayer] Timeout aguardando init: key=${key} err=${err}`);
         if (!res.writableEnded) res.status(503).end();
         return;
+      } finally {
+        clearTimeout(pendingTimer);
       }
 
       if (streamRegistry.has(key)) {
@@ -77,17 +80,19 @@ export class SmartPlayer {
 
     const initPromise = this.initStream(key, videoId, req, res);
     this.pendingInits.set(key, initPromise.catch(() => { /* absorbed */ }));
+    let initTimer: ReturnType<typeof setTimeout> | undefined;
     try {
       await Promise.race([
         initPromise,
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Init timeout')), INIT_STREAM_TIMEOUT_MS),
-        ),
+        new Promise((_, reject) => {
+          initTimer = setTimeout(() => reject(new Error('Init timeout')), INIT_STREAM_TIMEOUT_MS);
+        }),
       ]);
     } catch (err) {
       logger.warn(`[SmartPlayer] Init timeout: key=${key} err=${err}`);
       if (!res.writableEnded) res.status(503).end();
     } finally {
+      clearTimeout(initTimer);
       this.pendingInits.delete(key);
     }
   }
