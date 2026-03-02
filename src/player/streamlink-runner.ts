@@ -1,4 +1,3 @@
-import { spawn } from 'child_process';
 import { ManagedProcess } from './process-manager';
 import { logger } from '../core/logger';
 
@@ -22,15 +21,11 @@ function buildArgs(
   const args = [
     ...extraFlags,
     '--http-header', `User-Agent=${userAgent}`,
-    // Remove --config /dev/null: pode estar impedindo streamlink de carregar
-    // defaults importantes para YouTube (player client, etc)
+    // Garante que nenhum config externo (/root/.config/streamlink/config ou similar)
+    // cause conflito de flags ou erros de parsing (exit code=2).
+    '--no-config',
     '--no-plugin-sideloading',
-    // Bypass SSL verification: alguns ISPs/firewalls causam problemas
     '--http-no-ssl-verify',
-    // Desabilita DNS-over-HTTPS: pode triggerar code path antigo do YouTube
-    // que usa API key expirada em vez de web embed extraction
-    '--http-disable-doh',
-    // Forca loglevel info (nao trace, muito verboso)
     '--loglevel', 'info',
     '--stdout',
     url,
@@ -49,6 +44,9 @@ export interface StreamlinkParams {
   onExit: (code: number | null) => void;
 }
 
+/** Tamanho maximo do buffer de stderr acumulado para diagnostico. */
+const STDERR_TAIL_MAX = 6_000;
+
 export function startStreamlink(params: StreamlinkParams): ManagedProcess {
   const { url, userAgent, cookieFile, extraFlags, onData, onExit } = params;
   logger.info(`[streamlink-runner] Iniciando stream: url=${url}`);
@@ -60,26 +58,40 @@ export function startStreamlink(params: StreamlinkParams): ManagedProcess {
     { stdio: ['ignore', 'pipe', 'pipe'] },
   );
 
+  // Acumula stderr sanitizado para diagnostico em caso de falha.
+  let stderrTail = '';
+
   proc.stdout?.on('data', (chunk: Buffer) => onData(chunk));
 
-  // Streamlink escreve progresso e info em stderr (padrao CLI).
-  // Filtra linhas que sao apenas info/progresso, loga apenas erros reais.
   proc.stderr?.on('data', (chunk: Buffer) => {
-    const text = chunk.toString().trim();
+    const text = chunk.toString();
     const sanitized = sanitizeStreamlinkLog(text);
 
-    // Ignora logs info do streamlink ([cli][info]), loga apenas erros/avisos
-    if (/\[cli\]\[error\]|\[cli\]\[warning\]|^error:/i.test(sanitized)) {
-      logger.warn(`[streamlink-runner][stderr] ${sanitized}`);
+    // Mantém um tail rotativo para logar quando o processo falha.
+    stderrTail = (stderrTail + sanitized).slice(-STDERR_TAIL_MAX);
+
+    // Loga apenas erros/avisos em tempo real; info vai para debug.
+    const line = sanitized.trim();
+    if (!line) return;
+    if (/\[cli\]\[(error|warning)\]|^error:/i.test(line)) {
+      logger.warn(`[streamlink-runner][stderr] ${line}`);
     } else {
-      logger.debug(`[streamlink-runner][stderr] ${sanitized}`);
+      logger.debug(`[streamlink-runner][stderr] ${line}`);
     }
   });
 
   proc.onClose((code) => {
-    logger.info(`[streamlink-runner] Processo finalizado code=${code}`);
+    if (code !== 0) {
+      // Loga tail do stderr para identificar o motivo real da falha
+      // (ex.: "unrecognized arguments", "400 Bad Request", etc.).
+      const tail = stderrTail.trim().slice(-500);
+      logger.warn(`[streamlink-runner] Processo finalizado code=${code} stderrTail=${tail}`);
+    } else {
+      logger.info(`[streamlink-runner] Processo finalizado code=${code}`);
+    }
     onExit(code);
   });
+
   proc.onError((err) => {
     logger.error(`[streamlink-runner] Erro: ${err}`);
     onExit(null);
