@@ -131,9 +131,10 @@ class StreamRegistry {
             dead.push(res);
             try { res.end(); } catch { /* */ }
           } else {
-            // Entrou em draining: marca e starta timer individual de 3s.
+            // Entrou em draining: marca, atualiza timestamp e starta timer individual de 3s.
             state.draining = true;
             state.drainingAt = Date.now();
+            state.lastDrainTimestamp = state.drainingAt;
 
             // Timer por cliente: garante corte em exatamente DRAINING_DROP_TIMEOUT_MS
             // sem depender do ciclo de 30s do watchdog.
