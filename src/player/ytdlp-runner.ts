@@ -4,6 +4,7 @@ import { logger } from '../core/logger';
 
 const URL_RESOLVE_TIMEOUT_MS = 30_000;
 const STDERR_TAIL_MAX = 4_000;
+const DEFAULT_FORMAT_SELECTOR = 'bestvideo[vcodec^=avc1]+bestaudio[ext=m4a]/best[ext=mp4]/best';
 
 function sanitizeYtDlpLog(text: string): string {
   return text
@@ -12,28 +13,86 @@ function sanitizeYtDlpLog(text: string): string {
     .replace(/Authorization: Bearer [^\s]+/gi, 'Authorization: Bearer ***REDACTED***');
 }
 
+interface ResolveAttempt {
+  label: string;
+  extractorArgs?: string;
+}
+
+type ResolveFailureKind = 'exit' | 'no-url' | 'timeout';
+
+class ResolveAttemptError extends Error {
+  constructor(
+    message: string,
+    readonly kind: ResolveFailureKind,
+    readonly code: number | null = null,
+    readonly stderrSnippet: string = '',
+    readonly expectedTransient: boolean = false,
+  ) {
+    super(message);
+    this.name = 'ResolveAttemptError';
+  }
+}
+
+function hasArg(flags: string[], shortName: string, longName: string): boolean {
+  for (let i = 0; i < flags.length; i++) {
+    const flag = flags[i];
+    if (flag === shortName || flag === longName) return true;
+    if (flag.startsWith(`${longName}=`)) return true;
+  }
+  return false;
+}
+
+function buildAttempts(cookieFile: string | null, extraFlags: string[]): ResolveAttempt[] {
+  const hasExtractorArgs = hasArg(extraFlags, '', '--extractor-args');
+  if (hasExtractorArgs) return [{ label: 'profile' }];
+
+  if (!cookieFile) {
+    // Sem cookie, android costuma evitar o bloqueio/challenge do player web.
+    return [
+      { label: 'android', extractorArgs: 'youtube:player_client=android' },
+      { label: 'web', extractorArgs: 'youtube:player_client=web' },
+      { label: 'default' },
+    ];
+  }
+
+  return [
+    { label: 'web', extractorArgs: 'youtube:player_client=web' },
+    { label: 'default' },
+    { label: 'android', extractorArgs: 'youtube:player_client=android' },
+  ];
+}
+
+function isLikelyTransientFailure(stderrSnippet: string): boolean {
+  return /Requested format is not available|Only images are available|challenge solver|Sign in to confirm/i
+    .test(stderrSnippet);
+}
+
+function normalizeResolveError(err: unknown): Error {
+  if (err instanceof Error) return err;
+  return new Error(String(err));
+}
+
 export async function resolveYtDlpUrls(
   url: string,
   userAgent: string,
   cookieFile: string | null,
   extraFlags: string[] = [],
 ): Promise<string[]> {
-  const attempts: Array<{ label: string; extractorArgs?: string }> = [
-    { label: 'web', extractorArgs: 'youtube:player_client=web' },
-    { label: 'default' },
-    { label: 'android', extractorArgs: 'youtube:player_client=android' },
-  ];
+  const attempts = buildAttempts(cookieFile, extraFlags);
+  const hasCustomFormat = hasArg(extraFlags, '-f', '--format');
+  const hasCustomExtractorArgs = hasArg(extraFlags, '', '--extractor-args');
 
   let lastErr: Error | null = null;
 
-  for (const attempt of attempts) {
+  for (let i = 0; i < attempts.length; i++) {
+    const attempt = attempts[i];
     const args = [
-      '-f', 'bestvideo[vcodec^=avc1]+bestaudio[ext=m4a]/best[ext=mp4]/best',
       '--user-agent', userAgent,
       '--no-playlist',
       '--print', '%(url)s',
     ];
-    if (attempt.extractorArgs) args.push('--extractor-args', attempt.extractorArgs);
+    if (!hasCustomFormat) args.push('-f', DEFAULT_FORMAT_SELECTOR);
+    if (attempt.extractorArgs && !hasCustomExtractorArgs) args.push('--extractor-args', attempt.extractorArgs);
     args.push(...extraFlags);
     if (cookieFile) args.push('--cookies', cookieFile);
     args.push(url);
@@ -51,8 +110,16 @@ export async function resolveYtDlpUrls(
       logger.info(`[ytdlp-runner] ${urls.length} URL(s) resolvida(s) via ${attempt.label}`);
       return urls;
     } catch (err) {
-      lastErr = err instanceof Error ? err : new Error(String(err));
-      logger.warn(`[ytdlp-runner] Tentativa ${attempt.label} falhou: ${lastErr.message}`);
+      lastErr = normalizeResolveError(err);
+      const isLastAttempt = i === attempts.length - 1;
+      const expectedTransient = lastErr instanceof ResolveAttemptError
+        && (lastErr.expectedTransient || lastErr.kind === 'no-url');
+      const prefix = `[ytdlp-runner] Tentativa ${attempt.label} falhou`;
+      if (!isLastAttempt && expectedTransient) {
+        logger.info(`${prefix} (transiente): ${lastErr.message}`);
+      } else {
+        logger.warn(`${prefix}: ${lastErr.message}`);
+      }
     }
   }
 
@@ -76,7 +143,13 @@ async function runResolveAttempt(args: string[]): Promise<string[]> {
     const timer = setTimeout(() => {
       logger.warn('[ytdlp-runner] Timeout na resolução de URL — matando yt-dlp');
       try { proc.kill('SIGKILL'); } catch { /* */ }
-      finish(() => reject(new Error('yt-dlp URL resolution timeout')));
+      finish(() => reject(new ResolveAttemptError(
+        'yt-dlp URL resolution timeout',
+        'timeout',
+        null,
+        '',
+        true,
+      )));
     }, URL_RESOLVE_TIMEOUT_MS);
 
     proc.stdout?.on('data', (chunk: Buffer) => { stdout += chunk.toString(); });
@@ -90,8 +163,14 @@ async function runResolveAttempt(args: string[]): Promise<string[]> {
       clearTimeout(timer);
       finish(() => {
         if (code !== 0) {
-          logger.warn(`[ytdlp-runner] Resolução falhou code=${code} stderr=${stderrTail.trim().slice(-400)}`);
-          reject(new Error(`yt-dlp exited ${code}`));
+          const stderrSnippet = stderrTail.trim().slice(-400);
+          reject(new ResolveAttemptError(
+            `yt-dlp exited ${code} stderr=${stderrSnippet}`,
+            'exit',
+            code,
+            stderrSnippet,
+            isLikelyTransientFailure(stderrSnippet),
+          ));
           return;
         }
         const urls = stdout
@@ -100,7 +179,7 @@ async function runResolveAttempt(args: string[]): Promise<string[]> {
           .map(u => u.trim())
           .filter((u) => /^https?:\/\//i.test(u));
         if (urls.length === 0) {
-          reject(new Error('yt-dlp: nenhuma URL retornada'));
+          reject(new ResolveAttemptError('yt-dlp: nenhuma URL retornada', 'no-url', code, '', true));
           return;
         }
         resolve(urls);

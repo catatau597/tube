@@ -26,6 +26,7 @@ const DRAINING_DROP_TIMEOUT_MS = 25_000;
  * >= threshold = cliente genuinamente lento ou stuck.
  */
 const BACKPRESSURE_DROP_THRESHOLD = 8;
+const FLOW_RESUME_COOLDOWN_MS = 120;
 
 interface ClientState {
   id: number;
@@ -52,6 +53,7 @@ interface StreamSession {
   nextClientId: number;
   flowControl: SessionFlowControl | null;
   flowPaused: boolean;
+  flowResumeTimer: ReturnType<typeof setTimeout> | null;
 }
 
 /**
@@ -83,6 +85,7 @@ class StreamRegistry {
       nextClientId: 1,
       flowControl: null,
       flowPaused: false,
+      flowResumeTimer: null,
     });
     this.startIdleWatchdog(key);
     logger.info(`[stream-registry] Sessao criada: key=${key}`);
@@ -199,6 +202,7 @@ class StreamRegistry {
     s.killed = true;
 
     if (s.idleWatchdogTimer) { clearTimeout(s.idleWatchdogTimer); s.idleWatchdogTimer = null; }
+    if (s.flowResumeTimer) { clearTimeout(s.flowResumeTimer); s.flowResumeTimer = null; }
     s.flowPaused = false;
 
     for (const [res, state] of s.clients) {
@@ -281,17 +285,32 @@ class StreamRegistry {
     // Em modo 1 cliente, pausamos a origem ao entrar em draining para aplicar
     // backpressure real no processo filho (stdout.pause()).
     if (session.clients.size !== 1 || session.flowPaused || !session.flowControl) return;
+    if (session.flowResumeTimer) {
+      clearTimeout(session.flowResumeTimer);
+      session.flowResumeTimer = null;
+    }
     session.flowPaused = true;
     try { session.flowControl.pause(); } catch { /* */ }
-    logger.warn(`[stream-registry] Pausando origem por backpressure: key=${key} client=${state.id}`);
+    logger.debug(`[stream-registry] Pausando origem por backpressure: key=${key} client=${state.id}`);
   }
 
   private maybeResumeFlow(key: string, session: StreamSession): void {
     if (!session.flowPaused || !session.flowControl) return;
     if (this.hasDrainingClient(session)) return;
-    session.flowPaused = false;
-    try { session.flowControl.resume(); } catch { /* */ }
-    logger.info(`[stream-registry] Retomando origem: key=${key}`);
+    if (session.flowResumeTimer) return;
+
+    session.flowResumeTimer = setTimeout(() => {
+      const s = this.sessions.get(key);
+      if (!s || s.killed) return;
+      s.flowResumeTimer = null;
+
+      if (!s.flowPaused || !s.flowControl) return;
+      if (this.hasDrainingClient(s)) return;
+
+      s.flowPaused = false;
+      try { s.flowControl.resume(); } catch { /* */ }
+      logger.debug(`[stream-registry] Retomando origem: key=${key}`);
+    }, FLOW_RESUME_COOLDOWN_MS);
   }
 
   /**

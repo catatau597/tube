@@ -174,7 +174,7 @@ export class SmartPlayer {
     let procRef: ManagedProcess | null = null;
 
     streamRegistry.create(key, async () => {
-      if (procRef) await procRef.kill(3000);
+      if (procRef) await procRef.kill(5000);
     });
 
     if (!this.subscribeClient(key, req, firstClient)) {

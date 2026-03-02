@@ -105,3 +105,8 @@
   - `ytdlp-runner`: ordem de tentativas de cliente alterada para `web -> default -> android` na resolução de URL.
   - Objetivo: reduzir bloqueios anti-bot em vídeos que abrem no navegador anônimo mas falham no cliente Android.
   - Logs agora indicam tentativa e estado de cookie (`cookie=on/off`) para diagnóstico mais rápido.
+
+- ✅ Ajuste de ruído/latência no controle de backpressure (`2026-03-02`):
+  - `stream-registry`: adicionado cooldown (`FLOW_RESUME_COOLDOWN_MS`) para evitar oscilação rápida de `pause/resume` em cliente único.
+  - `stream-registry`: logs de `pause/resume` movidos para `debug` (deixam de poluir com centenas de `WARN` em condição normal de adaptação).
+  - `smart-player`: timeout de encerramento de `ffmpeg-placeholder` ampliado para 5s antes de SIGKILL, reduzindo warnings de teardown.
