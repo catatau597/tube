@@ -84,7 +84,11 @@ export function startStreamlink(params: StreamlinkParams): ManagedProcess {
     if (code !== 0) {
       // Loga tail do stderr para identificar o motivo real da falha
       // (ex.: "unrecognized arguments", "400 Bad Request", etc.).
-      const tail = stderrTail.trim().slice(-500);
+      // Normaliza para uma unica linha (sem quebras de linha nem caracteres de controle)
+      // para evitar poluicao de logs e log-forging.
+      const raw = stderrTail.trim().slice(-500);
+      // eslint-disable-next-line no-control-regex
+      const tail = raw.replace(/\r\n|\r|\n/g, '\\n').replace(/[\x00-\x1F\x7F]/g, '');
       logger.warn(`[streamlink-runner] Processo finalizado code=${code} stderrTail=${tail}`);
     } else {
       logger.info(`[streamlink-runner] Processo finalizado code=${code}`);
