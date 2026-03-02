@@ -27,7 +27,7 @@ const INIT_STREAM_TIMEOUT_MS = 15_000;
 const MANIFEST_WAIT_POLL_MS = 250;
 const MIN_READY_SEGMENTS: Record<HlsSession['kind'], number> = {
   live: 4,
-  vod: 4,
+  vod: 3,
   upcoming: 4,
 };
 
@@ -326,9 +326,10 @@ export class SmartPlayer {
       dir: session.dir,
       urls,
       userAgent: yt.userAgent,
-      paceInput: false,
+      paceInput: true,
       onExit: (code) => {
         if (code === 0) {
+          this.finalizeVodManifest(session.manifestPath);
           logger.info(`[SmartPlayer] VOD HLS concluido: key=${session.key}`);
           return;
         }
@@ -371,6 +372,10 @@ export class SmartPlayer {
       return this.injectStartOffset(rewritten, -8);
     }
 
+    if (kind === 'vod') {
+      return this.injectStartOffset(rewritten, -6);
+    }
+
     return rewritten;
   }
 
@@ -389,6 +394,17 @@ export class SmartPlayer {
       .split('\n')
       .map((line) => line.trim())
       .filter((line) => !!line && !line.startsWith('#'));
+  }
+
+  private finalizeVodManifest(manifestPath: string): void {
+    try {
+      if (!fs.existsSync(manifestPath)) return;
+      const raw = fs.readFileSync(manifestPath, 'utf-8');
+      if (raw.includes('#EXT-X-ENDLIST')) return;
+      fs.writeFileSync(manifestPath, `${raw.trimEnd()}\n#EXT-X-ENDLIST\n`, 'utf-8');
+    } catch (err) {
+      logger.warn(`[SmartPlayer] Falha ao finalizar manifesto VOD: ${err}`);
+    }
   }
 
   private clearSessionDir(dir: string): void {

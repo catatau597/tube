@@ -145,3 +145,10 @@
   - Causa identificada em log: `-hls_playlist_type` foi inserido na posicao errada da linha de comando do `ffmpeg`, sendo interpretado como template de segmento (`Invalid segment filename template '-hls_playlist_type'`).
   - `hls-runner`: montagem de argumentos HLS refeita para anexar flags opcionais antes de `-hls_segment_filename` e do arquivo `index.m3u8`.
   - Validação: `docker compose build` concluido com sucesso apos o ajuste.
+
+- ✅ Correção da regressao de VOD "reiniciando do zero" na branch `hls` (`2026-03-02`):
+  - Causa identificada em log: clientes extras nao criavam nova sessao/novo `yt-dlp`; eles recebiam o mesmo manifesto VOD completo desde `segment_00000`, efeito direto do modo HLS estatico adotado no ajuste anterior.
+  - `hls-runner`: VOD voltou para janela deslizante (`hls_list_size=24`, sem `playlist_type=event`), preservando a ideia de fluxo compartilhado em vez de arquivo completo desde o inicio.
+  - `smart-player`: VOD voltou a usar pacing em tempo real (`-re`) e passou a publicar `#EXT-X-START` negativo para que clientes novos entrem perto do ponto atual da sessao.
+  - `smart-player`: manifest bootstrap de VOD ficou em 3 segmentos para reduzir a demora inicial sem soltar manifesto cedo demais.
+  - Validação: `docker compose build` concluido com sucesso apos a correção.

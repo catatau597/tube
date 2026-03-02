@@ -7,7 +7,6 @@ interface HlsOutputOptions {
   listSize: string;
   flags: string;
   deleteThreshold?: string;
-  playlistType?: 'event' | 'vod';
 }
 
 const LIVE_HLS_OPTIONS: HlsOutputOptions = {
@@ -17,9 +16,8 @@ const LIVE_HLS_OPTIONS: HlsOutputOptions = {
 };
 
 const VOD_HLS_OPTIONS: HlsOutputOptions = {
-  listSize: '0',
-  flags: 'independent_segments+temp_file',
-  playlistType: 'event',
+  listSize: '24',
+  flags: 'append_list+omit_endlist+independent_segments+temp_file',
 };
 
 const UPCOMING_HLS_OPTIONS: HlsOutputOptions = {
@@ -40,10 +38,6 @@ function commonHlsOutputArgs(options: HlsOutputOptions): string[] {
 
   if (options.deleteThreshold) {
     args.push('-hls_delete_threshold', options.deleteThreshold);
-  }
-
-  if (options.playlistType) {
-    args.push('-hls_playlist_type', options.playlistType);
   }
 
   args.push(
