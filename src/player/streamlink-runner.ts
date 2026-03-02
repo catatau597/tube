@@ -1,54 +1,38 @@
-import { spawn } from 'child_process';
 import { ManagedProcess } from './process-manager';
 import { logger } from '../core/logger';
+
+/**
+ * Remove API keys e tokens dos logs de stderr do streamlink.
+ * Evita vazamento de credenciais em logs de producao.
+ */
+function sanitizeStreamlinkLog(text: string): string {
+  return text
+    .replace(/key=AIza[A-Za-z0-9_-]+/gi, 'key=***REDACTED***')
+    .replace(/oauth_token=[^&\s]+/gi, 'oauth_token=***REDACTED***')
+    .replace(/Authorization: Bearer [^\s]+/gi, 'Authorization: Bearer ***REDACTED***');
+}
 
 function buildArgs(
   url: string,
   userAgent: string,
   cookieFile: string | null,
   extraFlags: string[],
-  mode: 'stream' | 'simulate',
 ): string[] {
   const args = [
     ...extraFlags,
     '--http-header', `User-Agent=${userAgent}`,
-    '--config', '/dev/null',
+    // Garante que nenhum config externo (/root/.config/streamlink/config ou similar)
+    // cause conflito de flags ou erros de parsing (exit code=2).
+    '--no-config',
     '--no-plugin-sideloading',
+    '--http-no-ssl-verify',
+    '--loglevel', 'info',
+    '--stdout',
+    url,
+    'best',
   ];
   if (cookieFile) args.push('--http-cookie-jar', cookieFile);
-  args.push(mode === 'stream' ? '--stdout' : '--stream-url', url, 'best');
   return args;
-}
-
-/** Quick probe: does streamlink find a playable stream at this URL? */
-export async function streamlinkHasPlayableStream(
-  url: string,
-  userAgent: string,
-  cookieFile: string | null,
-  extraFlags: string[] = [],
-): Promise<boolean> {
-  return new Promise<boolean>((resolve) => {
-    logger.info(`[streamlink-runner] Testando stream: url=${url}`);
-    const proc = spawn(
-      'streamlink',
-      buildArgs(url, userAgent, cookieFile, extraFlags, 'simulate'),
-      { stdio: ['ignore', 'pipe', 'pipe'] },
-    );
-    let stderr = '';
-    proc.stderr?.on('data', (chunk: Buffer) => {
-      stderr += chunk.toString();
-      logger.debug(`[streamlink-runner][probe] ${chunk.toString().trim()}`);
-    });
-    proc.on('close', (code) => {
-      logger.info(`[streamlink-runner] Probe finalizado code=${code}`);
-      if (code === 0) { resolve(true); return; }
-      resolve(!/No playable streams found/i.test(stderr));
-    });
-    proc.on('error', (err) => {
-      logger.error(`[streamlink-runner] Erro no probe: ${err}`);
-      resolve(false);
-    });
-  });
 }
 
 export interface StreamlinkParams {
@@ -60,6 +44,9 @@ export interface StreamlinkParams {
   onExit: (code: number | null) => void;
 }
 
+/** Tamanho maximo do buffer de stderr acumulado para diagnostico. */
+const STDERR_TAIL_MAX = 6_000;
+
 export function startStreamlink(params: StreamlinkParams): ManagedProcess {
   const { url, userAgent, cookieFile, extraFlags, onData, onExit } = params;
   logger.info(`[streamlink-runner] Iniciando stream: url=${url}`);
@@ -67,18 +54,44 @@ export function startStreamlink(params: StreamlinkParams): ManagedProcess {
   const proc = new ManagedProcess(
     'streamlink',
     'streamlink',
-    buildArgs(url, userAgent, cookieFile, extraFlags, 'stream'),
+    buildArgs(url, userAgent, cookieFile, extraFlags),
     { stdio: ['ignore', 'pipe', 'pipe'] },
   );
 
+  // Acumula stderr sanitizado para diagnostico em caso de falha.
+  let stderrTail = '';
+
   proc.stdout?.on('data', (chunk: Buffer) => onData(chunk));
-  proc.stderr?.on('data', (chunk: Buffer) =>
-    logger.warn(`[streamlink-runner][stderr] ${chunk.toString().trim()}`),
-  );
+
+  proc.stderr?.on('data', (chunk: Buffer) => {
+    const text = chunk.toString();
+    const sanitized = sanitizeStreamlinkLog(text);
+
+    // Mantém um tail rotativo para logar quando o processo falha.
+    stderrTail = (stderrTail + sanitized).slice(-STDERR_TAIL_MAX);
+
+    // Loga apenas erros/avisos em tempo real; info vai para debug.
+    const line = sanitized.trim();
+    if (!line) return;
+    if (/\[cli\]\[(error|warning)\]|^error:/i.test(line)) {
+      logger.warn(`[streamlink-runner][stderr] ${line}`);
+    } else {
+      logger.debug(`[streamlink-runner][stderr] ${line}`);
+    }
+  });
+
   proc.onClose((code) => {
-    logger.info(`[streamlink-runner] Processo finalizado code=${code}`);
+    if (code !== 0) {
+      // Loga tail do stderr para identificar o motivo real da falha
+      // (ex.: "unrecognized arguments", "400 Bad Request", etc.).
+      const tail = stderrTail.trim().slice(-500);
+      logger.warn(`[streamlink-runner] Processo finalizado code=${code} stderrTail=${tail}`);
+    } else {
+      logger.info(`[streamlink-runner] Processo finalizado code=${code}`);
+    }
     onExit(code);
   });
+
   proc.onError((err) => {
     logger.error(`[streamlink-runner] Erro: ${err}`);
     onExit(null);

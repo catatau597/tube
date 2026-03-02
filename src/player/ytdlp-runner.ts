@@ -71,16 +71,26 @@ export interface YtDlpFfmpegParams {
 export function startYtDlpFfmpeg(params: YtDlpFfmpegParams): ManagedProcess {
   const { urls, userAgent, extraFfmpegFlags, onData, onExit } = params;
 
+  // Flags aplicadas a cada input:
+  // -reconnect 1              → reconecta se a conexão cair (HTTP)
+  // -reconnect_streamed 1     → reconecta em streams já iniciados (live HLS/DASH)
+  // -reconnect_delay_max 5    → espera máx 5s entre tentativas
+  const inputPrefix = [
+    '-user_agent', userAgent,
+    '-reconnect', '1',
+    '-reconnect_streamed', '1',
+    '-reconnect_delay_max', '5',
+  ];
+
   const args: string[] = [
     ...extraFfmpegFlags,
     '-loglevel', 'error',
-    '-user_agent', userAgent,
   ];
 
   if (urls.length >= 2) {
-    args.push('-i', urls[0], '-i', urls[1]);
+    args.push(...inputPrefix, '-i', urls[0], ...inputPrefix, '-i', urls[1]);
   } else {
-    args.push('-i', urls[0]);
+    args.push(...inputPrefix, '-i', urls[0]);
   }
 
   args.push('-c', 'copy', '-f', 'mpegts', 'pipe:1');

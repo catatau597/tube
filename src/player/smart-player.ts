@@ -4,7 +4,7 @@ import { Request, Response } from 'express';
 import { ToolProfileManager, ResolvedToolProfile } from './tool-profile-manager';
 import { streamRegistry } from './stream-registry';
 import { startFfmpegPlaceholder } from './ffmpeg-runner';
-import { streamlinkHasPlayableStream, startStreamlink } from './streamlink-runner';
+import { startStreamlink } from './streamlink-runner';
 import { resolveYtDlpUrls, startYtDlpFfmpeg } from './ytdlp-runner';
 import { ManagedProcess } from './process-manager';
 import { getConfig } from '../core/config-manager';
@@ -23,31 +23,50 @@ interface CacheFile {
   streams: Record<string, CacheStream>;
 }
 
+/**
+ * Tempo maximo (ms) apos o inicio do streamlink para considerar uma saida
+ * com erro como "fast fail" e acionar o fallback para yt-dlp.
+ * Erros 400 Bad Request do youtubei retornam em ~1s.
+ */
+const STREAMLINK_FAST_FAIL_MS = 8_000;
+
+/**
+ * Tempo maximo (ms) para initStream() completar (subir processo + subscrever
+ * primeiro cliente). Se exceder, retorna 503 ao cliente em vez de travar.
+ */
+const INIT_STREAM_TIMEOUT_MS = 5_000;
+
 export class SmartPlayer {
   private readonly statePath = path.join('/data', 'state_cache.json');
   private readonly textsPath = path.join('/data', 'textos_epg.json');
   private readonly toolProfiles = new ToolProfileManager();
 
-  /**
-   * Guards against duplicate process spawns when two clients request the
-   * same stream simultaneously during the initialization window.
-   */
   private readonly pendingInits = new Map<string, Promise<void>>();
 
   async serveVideo(videoId: string, req: Request, res: Response): Promise<void> {
     const key = videoId;
 
-    // ── Fast path: stream already running ────────────────────────────────────
     if (streamRegistry.has(key)) {
       logger.info(`[SmartPlayer] Stream ativo, subscrevendo cliente: key=${key}`);
       this.subscribeClient(key, req, res);
       return;
     }
 
-    // ── Init in progress: wait then subscribe ────────────────────────────────
     if (this.pendingInits.has(key)) {
       logger.info(`[SmartPlayer] Init em andamento, aguardando: key=${key}`);
-      await this.pendingInits.get(key);
+      try {
+        await Promise.race([
+          this.pendingInits.get(key)!,
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Init timeout')), INIT_STREAM_TIMEOUT_MS),
+          ),
+        ]);
+      } catch (err) {
+        logger.warn(`[SmartPlayer] Timeout aguardando init: key=${key} err=${err}`);
+        if (!res.writableEnded) res.status(503).end();
+        return;
+      }
+
       if (streamRegistry.has(key)) {
         this.subscribeClient(key, req, res);
       } else {
@@ -56,11 +75,18 @@ export class SmartPlayer {
       return;
     }
 
-    // ── Cold start ───────────────────────────────────────────────────────────
     const initPromise = this.initStream(key, videoId, req, res);
     this.pendingInits.set(key, initPromise.catch(() => { /* absorbed */ }));
     try {
-      await initPromise;
+      await Promise.race([
+        initPromise,
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Init timeout')), INIT_STREAM_TIMEOUT_MS),
+        ),
+      ]);
+    } catch (err) {
+      logger.warn(`[SmartPlayer] Init timeout: key=${key} err=${err}`);
+      if (!res.writableEnded) res.status(503).end();
     } finally {
       this.pendingInits.delete(key);
     }
@@ -71,7 +97,7 @@ export class SmartPlayer {
     return stream?.thumbnailUrl || getConfig('PLACEHOLDER_IMAGE_URL') || null;
   }
 
-  // ─── Private: orchestration ───────────────────────────────────────────────
+  // --- Private: orchestration -----------------------------------------------
 
   private async initStream(
     key: string,
@@ -85,12 +111,12 @@ export class SmartPlayer {
 
     const cache  = this.readStateCache();
     const stream = cache.streams[videoId];
-    logger.info(`[SmartPlayer] Init: key=${key} status=${stream?.status ?? 'não encontrado'}`);
+    logger.info(`[SmartPlayer] Init: key=${key} status=${stream?.status ?? 'nao encontrado'}`);
 
     if (!stream) {
       const placeholder = getConfig('PLACEHOLDER_IMAGE_URL');
       if (!placeholder) {
-        firstClient.status(404).json({ error: 'Stream não encontrado e sem placeholder configurado' });
+        firstClient.status(404).json({ error: 'Stream nao encontrado e sem placeholder configurado' });
         return;
       }
       this.spawnPlaceholder(key, placeholder, ffProfile, undefined, undefined, req, firstClient);
@@ -109,21 +135,18 @@ export class SmartPlayer {
     }
 
     if (stream.status === 'live' && this.isGenuinelyLive(stream)) {
-      logger.info(`[SmartPlayer] Testando streamlink: key=${key}`);
-      const playable = await streamlinkHasPlayableStream(
-        stream.watchUrl, slProfile.userAgent, slProfile.cookieFile, slProfile.flags,
-      );
-      if (playable) {
-        this.spawnStreamlink(key, stream.watchUrl, slProfile, req, firstClient);
-        return;
-      }
-      logger.info(`[SmartPlayer] Streamlink indisponível, usando yt-dlp: key=${key}`);
+      // Sem probe: a probe usa --stream-url que tem comportamento diferente do
+      // --stdout real, gerando falsos positivos e negativos. O fast-fail
+      // (STREAMLINK_FAST_FAIL_MS) cuida do fallback automaticamente.
+      logger.info(`[SmartPlayer] Iniciando streamlink diretamente: key=${key}`);
+      this.spawnStreamlink(key, stream.watchUrl, slProfile, ytProfile, ffProfile, req, firstClient);
+      return;
     }
 
     await this.spawnYtDlp(key, stream.watchUrl, ytProfile, ffProfile, req, firstClient);
   }
 
-  // ─── Private: spawn helpers ───────────────────────────────────────────────
+  // --- Private: spawn helpers -----------------------------------------------
 
   private spawnPlaceholder(
     key: string,
@@ -139,7 +162,7 @@ export class SmartPlayer {
 
     streamRegistry.create(key, async () => {
       const proc = await procPromise;
-      await proc.kill();
+      await proc.kill(500);
     });
 
     if (!this.subscribeClient(key, req, firstClient)) return;
@@ -157,33 +180,91 @@ export class SmartPlayer {
     logger.info(`[SmartPlayer] Placeholder iniciado: key=${key} PID=${proc.pid}`);
   }
 
+  /**
+   * Inicia streamlink como fonte principal.
+   *
+   * Se o processo sair com erro dentro de STREAMLINK_FAST_FAIL_MS (ex: 400 Bad
+   * Request do youtubei/v1/player), aciona fallback automatico para yt-dlp
+   * sem derrubar a sessao nem os clientes ja conectados.
+   */
   private spawnStreamlink(
     key: string,
     url: string,
     sl: ResolvedToolProfile,
+    yt: ResolvedToolProfile,
+    ff: ResolvedToolProfile,
     req: Request,
     firstClient: Response,
   ): void {
-    let resolveProc!: (p: ManagedProcess) => void;
-    const procPromise = new Promise<ManagedProcess>(r => { resolveProc = r; });
+    const procHolder: { current: ManagedProcess | null } = { current: null };
 
     streamRegistry.create(key, async () => {
-      const proc = await procPromise;
-      await proc.kill();
+      if (procHolder.current) await procHolder.current.kill();
     });
 
     if (!this.subscribeClient(key, req, firstClient)) return;
 
+    const startTime = Date.now();
     const proc = startStreamlink({
       url,
       userAgent:  sl.userAgent,
       cookieFile: sl.cookieFile,
       extraFlags: sl.flags,
       onData: (chunk) => streamRegistry.broadcast(key, chunk),
+      onExit: (code) => {
+        const elapsed = Date.now() - startTime;
+        const isFastFail = code !== 0 && elapsed < STREAMLINK_FAST_FAIL_MS;
+
+        if (isFastFail && streamRegistry.has(key)) {
+          logger.warn(
+            `[SmartPlayer] Streamlink fast fail (${elapsed}ms, code=${code}), ` +
+            `iniciando fallback yt-dlp: key=${key}`,
+          );
+          procHolder.current = null;
+          void this.switchToYtDlp(key, url, yt, ff, procHolder);
+        } else {
+          void streamRegistry.kill(key);
+        }
+      },
+    });
+    procHolder.current = proc;
+    logger.info(`[SmartPlayer] Streamlink iniciado: key=${key} PID=${proc.pid}`);
+  }
+
+  /**
+   * Fallback: substitui o streamlink por yt-dlp na sessao existente.
+   * Clientes conectados continuam sem reconectar.
+   */
+  private async switchToYtDlp(
+    key: string,
+    url: string,
+    yt: ResolvedToolProfile,
+    ff: ResolvedToolProfile,
+    procHolder: { current: ManagedProcess | null },
+  ): Promise<void> {
+    let urls: string[];
+    try {
+      urls = await resolveYtDlpUrls(url, yt.userAgent, yt.cookieFile, yt.flags);
+    } catch (err) {
+      logger.error(`[SmartPlayer] Fallback yt-dlp: falha na resolucao de URL: ${err}`);
+      void streamRegistry.kill(key);
+      return;
+    }
+
+    if (!streamRegistry.has(key)) {
+      logger.info(`[SmartPlayer] Fallback yt-dlp abortado: sessao ja encerrada: key=${key}`);
+      return;
+    }
+
+    const proc = startYtDlpFfmpeg({
+      urls,
+      userAgent:        yt.userAgent,
+      extraFfmpegFlags: ff.flags,
+      onData: (chunk) => streamRegistry.broadcast(key, chunk),
       onExit: ()      => void streamRegistry.kill(key),
     });
-    resolveProc(proc);
-    logger.info(`[SmartPlayer] Streamlink iniciado: key=${key} PID=${proc.pid}`);
+    procHolder.current = proc;
+    logger.info(`[SmartPlayer] Fallback yt-dlp->ffmpeg iniciado: key=${key} PID=${proc.pid}`);
   }
 
   private async spawnYtDlp(
@@ -198,7 +279,7 @@ export class SmartPlayer {
     try {
       urls = await resolveYtDlpUrls(url, yt.userAgent, yt.cookieFile, yt.flags);
     } catch (err) {
-      logger.error(`[SmartPlayer] Falha na resolução yt-dlp: ${err}`);
+      logger.error(`[SmartPlayer] Falha na resolucao yt-dlp: ${err}`);
       if (!firstClient.writableEnded) {
         firstClient.status(502).json({ error: 'Falha ao resolver URL do stream' });
       }
@@ -210,7 +291,7 @@ export class SmartPlayer {
 
     streamRegistry.create(key, async () => {
       const proc = await procPromise;
-      await proc.kill();
+      await proc.kill(500);
     });
 
     if (!this.subscribeClient(key, req, firstClient)) return;
@@ -223,28 +304,16 @@ export class SmartPlayer {
       onExit: ()      => void streamRegistry.kill(key),
     });
     resolveProc(proc);
-    logger.info(`[SmartPlayer] yt-dlp→ffmpeg iniciado: key=${key} PID=${proc.pid}`);
+    logger.info(`[SmartPlayer] yt-dlp->ffmpeg iniciado: key=${key} PID=${proc.pid}`);
   }
 
-  // ─── Private: subscribe helper ────────────────────────────────────────────
+  // --- Private: subscribe helper --------------------------------------------
 
-  /**
-   * Wires all disconnect listeners and registers the client with the session.
-   *
-   * Three complementary signals — no single one fires reliably in all cases:
-   *  1. res.on('close')  — Express finalizes the response
-   *  2. res.on('error')  — EPIPE / ECONNRESET on write
-   *  3. req.on('close')  — HTTP connection dropped (most reliable for VLC
-   *                         which doesn’t send TCP FIN on stop)
-   *
-   * Returns false if the session no longer exists (killed between
-   * create() and subscribeClient()), so callers can abort.
-   */
   private subscribeClient(key: string, req: Request, res: Response): boolean {
     res.setHeader('Content-Type', 'video/mp2t');
     const added = streamRegistry.addClient(key, res);
     if (!added) {
-      logger.warn(`[SmartPlayer] Sessão não encontrada ao subscrever cliente: key=${key}`);
+      logger.warn(`[SmartPlayer] Sessao nao encontrada ao subscrever cliente: key=${key}`);
       if (!res.writableEnded) res.status(503).end();
       return false;
     }
@@ -255,7 +324,7 @@ export class SmartPlayer {
     return true;
   }
 
-  // ─── Private: cache readers ───────────────────────────────────────────────
+  // --- Private: cache readers -----------------------------------------------
 
   private isGenuinelyLive(stream: CacheStream): boolean {
     return stream.status === 'live' && !!stream.actualStart && !stream.actualEnd;

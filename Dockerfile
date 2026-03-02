@@ -1,4 +1,4 @@
-# ── Stage 1: Build TypeScript ────────────────────────────────
+# ── Stage 1: Build TypeScript ────────────────────────────────────────────
 FROM node:20-alpine AS builder
 WORKDIR /app
 COPY package*.json tsconfig.json ./
@@ -6,12 +6,14 @@ RUN npm ci
 COPY src/ ./src/
 RUN npm run build
 
-# ── Stage 2: Runtime ─────────────────────────────────────────
+# ── Stage 2: Runtime ───────────────────────────────────────────────
 FROM node:20-alpine AS runtime
 WORKDIR /app
 
+# --upgrade garante que pip busca a versão mais recente de streamlink e yt-dlp
+# na hora do build, corrigindo bugs de versões antigas (ex: API key expirada do YouTube)
 RUN apk add --no-cache ffmpeg python3 py3-pip curl font-dejavu && \
-    pip3 install --break-system-packages streamlink yt-dlp
+    pip3 install --break-system-packages --upgrade streamlink yt-dlp
 
 # Dependências de produção
 COPY package*.json ./
