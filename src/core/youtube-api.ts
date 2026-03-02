@@ -237,6 +237,8 @@ export class YouTubeApi {
         logger.info(`[YouTubeApi] fetchBySearch eventType=${eventType}: ${ids.size} id(s) encontrado(s) até agora`);
       } catch (err) {
         logger.warn(`[YouTubeApi] fetchBySearch eventType=${eventType} falhou: ${err}`);
+        // Se todas as API keys estiverem esgotadas, não faz sentido continuar.
+        if (this.rotator.allExhausted) throw err;
       }
     }
 

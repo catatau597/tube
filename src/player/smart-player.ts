@@ -54,17 +54,20 @@ export class SmartPlayer {
 
     if (this.pendingInits.has(key)) {
       logger.info(`[SmartPlayer] Init em andamento, aguardando: key=${key}`);
+      let timer1: ReturnType<typeof setTimeout> | null = null;
       try {
         await Promise.race([
           this.pendingInits.get(key)!,
-          new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Init timeout')), INIT_STREAM_TIMEOUT_MS),
-          ),
+          new Promise<never>((_, reject) => {
+            timer1 = setTimeout(() => reject(new Error('Init timeout')), INIT_STREAM_TIMEOUT_MS);
+          }),
         ]);
       } catch (err) {
         logger.warn(`[SmartPlayer] Timeout aguardando init: key=${key} err=${err}`);
         if (!res.writableEnded) res.status(503).end();
         return;
+      } finally {
+        if (timer1 !== null) clearTimeout(timer1);
       }
 
       if (streamRegistry.has(key)) {
@@ -77,17 +80,19 @@ export class SmartPlayer {
 
     const initPromise = this.initStream(key, videoId, req, res);
     this.pendingInits.set(key, initPromise.catch(() => { /* absorbed */ }));
+    let timer2: ReturnType<typeof setTimeout> | null = null;
     try {
       await Promise.race([
         initPromise,
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Init timeout')), INIT_STREAM_TIMEOUT_MS),
-        ),
+        new Promise<never>((_, reject) => {
+          timer2 = setTimeout(() => reject(new Error('Init timeout')), INIT_STREAM_TIMEOUT_MS);
+        }),
       ]);
     } catch (err) {
       logger.warn(`[SmartPlayer] Init timeout: key=${key} err=${err}`);
       if (!res.writableEnded) res.status(503).end();
     } finally {
+      if (timer2 !== null) clearTimeout(timer2);
       this.pendingInits.delete(key);
     }
   }
@@ -157,15 +162,16 @@ export class SmartPlayer {
     req: Request,
     firstClient: Response,
   ): void {
-    let resolveProc!: (p: ManagedProcess) => void;
-    const procPromise = new Promise<ManagedProcess>(r => { resolveProc = r; });
+    let procRef: ManagedProcess | null = null;
 
     streamRegistry.create(key, async () => {
-      const proc = await procPromise;
-      await proc.kill(500);
+      if (procRef) await procRef.kill(500);
     });
 
-    if (!this.subscribeClient(key, req, firstClient)) return;
+    if (!this.subscribeClient(key, req, firstClient)) {
+      void streamRegistry.kill(key);
+      return;
+    }
 
     const proc = startFfmpegPlaceholder({
       imageUrl,
@@ -176,7 +182,7 @@ export class SmartPlayer {
       onData: (chunk) => streamRegistry.broadcast(key, chunk),
       onExit: ()      => void streamRegistry.kill(key),
     });
-    resolveProc(proc);
+    procRef = proc;
     logger.info(`[SmartPlayer] Placeholder iniciado: key=${key} PID=${proc.pid}`);
   }
 
@@ -202,7 +208,10 @@ export class SmartPlayer {
       if (procHolder.current) await procHolder.current.kill();
     });
 
-    if (!this.subscribeClient(key, req, firstClient)) return;
+    if (!this.subscribeClient(key, req, firstClient)) {
+      void streamRegistry.kill(key);
+      return;
+    }
 
     const startTime = Date.now();
     const proc = startStreamlink({
@@ -286,15 +295,16 @@ export class SmartPlayer {
       return;
     }
 
-    let resolveProc!: (p: ManagedProcess) => void;
-    const procPromise = new Promise<ManagedProcess>(r => { resolveProc = r; });
+    let procRef: ManagedProcess | null = null;
 
     streamRegistry.create(key, async () => {
-      const proc = await procPromise;
-      await proc.kill(500);
+      if (procRef) await procRef.kill(500);
     });
 
-    if (!this.subscribeClient(key, req, firstClient)) return;
+    if (!this.subscribeClient(key, req, firstClient)) {
+      void streamRegistry.kill(key);
+      return;
+    }
 
     const proc = startYtDlpFfmpeg({
       urls,
@@ -303,13 +313,14 @@ export class SmartPlayer {
       onData: (chunk) => streamRegistry.broadcast(key, chunk),
       onExit: ()      => void streamRegistry.kill(key),
     });
-    resolveProc(proc);
+    procRef = proc;
     logger.info(`[SmartPlayer] yt-dlp->ffmpeg iniciado: key=${key} PID=${proc.pid}`);
   }
 
   // --- Private: subscribe helper --------------------------------------------
 
   private subscribeClient(key: string, req: Request, res: Response): boolean {
+    if (res.writableEnded || res.destroyed) return false;
     res.setHeader('Content-Type', 'video/mp2t');
     const added = streamRegistry.addClient(key, res);
     if (!added) {

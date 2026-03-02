@@ -25,7 +25,6 @@ function buildArgs(
     // cause conflito de flags ou erros de parsing (exit code=2).
     '--no-config',
     '--no-plugin-sideloading',
-    '--http-no-ssl-verify',
     '--loglevel', 'info',
     '--stdout',
     url,
@@ -84,7 +83,10 @@ export function startStreamlink(params: StreamlinkParams): ManagedProcess {
     if (code !== 0) {
       // Loga tail do stderr para identificar o motivo real da falha
       // (ex.: "unrecognized arguments", "400 Bad Request", etc.).
-      const tail = stderrTail.trim().slice(-500);
+      // Normaliza para uma unica linha: substitui quebras/controles para evitar log-forging.
+      const tail = stderrTail.trim().slice(-500)
+        .replace(/\r?\n/g, '\\n')
+        .replace(/[\x00-\x1f\x7f]/g, '');
       logger.warn(`[streamlink-runner] Processo finalizado code=${code} stderrTail=${tail}`);
     } else {
       logger.info(`[streamlink-runner] Processo finalizado code=${code}`);
