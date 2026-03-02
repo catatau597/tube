@@ -18,15 +18,23 @@ export async function resolveYtDlpUrls(
   cookieFile: string | null,
   extraFlags: string[] = [],
 ): Promise<string[]> {
-  return new Promise((resolve, reject) => {
+  const attempts: Array<{ label: string; extractorArgs?: string }> = [
+    { label: 'web', extractorArgs: 'youtube:player_client=web' },
+    { label: 'default' },
+    { label: 'android', extractorArgs: 'youtube:player_client=android' },
+  ];
+
+  let lastErr: Error | null = null;
+
+  for (const attempt of attempts) {
     const args = [
       '-f', 'bestvideo[vcodec^=avc1]+bestaudio[ext=m4a]/best[ext=mp4]/best',
       '--user-agent', userAgent,
-      '--extractor-args', 'youtube:player_client=android',
       '--no-playlist',
       '--print', '%(url)s',
-      ...extraFlags,
     ];
+    if (attempt.extractorArgs) args.push('--extractor-args', attempt.extractorArgs);
+    args.push(...extraFlags);
     if (cookieFile) args.push('--cookies', cookieFile);
     args.push(url);
 
@@ -34,7 +42,25 @@ export async function resolveYtDlpUrls(
       .map((part) => sanitizeYtDlpLog(part))
       .join(' ')
       .slice(0, 500);
-    logger.info(`[ytdlp-runner] Resolvendo URL: ${url} args=${sanitizedCmd}`);
+    logger.info(
+      `[ytdlp-runner] Resolvendo URL (${attempt.label}) cookie=${cookieFile ? 'on' : 'off'}: ${url} args=${sanitizedCmd}`,
+    );
+
+    try {
+      const urls = await runResolveAttempt(args);
+      logger.info(`[ytdlp-runner] ${urls.length} URL(s) resolvida(s) via ${attempt.label}`);
+      return urls;
+    } catch (err) {
+      lastErr = err instanceof Error ? err : new Error(String(err));
+      logger.warn(`[ytdlp-runner] Tentativa ${attempt.label} falhou: ${lastErr.message}`);
+    }
+  }
+
+  throw lastErr ?? new Error('yt-dlp: falha desconhecida na resolucao');
+}
+
+async function runResolveAttempt(args: string[]): Promise<string[]> {
+  return new Promise((resolve, reject) => {
     const proc = spawn('yt-dlp', args, { stdio: ['ignore', 'pipe', 'pipe'] });
 
     let settled = false;
@@ -77,7 +103,6 @@ export async function resolveYtDlpUrls(
           reject(new Error('yt-dlp: nenhuma URL retornada'));
           return;
         }
-        logger.info(`[ytdlp-runner] ${urls.length} URL(s) resolvida(s)`);
         resolve(urls);
       });
     });

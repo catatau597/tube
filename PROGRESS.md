@@ -100,3 +100,8 @@
   - `ytdlp-runner`: `ffmpeg` para VOD em modo pacing (`-re`) para evitar burst acima da taxa de reprodução.
   - `process-manager`: expostos `pauseOutput()`/`resumeOutput()` para backpressure cooperativo.
   - Build validado via `docker compose build` (stage builder com `tsc` concluído).
+
+- ✅ Ajuste de robustez na resolução VOD (`2026-03-02`):
+  - `ytdlp-runner`: ordem de tentativas de cliente alterada para `web -> default -> android` na resolução de URL.
+  - Objetivo: reduzir bloqueios anti-bot em vídeos que abrem no navegador anônimo mas falham no cliente Android.
+  - Logs agora indicam tentativa e estado de cookie (`cookie=on/off`) para diagnóstico mais rápido.
