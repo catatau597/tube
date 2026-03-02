@@ -31,7 +31,16 @@ export function createPlayerRouter(): Router {
    * Express nao precisa fazer nada apos chamar serveVideo().
    */
   router.get('/stream/:videoId', (request, response) => {
-    void player.serveVideo(request.params.videoId, request, response);
+    void player
+      .serveVideo(request.params.videoId, request, response)
+      .catch((error) => {
+        logger.error(
+          `[PlayerRouter] Erro ao servir video ${request.params.videoId}: ${String(error)}`
+        );
+        if (!response.writableEnded) {
+          response.status(500).end();
+        }
+      });
   });
 
   router.get('/thumbnail/:videoId', async (request, response) => {
