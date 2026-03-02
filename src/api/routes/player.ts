@@ -16,26 +16,38 @@ export function createPlayerRouter(): Router {
   const router = Router();
   const player = new SmartPlayer();
 
-  /**
-   * IMPORTANTE: serveVideo() e fire-and-forget.
-   *
-   * Nao usar await aqui — serveVideo() sobe o processo filho, subscreve o
-   * cliente via res.write(), e so finaliza quando o stream morre. Se aguardarmos
-   * a Promise, Express trava o handler por 30-60s.
-   *
-   * serveVideo() cuida de:
-   * - Setar headers (Content-Type, etc)
-   * - Conectar stdout do processo filho ao res via broadcast()
-   * - Fechar res quando stream morre
-   *
-   * Express nao precisa fazer nada apos chamar serveVideo().
-   */
+  router.get('/stream/:videoId/index.m3u8', (request, response) => {
+    void player
+      .serveVideo(request.params.videoId, request, response)
+      .catch((error) => {
+        logger.error(
+          `[PlayerRouter] Erro ao servir manifesto HLS ${request.params.videoId}/index.m3u8: ${String(error)}`
+        );
+        if (!response.writableEnded) {
+          response.status(500).end();
+        }
+      });
+  });
+
+  router.get('/stream/:videoId/:segment', (request, response) => {
+    void player
+      .serveSegment(request.params.videoId, request.params.segment, response)
+      .catch((error) => {
+        logger.error(
+          `[PlayerRouter] Erro ao servir segmento ${request.params.videoId}/${request.params.segment}: ${String(error)}`
+        );
+        if (!response.writableEnded) {
+          response.status(500).end();
+        }
+      });
+  });
+
   router.get('/stream/:videoId', (request, response) => {
     void player
       .serveVideo(request.params.videoId, request, response)
       .catch((error) => {
         logger.error(
-          `[PlayerRouter] Erro ao servir video ${request.params.videoId}: ${String(error)}`
+          `[PlayerRouter] Erro ao servir manifesto HLS ${request.params.videoId}: ${String(error)}`
         );
         if (!response.writableEnded) {
           response.status(500).end();

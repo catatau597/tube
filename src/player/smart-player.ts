@@ -2,109 +2,68 @@ import fs from 'fs';
 import path from 'path';
 import { Request, Response } from 'express';
 import { ToolProfileManager, ResolvedToolProfile } from './tool-profile-manager';
-import { streamRegistry } from './stream-registry';
-import { startFfmpegPlaceholder } from './ffmpeg-runner';
+import { hlsSessionRegistry, HlsSession } from './hls-session-registry';
+import { startPlaceholderToHls, startPipeToHls, startUrlsToHls } from './hls-runner';
 import { startStreamlink } from './streamlink-runner';
-import { resolveYtDlpUrls, startYtDlpFfmpeg } from './ytdlp-runner';
+import { resolveYtDlpUrls } from './ytdlp-runner';
 import { ManagedProcess } from './process-manager';
 import { getConfig } from '../core/config-manager';
 import { logger } from '../core/logger';
 
 interface CacheStream {
-  videoId:     string;
-  watchUrl:    string;
+  videoId: string;
+  watchUrl: string;
   thumbnailUrl: string;
-  status:      'live' | 'upcoming' | 'none';
+  status: 'live' | 'upcoming' | 'none';
   actualStart: string | null;
-  actualEnd:   string | null;
+  actualEnd: string | null;
 }
 
 interface CacheFile {
   streams: Record<string, CacheStream>;
 }
 
-/**
- * Tempo maximo (ms) para initStream() completar (subir processo + subscrever
- * primeiro cliente). Se exceder, retorna 503 ao cliente em vez de travar.
- */
 const INIT_STREAM_TIMEOUT_MS = 15_000;
+const MANIFEST_WAIT_POLL_MS = 250;
 
 export class SmartPlayer {
   private readonly statePath = path.join('/data', 'state_cache.json');
   private readonly textsPath = path.join('/data', 'textos_epg.json');
   private readonly toolProfiles = new ToolProfileManager();
-
   private readonly pendingInits = new Map<string, Promise<void>>();
 
-  async serveVideo(videoId: string, req: Request, res: Response): Promise<void> {
-    const key = videoId;
+  async serveVideo(videoId: string, _req: Request, res: Response): Promise<void> {
+    const session = await this.ensureSession(videoId);
+    const playlist = await this.readPlaylist(session, videoId);
 
-    if (streamRegistry.has(key)) {
-      logger.info(`[SmartPlayer] Stream ativo, subscrevendo cliente: key=${key}`);
-      this.subscribeClient(key, req, res);
+    hlsSessionRegistry.touch(videoId);
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
+    res.send(playlist);
+  }
+
+  async serveSegment(videoId: string, segmentName: string, res: Response): Promise<void> {
+    const session = hlsSessionRegistry.get(videoId);
+    if (!session) {
+      res.status(404).json({ error: 'Sessao HLS nao encontrada' });
       return;
     }
 
-    if (this.pendingInits.has(key)) {
-      logger.info(`[SmartPlayer] Init em andamento, aguardando: key=${key}`);
-      let timer1: ReturnType<typeof setTimeout> | null = null;
-      let timedOut = false;
-      try {
-        await Promise.race([
-          this.pendingInits.get(key)!,
-          new Promise<never>((_, reject) => {
-            timer1 = setTimeout(() => reject(new Error('Init timeout')), INIT_STREAM_TIMEOUT_MS);
-          }),
-        ]);
-      } catch (err) {
-        timedOut = true;
-        logger.warn(`[SmartPlayer] Timeout aguardando init: key=${key} err=${err}`);
-      } finally {
-        if (timer1 !== null) clearTimeout(timer1);
-      }
-
-      if (streamRegistry.has(key)) {
-        this.subscribeClient(key, req, res);
-      } else if (timedOut && this.pendingInits.has(key)) {
-        logger.warn(`[SmartPlayer] Init ainda em andamento apos timeout, aguardando janela de graca: key=${key}`);
-        try {
-          await Promise.race([
-            this.pendingInits.get(key)!,
-            new Promise<never>((_, reject) => {
-              setTimeout(() => reject(new Error('Init grace timeout')), 5_000);
-            }),
-          ]);
-        } catch (err) {
-          logger.warn(`[SmartPlayer] Janela de graca expirada: key=${key} err=${err}`);
-        }
-        if (streamRegistry.has(key)) {
-          this.subscribeClient(key, req, res);
-        } else if (!res.writableEnded) {
-          res.status(503).end();
-        }
-      } else {
-        if (!res.writableEnded) res.status(503).end();
-      }
+    const segmentPath = path.resolve(session.dir, segmentName);
+    const sessionDir = path.resolve(session.dir) + path.sep;
+    if (!segmentPath.startsWith(sessionDir) || !fs.existsSync(segmentPath) || !fs.statSync(segmentPath).isFile()) {
+      res.status(404).json({ error: 'Segmento HLS nao encontrado' });
       return;
     }
 
-    const initPromise = this.initStream(key, videoId, req, res);
-    this.pendingInits.set(key, initPromise.catch(() => { /* absorbed */ }));
-    let timer2: ReturnType<typeof setTimeout> | null = null;
-    try {
-      await Promise.race([
-        initPromise,
-        new Promise<never>((_, reject) => {
-          timer2 = setTimeout(() => reject(new Error('Init timeout')), INIT_STREAM_TIMEOUT_MS);
-        }),
-      ]);
-    } catch (err) {
-      logger.warn(`[SmartPlayer] Init timeout: key=${key} err=${err}`);
-      if (!streamRegistry.has(key) && !res.writableEnded) res.status(503).end();
-    } finally {
-      if (timer2 !== null) clearTimeout(timer2);
-      this.pendingInits.delete(key);
+    hlsSessionRegistry.touch(videoId);
+    res.setHeader('Cache-Control', 'no-cache');
+    if (segmentName.endsWith('.ts')) {
+      res.type('video/mp2t');
+    } else if (segmentName.endsWith('.m3u8')) {
+      res.type('application/vnd.apple.mpegurl');
     }
+    res.sendFile(segmentPath);
   }
 
   getThumbnailUrl(videoId: string): string | null {
@@ -112,264 +71,297 @@ export class SmartPlayer {
     return stream?.thumbnailUrl || getConfig('PLACEHOLDER_IMAGE_URL') || null;
   }
 
-  // --- Private: orchestration -----------------------------------------------
+  private async ensureSession(videoId: string): Promise<HlsSession> {
+    if (hlsSessionRegistry.has(videoId)) {
+      hlsSessionRegistry.touch(videoId);
+      return hlsSessionRegistry.get(videoId)!;
+    }
 
-  private async initStream(
-    key: string,
-    videoId: string,
-    req: Request,
-    firstClient: Response,
-  ): Promise<void> {
+    if (this.pendingInits.has(videoId)) {
+      await this.waitForInit(videoId, this.pendingInits.get(videoId)!);
+      const session = hlsSessionRegistry.get(videoId);
+      if (!session) throw new Error(`Sessao HLS nao criada para key=${videoId}`);
+      return session;
+    }
+
+    const initPromise = this.initSession(videoId);
+    this.pendingInits.set(videoId, initPromise);
+    try {
+      await this.waitForInit(videoId, initPromise);
+    } finally {
+      this.pendingInits.delete(videoId);
+    }
+
+    const session = hlsSessionRegistry.get(videoId);
+    if (!session) throw new Error(`Sessao HLS nao criada para key=${videoId}`);
+    return session;
+  }
+
+  private async waitForInit(key: string, initPromise: Promise<void>): Promise<void> {
+    await Promise.race([
+      initPromise,
+      new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error(`Init timeout key=${key}`)), INIT_STREAM_TIMEOUT_MS);
+      }),
+    ]);
+  }
+
+  private async initSession(videoId: string): Promise<void> {
     const slProfile = this.toolProfiles.resolveProfile('streamlink');
     const ytProfile = this.toolProfiles.resolveProfile('yt-dlp');
     const ffProfile = this.toolProfiles.resolveProfile('ffmpeg');
 
-    const cache  = this.readStateCache();
+    const cache = this.readStateCache();
     const stream = cache.streams[videoId];
-    logger.info(`[SmartPlayer] Init: key=${key} status=${stream?.status ?? 'nao encontrado'}`);
+    logger.info(`[SmartPlayer] Init HLS: key=${videoId} status=${stream?.status ?? 'nao encontrado'}`);
 
-    if (!stream) {
-      const placeholder = getConfig('PLACEHOLDER_IMAGE_URL');
-      if (!placeholder) {
-        firstClient.status(404).json({ error: 'Stream nao encontrado e sem placeholder configurado' });
+    let createdSession = false;
+    try {
+      if (!stream) {
+        const placeholder = getConfig('PLACEHOLDER_IMAGE_URL');
+        if (!placeholder) throw new Error('Stream nao encontrado e sem placeholder configurado');
+        const session = hlsSessionRegistry.create(videoId, 'upcoming');
+        createdSession = true;
+        this.spawnPlaceholderSession(session, placeholder, ffProfile, undefined, undefined);
         return;
       }
-      this.spawnPlaceholder(key, placeholder, ffProfile, undefined, undefined, req, firstClient);
-      return;
-    }
 
-    if (stream.status === 'upcoming') {
-      const texts = this.readTextsCache()[videoId] ?? { line1: '', line2: '' };
-      const image = stream.thumbnailUrl || getConfig('PLACEHOLDER_IMAGE_URL');
-      if (!image) {
-        firstClient.status(404).json({ error: 'Sem thumbnail/placeholder para stream upcoming' });
+      if (stream.status === 'upcoming') {
+        const texts = this.readTextsCache()[videoId] ?? { line1: '', line2: '' };
+        const image = stream.thumbnailUrl || getConfig('PLACEHOLDER_IMAGE_URL');
+        if (!image) throw new Error('Sem thumbnail/placeholder para stream upcoming');
+        const session = hlsSessionRegistry.create(videoId, 'upcoming');
+        createdSession = true;
+        this.spawnPlaceholderSession(session, image, ffProfile, texts.line1, texts.line2);
         return;
       }
-      this.spawnPlaceholder(key, image, ffProfile, texts.line1, texts.line2, req, firstClient);
-      return;
-    }
 
-    if (stream.status === 'live' && this.isGenuinelyLive(stream)) {
-      // Sem probe: a probe usa --stream-url que tem comportamento diferente do
-      // --stdout real, gerando falsos positivos e negativos.
-      logger.info(`[SmartPlayer] Iniciando streamlink diretamente: key=${key}`);
-      this.spawnStreamlink(key, stream.watchUrl, slProfile, ytProfile, ffProfile, req, firstClient);
-      return;
-    }
+      if (stream.status === 'live' && this.isGenuinelyLive(stream)) {
+        const session = hlsSessionRegistry.create(videoId, 'live');
+        createdSession = true;
+        this.spawnLiveSession(session, stream.watchUrl, slProfile, ytProfile);
+        return;
+      }
 
-    await this.spawnYtDlp(key, stream.watchUrl, ytProfile, ffProfile, req, firstClient);
+      const session = hlsSessionRegistry.create(videoId, 'vod');
+      createdSession = true;
+      await this.spawnVodSession(session, stream.watchUrl, ytProfile);
+    } catch (err) {
+      if (createdSession && hlsSessionRegistry.has(videoId)) {
+        await hlsSessionRegistry.destroy(videoId, 'init-error');
+      }
+      throw err;
+    }
   }
 
-  // --- Private: spawn helpers -----------------------------------------------
-
-  private spawnPlaceholder(
-    key: string,
+  private spawnPlaceholderSession(
+    session: HlsSession,
     imageUrl: string,
     ff: ResolvedToolProfile,
     textLine1: string | undefined,
     textLine2: string | undefined,
-    req: Request,
-    firstClient: Response,
   ): void {
     let procRef: ManagedProcess | null = null;
 
-    streamRegistry.create(key, async () => {
+    hlsSessionRegistry.setKillFn(session.key, async () => {
       if (procRef) await procRef.kill(5000);
     });
 
-    if (!this.subscribeClient(key, req, firstClient)) {
-      void streamRegistry.kill(key);
-      return;
-    }
-
-    const proc = startFfmpegPlaceholder({
+    procRef = startPlaceholderToHls({
+      dir: session.dir,
       imageUrl,
-      userAgent:  ff.userAgent,
-      extraFlags: ff.flags,
+      userAgent: ff.userAgent,
       textLine1,
       textLine2,
-      onData: (chunk) => streamRegistry.broadcast(key, chunk),
-      onExit: ()      => void streamRegistry.kill(key),
+      onExit: () => {
+        void hlsSessionRegistry.destroy(session.key, 'placeholder-exit');
+      },
     });
-    procRef = proc;
-    streamRegistry.setFlowControl(key, {
-      pause: () => proc.pauseOutput(),
-      resume: () => proc.resumeOutput(),
-    });
-    logger.info(`[SmartPlayer] Placeholder iniciado: key=${key} PID=${proc.pid}`);
+
+    logger.info(`[SmartPlayer] Placeholder HLS iniciado: key=${session.key} PID=${procRef.pid}`);
   }
 
-  /**
-   * Inicia streamlink como fonte principal.
-   *
-   * Se streamlink falhar antes de entregar o primeiro byte util (ex: 400 Bad
-   * Request do youtubei/v1/player), aciona fallback automatico para yt-dlp
-   * sem derrubar a sessao nem os clientes ja conectados.
-   */
-  private spawnStreamlink(
-    key: string,
+  private spawnLiveSession(
+    session: HlsSession,
     url: string,
     sl: ResolvedToolProfile,
     yt: ResolvedToolProfile,
-    ff: ResolvedToolProfile,
-    req: Request,
-    firstClient: Response,
   ): void {
-    const procHolder: { current: ManagedProcess | null } = { current: null };
+    const state: {
+      replacing: boolean;
+      source: ManagedProcess | null;
+      writer: ManagedProcess | null;
+      firstByteAt: number | null;
+    } = {
+      replacing: false,
+      source: null,
+      writer: null,
+      firstByteAt: null,
+    };
 
-    streamRegistry.create(key, async () => {
-      if (procHolder.current) await procHolder.current.kill();
+    const ensureWriter = (): ManagedProcess => {
+      if (state.writer) return state.writer;
+      state.writer = startPipeToHls({
+        dir: session.dir,
+        onExit: () => {
+          if (!state.replacing) {
+            void hlsSessionRegistry.destroy(session.key, 'live-writer-exit');
+          }
+        },
+      });
+      return state.writer;
+    };
+
+    hlsSessionRegistry.setKillFn(session.key, async () => {
+      state.replacing = true;
+      if (state.source) await state.source.kill();
+      if (state.writer) await state.writer.kill(3000);
+      state.replacing = false;
     });
 
-    if (!this.subscribeClient(key, req, firstClient)) {
-      void streamRegistry.kill(key);
-      return;
-    }
-
-    const startTime = Date.now();
-    let firstByteAt: number | null = null;
-    const proc = startStreamlink({
+    const startedAt = Date.now();
+    state.source = startStreamlink({
       url,
-      userAgent:  sl.userAgent,
+      userAgent: sl.userAgent,
       cookieFile: sl.cookieFile,
       extraFlags: sl.flags,
       onData: (chunk) => {
-        if (firstByteAt === null) {
-          firstByteAt = Date.now();
-          logger.info(`[SmartPlayer] Streamlink primeiro byte: key=${key} t=${firstByteAt - startTime}ms`);
+        if (state.firstByteAt === null) {
+          state.firstByteAt = Date.now();
+          logger.info(`[SmartPlayer] Streamlink primeiro byte HLS: key=${session.key} t=${state.firstByteAt - startedAt}ms`);
         }
-        streamRegistry.broadcast(key, chunk);
+
+        const writer = ensureWriter();
+        try {
+          if (writer.stdin && !writer.stdin.destroyed && writer.stdin.writable) writer.stdin.write(chunk);
+        } catch { /* noop */ }
       },
       onExit: (code) => {
-        const elapsed = Date.now() - startTime;
-        const hasStreamOutput = firstByteAt !== null;
-        const shouldFallback = code !== 0 && !hasStreamOutput && streamRegistry.has(key);
+        const hasOutput = state.firstByteAt !== null;
+        if (code !== 0 && !hasOutput && hlsSessionRegistry.has(session.key)) {
+          logger.warn(`[SmartPlayer] Streamlink falhou sem output HLS, fallback yt-dlp: key=${session.key} code=${code}`);
+          void this.switchLiveSessionToYtDlp(session, url, yt, state);
+          return;
+        }
 
-        if (shouldFallback) {
-          logger.warn(
-            `[SmartPlayer] Streamlink falhou sem output (${elapsed}ms, code=${code}), iniciando fallback yt-dlp: key=${key}`,
-          );
-          procHolder.current = null;
-          void this.switchToYtDlp(key, url, yt, ff, procHolder);
+        if (state.writer?.stdin && !state.writer.stdin.destroyed) {
+          try { state.writer.stdin.end(); } catch { /* noop */ }
         } else {
-          void streamRegistry.kill(key);
+          void hlsSessionRegistry.destroy(session.key, 'live-source-exit');
         }
       },
     });
-    procHolder.current = proc;
-    streamRegistry.setFlowControl(key, {
-      pause: () => proc.pauseOutput(),
-      resume: () => proc.resumeOutput(),
-    });
-    logger.info(`[SmartPlayer] Streamlink iniciado: key=${key} PID=${proc.pid}`);
+
+    logger.info(`[SmartPlayer] Streamlink HLS iniciado: key=${session.key} PID=${state.source.pid}`);
   }
 
-  /**
-   * Fallback: substitui o streamlink por yt-dlp na sessao existente.
-   * Clientes conectados continuam sem reconectar.
-   */
-  private async switchToYtDlp(
-    key: string,
+  private async switchLiveSessionToYtDlp(
+    session: HlsSession,
     url: string,
     yt: ResolvedToolProfile,
-    ff: ResolvedToolProfile,
-    procHolder: { current: ManagedProcess | null },
+    state: {
+      replacing: boolean;
+      source: ManagedProcess | null;
+      writer: ManagedProcess | null;
+      firstByteAt: number | null;
+    },
   ): Promise<void> {
-    let urls: string[];
+    state.replacing = true;
     try {
-      urls = await resolveYtDlpUrls(url, yt.userAgent, yt.cookieFile, yt.flags);
-    } catch (err) {
-      logger.error(`[SmartPlayer] Fallback yt-dlp: falha na resolucao de URL: ${err}`);
-      void streamRegistry.kill(key);
-      return;
-    }
-
-    if (!streamRegistry.has(key)) {
-      logger.info(`[SmartPlayer] Fallback yt-dlp abortado: sessao ja encerrada: key=${key}`);
-      return;
-    }
-
-    const proc = startYtDlpFfmpeg({
-      urls,
-      userAgent:        yt.userAgent,
-      extraFfmpegFlags: ff.flags,
-      paceInput: false,
-      onData: (chunk) => streamRegistry.broadcast(key, chunk),
-      onExit: ()      => void streamRegistry.kill(key),
-    });
-    procHolder.current = proc;
-    streamRegistry.setFlowControl(key, {
-      pause: () => proc.pauseOutput(),
-      resume: () => proc.resumeOutput(),
-    });
-    logger.info(`[SmartPlayer] Fallback yt-dlp->ffmpeg iniciado: key=${key} PID=${proc.pid}`);
-  }
-
-  private async spawnYtDlp(
-    key: string,
-    url: string,
-    yt: ResolvedToolProfile,
-    ff: ResolvedToolProfile,
-    req: Request,
-    firstClient: Response,
-  ): Promise<void> {
-    let urls: string[];
-    try {
-      urls = await resolveYtDlpUrls(url, yt.userAgent, yt.cookieFile, yt.flags);
-    } catch (err) {
-      logger.error(`[SmartPlayer] Falha na resolucao yt-dlp: ${err}`);
-      if (!firstClient.writableEnded) {
-        firstClient.status(502).json({ error: 'Falha ao resolver URL do stream' });
+      if (state.writer) {
+        await state.writer.kill(3000);
+        state.writer = null;
       }
-      return;
-    }
+      this.clearSessionDir(session.dir);
 
+      const urls = await resolveYtDlpUrls(url, yt.userAgent, yt.cookieFile, yt.flags);
+      if (!hlsSessionRegistry.has(session.key)) return;
+
+      state.writer = startUrlsToHls({
+        dir: session.dir,
+        urls,
+        userAgent: yt.userAgent,
+        paceInput: false,
+        onExit: () => {
+          if (!state.replacing) {
+            void hlsSessionRegistry.destroy(session.key, 'live-fallback-exit');
+          }
+        },
+      });
+
+      hlsSessionRegistry.setKillFn(session.key, async () => {
+        state.replacing = true;
+        if (state.source) await state.source.kill();
+        if (state.writer) await state.writer.kill(3000);
+        state.replacing = false;
+      });
+
+      logger.info(`[SmartPlayer] Live HLS fallback yt-dlp iniciado: key=${session.key} PID=${state.writer.pid}`);
+    } catch (err) {
+      logger.error(`[SmartPlayer] Falha no fallback live->yt-dlp HLS: key=${session.key} err=${err}`);
+      await hlsSessionRegistry.destroy(session.key, 'live-fallback-error');
+    } finally {
+      state.replacing = false;
+    }
+  }
+
+  private async spawnVodSession(
+    session: HlsSession,
+    url: string,
+    yt: ResolvedToolProfile,
+  ): Promise<void> {
+    const urls = await resolveYtDlpUrls(url, yt.userAgent, yt.cookieFile, yt.flags);
     let procRef: ManagedProcess | null = null;
 
-    streamRegistry.create(key, async () => {
+    hlsSessionRegistry.setKillFn(session.key, async () => {
       if (procRef) await procRef.kill(3000);
     });
 
-    if (!this.subscribeClient(key, req, firstClient)) {
-      void streamRegistry.kill(key);
-      return;
-    }
-
-    const proc = startYtDlpFfmpeg({
+    procRef = startUrlsToHls({
+      dir: session.dir,
       urls,
-      userAgent:        yt.userAgent,
-      extraFfmpegFlags: ff.flags,
+      userAgent: yt.userAgent,
       paceInput: true,
-      onData: (chunk) => streamRegistry.broadcast(key, chunk),
-      onExit: ()      => void streamRegistry.kill(key),
+      onExit: () => {
+        void hlsSessionRegistry.destroy(session.key, 'vod-exit');
+      },
     });
-    procRef = proc;
-    streamRegistry.setFlowControl(key, {
-      pause: () => proc.pauseOutput(),
-      resume: () => proc.resumeOutput(),
-    });
-    logger.info(`[SmartPlayer] yt-dlp->ffmpeg iniciado: key=${key} PID=${proc.pid}`);
+
+    logger.info(`[SmartPlayer] VOD HLS iniciado: key=${session.key} PID=${procRef.pid}`);
   }
 
-  // --- Private: subscribe helper --------------------------------------------
-
-  private subscribeClient(key: string, req: Request, res: Response): boolean {
-    if (res.writableEnded || res.destroyed) return false;
-    res.setHeader('Content-Type', 'video/mp2t');
-    const added = streamRegistry.addClient(key, res);
-    if (!added) {
-      logger.warn(`[SmartPlayer] Sessao nao encontrada ao subscrever cliente: key=${key}`);
-      if (!res.writableEnded) res.status(503).end();
-      return false;
+  private async readPlaylist(session: HlsSession, videoId: string): Promise<string> {
+    const startedAt = Date.now();
+    while (Date.now() - startedAt < INIT_STREAM_TIMEOUT_MS) {
+      if (fs.existsSync(session.manifestPath) && fs.statSync(session.manifestPath).size > 0) {
+        const raw = fs.readFileSync(session.manifestPath, 'utf-8');
+        return this.rewritePlaylist(raw, videoId);
+      }
+      await new Promise(resolve => setTimeout(resolve, MANIFEST_WAIT_POLL_MS));
     }
-    const unsub = () => streamRegistry.removeClient(key, res);
-    res.on('close', unsub);
-    res.on('error', unsub);
-    req.on('close', unsub);
-    return true;
+
+    throw new Error(`Manifesto HLS indisponivel para key=${videoId}`);
   }
 
-  // --- Private: cache readers -----------------------------------------------
+  private rewritePlaylist(playlist: string, videoId: string): string {
+    const prefix = `/api/stream/${encodeURIComponent(videoId)}`;
+    return playlist
+      .split('\n')
+      .map((line) => {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith('#')) return line;
+        return `${prefix}/${trimmed}`;
+      })
+      .join('\n');
+  }
+
+  private clearSessionDir(dir: string): void {
+    try {
+      for (const entry of fs.readdirSync(dir)) {
+        fs.rmSync(path.join(dir, entry), { recursive: true, force: true });
+      }
+    } catch { /* noop */ }
+  }
 
   private isGenuinelyLive(stream: CacheStream): boolean {
     return stream.status === 'live' && !!stream.actualStart && !stream.actualEnd;
@@ -380,13 +372,17 @@ export class SmartPlayer {
     try {
       const parsed = JSON.parse(fs.readFileSync(this.statePath, 'utf-8')) as CacheFile;
       return parsed?.streams ? parsed : { streams: {} };
-    } catch { return { streams: {} }; }
+    } catch {
+      return { streams: {} };
+    }
   }
 
   private readTextsCache(): Record<string, { line1: string; line2: string }> {
     if (!fs.existsSync(this.textsPath)) return {};
     try {
       return JSON.parse(fs.readFileSync(this.textsPath, 'utf-8')) as Record<string, { line1: string; line2: string }>;
-    } catch { return {}; }
+    } catch {
+      return {};
+    }
   }
 }

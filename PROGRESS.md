@@ -113,5 +113,16 @@
 
 - ✅ Ajuste de pacing/qualidade para live/upcoming (`2026-03-02`):
   - `ffmpeg-runner`: placeholder voltou a usar leitura em tempo real (`-re`) para evitar flood de `mpegts` e disparos de backpressure/watchdog em streams upcoming.
-  - `streamlink-runner`: qualidade default reduzida para `720p,480p,best`, mitigando gargalo de fan-out com 2+ clientes sem impedir override por perfil via `--default-stream`.
+  - `streamlink-runner`: qualidade default voltou para `best`; o limitador temporário para `720p,480p,best` foi descartado porque o gargalo persistiu e não era a causa raiz.
   - `streamlink-runner`: encerramento normal por `SIGTERM` (`code=130`) passou a ser logado como `info`, reduzindo falso positivo de warning no teardown.
+
+- ✅ Migração estrutural para HLS na branch `hls` (`2026-03-02`):
+  - `smart-player`: deixou de entregar `mpegts` continuo por `stream-registry` e passou a orquestrar sessoes HLS compartilhadas por `videoId`.
+  - `src/player/hls-session-registry.ts`: novo registry de sessao HLS com diretorio temporario, `manifestPath`, `killFn`, `touch()` e cleanup por idle timeout.
+  - `src/player/hls-runner.ts`: novos runners ffmpeg para gerar HLS a partir de `pipe` (streamlink), `urls` resolvidas (yt-dlp) e `placeholder`.
+  - `api/routes/player`: `/api/stream/:videoId` agora serve manifesto HLS; `/api/stream/:videoId/:segment` serve segmentos HLS; alias `/api/stream/:videoId/index.m3u8` adicionado.
+  - `live`: `streamlink -> ffmpeg(HLS)` com fallback para `yt-dlp -> ffmpeg(HLS)` quando streamlink falha sem primeiro byte.
+  - `vod`: `yt-dlp(resolve) -> ffmpeg(HLS)` com pacing para manter comportamento compartilhado de sessao.
+  - `upcoming`: placeholder passou a ser entregue em HLS.
+  - `DOC/PROMPT_HLS_MIGRATION.md`: prompt/desenho da arquitetura implementada para referencia da branch.
+  - Validação: `docker compose build` concluido com sucesso apos a migração.
