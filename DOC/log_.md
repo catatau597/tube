@@ -1,170 +1,616 @@
 root@master2:~# docker logs -f tubewranglerr
-2026-03-02 09:56:18 INFO [StateManager] Cache carregado com 33 streams.
-2026-03-02 09:56:18 INFO [YouTubeApi] Lista de chaves atualizada (1 chave(s)).
+2026-03-02 11:26:15 INFO [StateManager] Cache carregado com 32 streams.
+2026-03-02 11:26:15 INFO [YouTubeApi] Lista de chaves atualizada (1 chave(s)).
 Warning: connect.session() MemoryStore is not
 designed for a production environment, as it will leak
 memory, and will not scale past a single process.
-2026-03-02 09:56:18 INFO Servidor HTTP iniciado em http://0.0.0.0:8888
-2026-03-02 09:56:18 INFO [Scheduler] Iniciado com delay inicial (cache existente detectado).
-2026-03-02 09:56:18 INFO [Scheduler] Loop iniciado. Tick a cada 60s.
-2026-03-02 09:56:18 INFO [Scheduler] 2 stream(s) na janela pré-evento.
-2026-03-02 09:56:18 INFO [Scheduler] 1 stream(s) live em monitoramento.
-2026-03-02 09:56:18 INFO [Scheduler] Verificação alta frequência: 3 stream(s).
-2026-03-02 09:56:18 INFO [Scheduler] Estado: 2 live | 21 upcoming | 10 vod.
-2026-03-02 09:56:22 INFO [HTTP] GET / → 302 (5ms) [anon]
-2026-03-02 09:56:22 INFO [HTTP] GET /login → 200 (4ms) [anon]
-2026-03-02 09:56:31 INFO [HTTP] GET /api/scheduler/status → 401 (4ms) [anon]
-2026-03-02 09:56:31 INFO [HTTP] GET /api/channels → 401 (1ms) [anon]
-2026-03-02 09:56:31 INFO [HTTP] GET /api/streams → 401 (1ms) [anon]
-2026-03-02 09:56:31 INFO [HTTP] GET /api/config → 401 (0ms) [anon]
-2026-03-02 09:56:31 INFO [HTTP] GET /login → 304 (1ms) [anon]
-2026-03-02 09:56:31 INFO [HTTP] GET /api/scheduler/status → 401 (1ms) [anon]
-2026-03-02 09:56:31 INFO [HTTP] GET /login → 304 (3ms) [anon]
-2026-03-02 09:56:31 INFO [HTTP] GET /login → 304 (1ms) [anon]
-2026-03-02 09:56:31 INFO [HTTP] GET /css/style.css → 304 (1ms) [anon]
-2026-03-02 09:56:36 INFO [HTTP] POST /api/auth/login → 200 (74ms) [admin]
-2026-03-02 09:56:36 INFO [HTTP] GET / → 304 (1ms) [admin]
-2026-03-02 09:56:36 INFO [HTTP] GET /css/style.css → 304 (2ms) [admin]
-2026-03-02 09:56:36 INFO [HTTP] GET /js/app.js → 304 (1ms) [admin]
-2026-03-02 09:56:37 INFO [HTTP] GET /js/dashboard.js → 304 (1ms) [admin]
-2026-03-02 09:56:37 INFO [HTTP] GET /js/channels.js → 304 (1ms) [admin]
-2026-03-02 09:56:37 INFO [HTTP] GET /js/streams.js → 304 (2ms) [admin]
-2026-03-02 09:56:37 INFO [HTTP] GET /js/playlists.js → 304 (0ms) [admin]
-2026-03-02 09:56:37 INFO [HTTP] GET /js/settings.js → 304 (1ms) [admin]
-2026-03-02 09:56:37 INFO [HTTP] GET /js/logs.js → 304 (2ms) [admin]
-2026-03-02 09:56:37 INFO [HTTP] GET /js/title-format.js → 304 (1ms) [admin]
-2026-03-02 09:56:37 INFO [HTTP] GET /api/scheduler/status → 200 (2ms) [admin]
-2026-03-02 09:56:37 INFO [HTTP] GET /api/channels → 200 (5ms) [admin]
-2026-03-02 09:56:37 INFO [HTTP] GET /api/streams → 200 (4ms) [admin]
-2026-03-02 09:56:37 INFO [HTTP] GET /api/config → 304 (2ms) [admin]
-2026-03-02 09:56:37 INFO [HTTP] GET /api/scheduler/status → 304 (1ms) [admin]
-2026-03-02 09:56:39 INFO [HTTP] GET / → 304 (1ms) [admin]
-2026-03-02 09:56:40 INFO [HTTP] GET /css/style.css → 304 (1ms) [admin]
-2026-03-02 09:56:40 INFO [HTTP] GET /js/app.js → 304 (0ms) [admin]
-2026-03-02 09:56:40 INFO [HTTP] GET /js/dashboard.js → 304 (3ms) [admin]
-2026-03-02 09:56:40 INFO [HTTP] GET /js/channels.js → 304 (3ms) [admin]
-2026-03-02 09:56:40 INFO [HTTP] GET /js/streams.js → 304 (3ms) [admin]
-2026-03-02 09:56:40 INFO [HTTP] GET /js/playlists.js → 304 (1ms) [admin]
-2026-03-02 09:56:40 INFO [HTTP] GET /js/settings.js → 304 (1ms) [admin]
-2026-03-02 09:56:40 INFO [HTTP] GET /js/logs.js → 304 (1ms) [admin]
-2026-03-02 09:56:40 INFO [HTTP] GET /js/title-format.js → 304 (0ms) [admin]
-2026-03-02 09:56:40 INFO [HTTP] GET /api/scheduler/status → 304 (1ms) [admin]
-2026-03-02 09:56:40 INFO [HTTP] GET /api/channels → 304 (3ms) [admin]
-2026-03-02 09:56:40 INFO [HTTP] GET /api/streams → 304 (3ms) [admin]
-2026-03-02 09:56:40 INFO [HTTP] GET /api/config → 304 (2ms) [admin]
-2026-03-02 09:56:40 INFO [HTTP] GET /api/scheduler/status → 304 (0ms) [admin]
-2026-03-02 09:56:41 INFO [HTTP] GET /api/scheduler/status → 304 (1ms) [admin]
-2026-03-02 09:56:50 INFO [HTTP] GET /live-proxy.m3u → 200 (5ms) [anon]
-2026-03-02 09:56:50 INFO [SmartPlayer] Init: key=PXqX2hK5RF4 status=live
-2026-03-02 09:56:50 INFO [SmartPlayer] Iniciando streamlink diretamente: key=PXqX2hK5RF4
-2026-03-02 09:56:50 INFO [stream-registry] Sessao criada: key=PXqX2hK5RF4
-2026-03-02 09:56:50 INFO [stream-registry] +cliente key=PXqX2hK5RF4 client=1 total=1
-2026-03-02 09:56:50 INFO [streamlink-runner] Iniciando stream: url=https://www.youtube.com/watch?v=PXqX2hK5RF4 args=--no-config --no-plugin-sideloading --loglevel info --stream-timeout 30 --retry-streams 1 --retry-max 3 --http-header User-Agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0 --stdout https://www.youtube.com/watch?v=PXqX2hK5RF4 720p,480p,best
-2026-03-02 09:56:50 INFO [SmartPlayer] Streamlink iniciado: key=PXqX2hK5RF4 PID=24
-2026-03-02 09:56:51 WARN [streamlink-runner][stderr] [cli][error] Unable to open URL: https://www.youtube.com/youtubei/v1/player (400 Client Error: Bad Request for url: https://www.youtube.com/youtubei/v1/player?key=***REDACTED***)
-2026-03-02 09:56:52 INFO [HTTP] GET / → 302 (0ms) [anon]
-2026-03-02 09:56:52 INFO [HTTP] GET /login → 200 (1ms) [anon]
-2026-03-02 09:56:54 INFO [SmartPlayer] Streamlink primeiro byte: key=PXqX2hK5RF4 t=3772ms
-2026-03-02 09:57:00 INFO [HTTP] GET /live-proxy.m3u → 200 (2ms) [anon]
-2026-03-02 09:57:00 INFO [SmartPlayer] Stream ativo, subscrevendo cliente: key=PXqX2hK5RF4
-2026-03-02 09:57:00 INFO [stream-registry] +cliente key=PXqX2hK5RF4 client=2 total=2
-2026-03-02 09:57:16 INFO [HTTP] GET /live-proxy.m3u → 200 (2ms) [anon]
-2026-03-02 09:57:16 INFO [SmartPlayer] Stream ativo, subscrevendo cliente: key=PXqX2hK5RF4
-2026-03-02 09:57:16 INFO [stream-registry] +cliente key=PXqX2hK5RF4 client=3 total=3
-2026-03-02 09:57:19 INFO [HTTP] GET /live-proxy.m3u → 200 (1ms) [anon]
-2026-03-02 09:57:19 INFO [SmartPlayer] Stream ativo, subscrevendo cliente: key=PXqX2hK5RF4
-2026-03-02 09:57:19 INFO [stream-registry] +cliente key=PXqX2hK5RF4 client=4 total=4
-2026-03-02 09:57:22 INFO [HTTP] GET / → 302 (1ms) [anon]
-2026-03-02 09:57:22 INFO [HTTP] GET /login → 200 (1ms) [anon]
-2026-03-02 09:57:53 INFO [HTTP] GET / → 302 (0ms) [anon]
-2026-03-02 09:57:53 INFO [HTTP] GET /login → 200 (1ms) [anon]
-2026-03-02 09:58:23 INFO [HTTP] GET / → 302 (1ms) [anon]
-2026-03-02 09:58:23 INFO [HTTP] GET /login → 200 (1ms) [anon]
-2026-03-02 09:58:48 INFO [stream-registry] -cliente key=PXqX2hK5RF4 client=2 reason=disconnect restantes=3
-2026-03-02 09:58:48 INFO [SmartPlayer] Init: key=pYowbb2vLfI status=live
-2026-03-02 09:58:48 INFO [SmartPlayer] Iniciando streamlink diretamente: key=pYowbb2vLfI
-2026-03-02 09:58:48 INFO [stream-registry] Sessao criada: key=pYowbb2vLfI
-2026-03-02 09:58:48 INFO [stream-registry] +cliente key=pYowbb2vLfI client=1 total=1
-2026-03-02 09:58:48 INFO [streamlink-runner] Iniciando stream: url=https://www.youtube.com/watch?v=pYowbb2vLfI args=--no-config --no-plugin-sideloading --loglevel info --stream-timeout 30 --retry-streams 1 --retry-max 3 --http-header User-Agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0 --stdout https://www.youtube.com/watch?v=pYowbb2vLfI 720p,480p,best
-2026-03-02 09:58:48 INFO [SmartPlayer] Streamlink iniciado: key=pYowbb2vLfI PID=51
-2026-03-02 09:58:50 WARN [streamlink-runner][stderr] [cli][error] Unable to open URL: https://www.youtube.com/youtubei/v1/player (400 Client Error: Bad Request for url: https://www.youtube.com/youtubei/v1/player?key=***REDACTED***)
-2026-03-02 09:58:52 INFO [SmartPlayer] Streamlink primeiro byte: key=pYowbb2vLfI t=3920ms
-2026-03-02 09:58:53 INFO [HTTP] GET / → 302 (0ms) [anon]
-2026-03-02 09:58:53 INFO [HTTP] GET /login → 200 (1ms) [anon]
-2026-03-02 09:59:03 INFO [stream-registry] -cliente key=PXqX2hK5RF4 client=4 reason=disconnect restantes=2
-2026-03-02 09:59:04 INFO [SmartPlayer] Stream ativo, subscrevendo cliente: key=pYowbb2vLfI
-2026-03-02 09:59:04 INFO [stream-registry] +cliente key=pYowbb2vLfI client=2 total=2
-2026-03-02 09:59:23 INFO [HTTP] GET / → 302 (0ms) [anon]
-2026-03-02 09:59:23 INFO [HTTP] GET /login → 200 (2ms) [anon]
-2026-03-02 09:59:53 INFO [HTTP] GET / → 302 (2ms) [anon]
-2026-03-02 09:59:53 INFO [HTTP] GET /login → 200 (1ms) [anon]
-2026-03-02 10:00:24 INFO [HTTP] GET / → 302 (1ms) [anon]
-2026-03-02 10:00:24 INFO [HTTP] GET /login → 200 (1ms) [anon]
-2026-03-02 10:00:46 INFO [stream-registry] -cliente key=PXqX2hK5RF4 client=3 reason=disconnect restantes=1
-2026-03-02 10:00:46 INFO [SmartPlayer] Stream ativo, subscrevendo cliente: key=pYowbb2vLfI
-2026-03-02 10:00:46 INFO [stream-registry] +cliente key=pYowbb2vLfI client=3 total=3
-2026-03-02 10:00:49 INFO [stream-registry] -cliente key=PXqX2hK5RF4 client=1 reason=disconnect restantes=0
-2026-03-02 10:00:49 INFO [stream-registry] Sessao destruida: key=PXqX2hK5RF4
-2026-03-02 10:00:49 INFO [streamlink] SIGTERM → PID 24
-2026-03-02 10:00:49 INFO [SmartPlayer] Stream ativo, subscrevendo cliente: key=pYowbb2vLfI
-2026-03-02 10:00:49 INFO [stream-registry] +cliente key=pYowbb2vLfI client=4 total=4
-2026-03-02 10:00:49 INFO [streamlink-runner] Processo finalizado code=130 (encerramento solicitado)
-2026-03-02 10:00:49 INFO [streamlink] PID 24 encerrado
-2026-03-02 10:00:54 INFO [HTTP] GET / → 302 (1ms) [anon]
-2026-03-02 10:00:54 INFO [HTTP] GET /login → 200 (1ms) [anon]
-2026-03-02 10:01:18 INFO [Scheduler] 2 stream(s) live em monitoramento.
-2026-03-02 10:01:18 INFO [Scheduler] Verificação alta frequência: 2 stream(s).
-2026-03-02 10:01:18 INFO [Scheduler] Estado: 2 live | 21 upcoming | 10 vod.
-2026-03-02 10:01:24 INFO [HTTP] GET / → 302 (0ms) [anon]
-2026-03-02 10:01:24 INFO [HTTP] GET /login → 200 (1ms) [anon]
-2026-03-02 10:01:54 INFO [HTTP] GET / → 302 (0ms) [anon]
-2026-03-02 10:01:54 INFO [HTTP] GET /login → 200 (1ms) [anon]
-2026-03-02 10:02:24 INFO [HTTP] GET / → 302 (1ms) [anon]
-2026-03-02 10:02:24 INFO [HTTP] GET /login → 200 (0ms) [anon]
-2026-03-02 10:02:42 INFO [stream-registry] -cliente key=pYowbb2vLfI client=1 reason=disconnect restantes=3
-2026-03-02 10:02:42 INFO [SmartPlayer] Init: key=PXqX2hK5RF4 status=live
-2026-03-02 10:02:42 INFO [SmartPlayer] Iniciando streamlink diretamente: key=PXqX2hK5RF4
-2026-03-02 10:02:42 INFO [stream-registry] Sessao criada: key=PXqX2hK5RF4
-2026-03-02 10:02:42 INFO [stream-registry] +cliente key=PXqX2hK5RF4 client=1 total=1
-2026-03-02 10:02:42 INFO [streamlink-runner] Iniciando stream: url=https://www.youtube.com/watch?v=PXqX2hK5RF4 args=--no-config --no-plugin-sideloading --loglevel info --stream-timeout 30 --retry-streams 1 --retry-max 3 --http-header User-Agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0 --stdout https://www.youtube.com/watch?v=PXqX2hK5RF4 720p,480p,best
-2026-03-02 10:02:42 INFO [SmartPlayer] Streamlink iniciado: key=PXqX2hK5RF4 PID=105
-2026-03-02 10:02:44 INFO [stream-registry] -cliente key=pYowbb2vLfI client=2 reason=disconnect restantes=2
-2026-03-02 10:02:44 WARN [streamlink-runner][stderr] [cli][error] Unable to open URL: https://www.youtube.com/youtubei/v1/player (400 Client Error: Bad Request for url: https://www.youtube.com/youtubei/v1/player?key=***REDACTED***)
-2026-03-02 10:02:44 INFO [SmartPlayer] Stream ativo, subscrevendo cliente: key=PXqX2hK5RF4
-2026-03-02 10:02:44 INFO [stream-registry] +cliente key=PXqX2hK5RF4 client=2 total=2
-2026-03-02 10:02:45 INFO [stream-registry] -cliente key=pYowbb2vLfI client=3 reason=disconnect restantes=1
-2026-03-02 10:02:45 INFO [SmartPlayer] Stream ativo, subscrevendo cliente: key=PXqX2hK5RF4
-2026-03-02 10:02:45 INFO [stream-registry] +cliente key=PXqX2hK5RF4 client=3 total=3
-2026-03-02 10:02:46 INFO [SmartPlayer] Streamlink primeiro byte: key=PXqX2hK5RF4 t=3817ms
-2026-03-02 10:02:47 INFO [stream-registry] -cliente key=pYowbb2vLfI client=4 reason=disconnect restantes=0
-2026-03-02 10:02:47 INFO [stream-registry] Sessao destruida: key=pYowbb2vLfI
-2026-03-02 10:02:47 INFO [streamlink] SIGTERM → PID 51
-2026-03-02 10:02:47 INFO [SmartPlayer] Stream ativo, subscrevendo cliente: key=PXqX2hK5RF4
-2026-03-02 10:02:47 INFO [stream-registry] +cliente key=PXqX2hK5RF4 client=4 total=4
-2026-03-02 10:02:47 INFO [streamlink-runner] Processo finalizado code=130 (encerramento solicitado)
-2026-03-02 10:02:47 INFO [streamlink] PID 51 encerrado
-2026-03-02 10:02:54 INFO [HTTP] GET / → 302 (0ms) [anon]
-2026-03-02 10:02:54 INFO [HTTP] GET /login → 200 (2ms) [anon]
-2026-03-02 10:03:25 INFO [HTTP] GET / → 302 (0ms) [anon]
-2026-03-02 10:03:25 INFO [HTTP] GET /login → 200 (1ms) [anon]
-2026-03-02 10:03:37 INFO [stream-registry] -cliente key=PXqX2hK5RF4 client=3 reason=disconnect restantes=3
-2026-03-02 10:03:42 INFO [stream-registry] -cliente key=PXqX2hK5RF4 client=4 reason=disconnect restantes=2
-2026-03-02 10:03:44 INFO [stream-registry] -cliente key=PXqX2hK5RF4 client=1 reason=disconnect restantes=1
-2026-03-02 10:03:46 INFO [stream-registry] -cliente key=PXqX2hK5RF4 client=2 reason=disconnect restantes=0
-2026-03-02 10:03:46 INFO [stream-registry] Sessao destruida: key=PXqX2hK5RF4
-2026-03-02 10:03:46 INFO [streamlink] SIGTERM → PID 105
-2026-03-02 10:03:47 INFO [streamlink-runner] Processo finalizado code=130 (encerramento solicitado)
-2026-03-02 10:03:47 INFO [streamlink] PID 105 encerrado
-2026-03-02 10:03:53 INFO [HTTP] GET / → 304 (1ms) [admin]
-2026-03-02 10:03:53 INFO [HTTP] GET /css/style.css → 304 (1ms) [admin]
-2026-03-02 10:03:53 INFO [HTTP] GET /js/app.js → 304 (1ms) [admin]
-2026-03-02 10:03:53 INFO [HTTP] GET /js/dashboard.js → 304 (2ms) [admin]
-2026-03-02 10:03:53 INFO [HTTP] GET /js/channels.js → 304 (1ms) [admin]
-2026-03-02 10:03:53 INFO [HTTP] GET /js/streams.js → 304 (1ms) [admin]
-2026-03-02 10:03:53 INFO [HTTP] GET /js/title-format.js → 304 (1ms) [admin]
-2026-03-02 10:03:53 INFO [HTTP] GET /js/playlists.js → 304 (1ms) [admin]
-2026-03-02 10:03:53 INFO [HTTP] GET /js/settings.js → 304 (0ms) [admin]
-2026-03-02 10:03:53 INFO [HTTP] GET /js/logs.js → 304 (0ms) [admin]
-2026-03-02 10:03:53 INFO [HTTP] GET /api/scheduler/status → 304 (1ms) [admin]
-2026-03-02 10:03:55 INFO [HTTP] GET / → 302 (0ms) [anon]
-2026-03-02 10:03:55 INFO [HTTP] GET /login → 200 (1ms) [anon]
+2026-03-02 11:26:15 INFO Servidor HTTP iniciado em http://0.0.0.0:8888
+2026-03-02 11:26:15 INFO [Scheduler] Iniciado com delay inicial (cache existente detectado).
+2026-03-02 11:26:15 INFO [Scheduler] Loop iniciado. Tick a cada 60s.
+2026-03-02 11:26:15 INFO [Scheduler] 1 stream(s) na janela pré-evento.
+2026-03-02 11:26:15 INFO [Scheduler] 1 stream(s) live em monitoramento.
+2026-03-02 11:26:15 INFO [Scheduler] Verificação alta frequência: 2 stream(s).
+2026-03-02 11:26:16 INFO [Scheduler] Estado: 1 live | 21 upcoming | 10 vod.
+2026-03-02 11:26:19 INFO [HTTP] GET / → 302 (4ms) [anon]
+2026-03-02 11:26:19 INFO [HTTP] GET /login → 200 (4ms) [anon]
+2026-03-02 11:26:29 INFO [HTTP] GET / → 302 (3ms) [anon]
+2026-03-02 11:26:29 INFO [HTTP] GET /login → 200 (2ms) [anon]
+2026-03-02 11:26:29 INFO [HTTP] GET /css/style.css → 200 (3ms) [anon]
+2026-03-02 11:26:29 INFO [HTTP] GET /favicon.ico → 404 (3ms) [anon]
+2026-03-02 11:26:35 INFO [HTTP] POST /api/auth/login → 200 (75ms) [admin]
+2026-03-02 11:26:35 INFO [HTTP] GET / → 200 (1ms) [admin]
+2026-03-02 11:26:36 INFO [HTTP] GET /css/style.css → 304 (2ms) [admin]
+2026-03-02 11:26:36 INFO [HTTP] GET /js/app.js → 200 (1ms) [admin]
+2026-03-02 11:26:36 INFO [HTTP] GET /js/dashboard.js → 200 (5ms) [admin]
+2026-03-02 11:26:36 INFO [HTTP] GET /js/streams.js → 200 (5ms) [admin]
+2026-03-02 11:26:36 INFO [HTTP] GET /js/channels.js → 200 (6ms) [admin]
+2026-03-02 11:26:36 INFO [HTTP] GET /js/playlists.js → 200 (5ms) [admin]
+2026-03-02 11:26:36 INFO [HTTP] GET /js/logs.js → 200 (4ms) [admin]
+2026-03-02 11:26:36 INFO [HTTP] GET /js/settings.js → 200 (4ms) [admin]
+2026-03-02 11:26:36 INFO [HTTP] GET /js/title-format.js → 200 (1ms) [admin]
+2026-03-02 11:26:36 INFO [HTTP] GET /api/scheduler/status → 200 (2ms) [admin]
+2026-03-02 11:26:36 INFO [HTTP] GET /api/channels → 200 (2ms) [admin]
+2026-03-02 11:26:36 INFO [HTTP] GET /api/streams → 200 (3ms) [admin]
+2026-03-02 11:26:36 INFO [HTTP] GET /api/config → 304 (2ms) [admin]
+2026-03-02 11:26:36 INFO [HTTP] GET /api/scheduler/status → 304 (1ms) [admin]
+2026-03-02 11:26:39 INFO [HTTP] GET /api/scheduler/status → 304 (1ms) [admin]
+2026-03-02 11:26:50 INFO [HTTP] GET / → 302 (1ms) [anon]
+2026-03-02 11:26:50 INFO [HTTP] GET /login → 200 (1ms) [anon]
+2026-03-02 11:26:53 INFO [HTTP] GET /live-proxy.m3u → 200 (2ms) [anon]
+2026-03-02 11:26:53 INFO [SmartPlayer] Init HLS: key=PXqX2hK5RF4 status=live
+2026-03-02 11:26:53 INFO [hls-session] Sessao criada: key=PXqX2hK5RF4 kind=live dir=/tmp/tubewranglerr-hls/PXqX2hK5RF4
+2026-03-02 11:26:53 INFO [streamlink-runner] Iniciando stream: url=https://www.youtube.com/watch?v=PXqX2hK5RF4 args=--no-config --no-plugin-sideloading --loglevel info --stream-timeout 30 --retry-streams 1 --retry-max 3 --http-header User-Agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0 --stdout https://www.youtube.com/watch?v=PXqX2hK5RF4 best
+2026-03-02 11:26:53 INFO [SmartPlayer] Streamlink HLS iniciado: key=PXqX2hK5RF4 PID=30
+2026-03-02 11:26:57 INFO [SmartPlayer] Streamlink primeiro byte HLS: key=PXqX2hK5RF4 t=4935ms
+2026-03-02 11:26:57 INFO [hls-runner] Iniciando ffmpeg HLS via pipe dir=/tmp/tubewranglerr-hls/PXqX2hK5RF4
+2026-03-02 11:26:58 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (5270ms) [anon]
+2026-03-02 11:26:58 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00000.ts → 200 (74ms) [anon]
+2026-03-02 11:26:59 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00001.ts → 200 (101ms) [anon]
+2026-03-02 11:27:03 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:27:03 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00002.ts → 200 (68ms) [anon]
+2026-03-02 11:27:08 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:27:08 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00003.ts → 200 (50ms) [anon]
+2026-03-02 11:27:13 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:27:13 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00004.ts → 200 (51ms) [anon]
+2026-03-02 11:27:18 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:27:20 INFO [HTTP] GET / → 302 (1ms) [anon]
+2026-03-02 11:27:20 INFO [HTTP] GET /login → 200 (1ms) [anon]
+2026-03-02 11:27:23 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:27:23 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00005.ts → 200 (47ms) [anon]
+2026-03-02 11:27:28 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (0ms) [anon]
+2026-03-02 11:27:28 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00006.ts → 200 (86ms) [anon]
+2026-03-02 11:27:33 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:27:33 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00007.ts → 200 (50ms) [anon]
+2026-03-02 11:27:39 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:27:39 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00008.ts → 200 (72ms) [anon]
+2026-03-02 11:27:43 INFO [HTTP] GET /live-proxy.m3u → 200 (1ms) [anon]
+2026-03-02 11:27:43 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:27:43 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00006.ts → 200 (70ms) [anon]
+2026-03-02 11:27:44 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (0ms) [anon]
+2026-03-02 11:27:44 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00009.ts → 200 (31ms) [anon]
+2026-03-02 11:27:44 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00007.ts → 200 (31ms) [anon]
+2026-03-02 11:27:45 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00008.ts → 200 (55ms) [anon]
+2026-03-02 11:27:48 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:27:49 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (0ms) [anon]
+2026-03-02 11:27:49 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00010.ts → 200 (25ms) [anon]
+2026-03-02 11:27:49 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00009.ts → 200 (4ms) [anon]
+2026-03-02 11:27:50 INFO [HTTP] GET / → 302 (1ms) [anon]
+2026-03-02 11:27:50 INFO [HTTP] GET /login → 200 (1ms) [anon]
+2026-03-02 11:27:53 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:27:54 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (0ms) [anon]
+2026-03-02 11:27:54 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00011.ts → 200 (5ms) [anon]
+2026-03-02 11:27:54 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00010.ts → 200 (5ms) [anon]
+2026-03-02 11:27:58 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:27:59 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:27:59 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00012.ts → 200 (58ms) [anon]
+2026-03-02 11:27:59 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00011.ts → 200 (3ms) [anon]
+2026-03-02 11:28:03 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:28:04 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (0ms) [anon]
+2026-03-02 11:28:04 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00013.ts → 200 (4ms) [anon]
+2026-03-02 11:28:04 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00012.ts → 200 (78ms) [anon]
+2026-03-02 11:28:08 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:28:09 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:28:09 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00014.ts → 200 (6ms) [anon]
+2026-03-02 11:28:09 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00013.ts → 200 (6ms) [anon]
+2026-03-02 11:28:13 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:28:14 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00014.ts → 200 (5ms) [anon]
+2026-03-02 11:28:14 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (0ms) [anon]
+2026-03-02 11:28:14 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00015.ts → 200 (80ms) [anon]
+2026-03-02 11:28:18 INFO [HTTP] GET /live-proxy.m3u → 200 (1ms) [anon]
+2026-03-02 11:28:18 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (0ms) [anon]
+2026-03-02 11:28:18 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00013.ts → 200 (44ms) [anon]
+2026-03-02 11:28:18 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00014.ts → 200 (67ms) [anon]
+2026-03-02 11:28:18 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:28:19 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00015.ts → 200 (54ms) [anon]
+2026-03-02 11:28:19 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (0ms) [anon]
+2026-03-02 11:28:19 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00015.ts → 200 (41ms) [anon]
+2026-03-02 11:28:19 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00016.ts → 200 (113ms) [anon]
+2026-03-02 11:28:20 INFO [HTTP] GET / → 302 (0ms) [anon]
+2026-03-02 11:28:20 INFO [HTTP] GET /login → 200 (1ms) [anon]
+2026-03-02 11:28:23 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:28:23 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:28:23 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00016.ts → 200 (49ms) [anon]
+2026-03-02 11:28:24 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00016.ts → 200 (5ms) [anon]
+2026-03-02 11:28:24 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:28:24 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00017.ts → 200 (4ms) [anon]
+2026-03-02 11:28:26 INFO [HTTP] GET /live-proxy.m3u → 200 (1ms) [anon]
+2026-03-02 11:28:26 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:28:27 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00014.ts → 200 (110ms) [anon]
+2026-03-02 11:28:27 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00015.ts → 200 (111ms) [anon]
+2026-03-02 11:28:28 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:28:28 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00016.ts → 200 (91ms) [anon]
+2026-03-02 11:28:28 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00017.ts → 200 (3ms) [anon]
+2026-03-02 11:28:29 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:28:29 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00017.ts → 200 (4ms) [anon]
+2026-03-02 11:28:29 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:28:30 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00018.ts → 200 (4ms) [anon]
+2026-03-02 11:28:32 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00017.ts → 200 (5ms) [anon]
+2026-03-02 11:28:32 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:28:33 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:28:33 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00018.ts → 200 (4ms) [anon]
+2026-03-02 11:28:34 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:28:34 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00018.ts → 200 (4ms) [anon]
+2026-03-02 11:28:35 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (0ms) [anon]
+2026-03-02 11:28:35 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00019.ts → 200 (63ms) [anon]
+2026-03-02 11:28:37 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00018.ts → 200 (43ms) [anon]
+2026-03-02 11:28:37 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (0ms) [anon]
+2026-03-02 11:28:38 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:28:38 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00019.ts → 200 (96ms) [anon]
+2026-03-02 11:28:39 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:28:39 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00019.ts → 200 (55ms) [anon]
+2026-03-02 11:28:40 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (0ms) [anon]
+2026-03-02 11:28:40 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00020.ts → 200 (59ms) [anon]
+2026-03-02 11:28:42 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00019.ts → 200 (83ms) [anon]
+2026-03-02 11:28:42 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (0ms) [anon]
+2026-03-02 11:28:43 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:28:43 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00020.ts → 200 (49ms) [anon]
+2026-03-02 11:28:44 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (0ms) [anon]
+2026-03-02 11:28:44 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00020.ts → 200 (55ms) [anon]
+2026-03-02 11:28:45 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:28:45 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00021.ts → 200 (4ms) [anon]
+2026-03-02 11:28:47 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00020.ts → 200 (44ms) [anon]
+2026-03-02 11:28:47 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:28:48 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00021.ts → 200 (3ms) [anon]
+2026-03-02 11:28:48 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (0ms) [anon]
+2026-03-02 11:28:49 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (0ms) [anon]
+2026-03-02 11:28:49 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00021.ts → 200 (4ms) [anon]
+2026-03-02 11:28:50 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:28:50 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00022.ts → 200 (4ms) [anon]
+2026-03-02 11:28:50 INFO [HTTP] GET / → 302 (0ms) [anon]
+2026-03-02 11:28:50 INFO [HTTP] GET /login → 200 (1ms) [anon]
+2026-03-02 11:28:50 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00023.ts → 200 (43ms) [anon]
+2026-03-02 11:28:52 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00021.ts → 200 (44ms) [anon]
+2026-03-02 11:28:52 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (0ms) [anon]
+2026-03-02 11:28:53 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00022.ts → 200 (4ms) [anon]
+2026-03-02 11:28:53 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:28:54 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (2ms) [anon]
+2026-03-02 11:28:54 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00022.ts → 200 (4ms) [anon]
+2026-03-02 11:28:55 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:28:55 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00024.ts → 200 (5ms) [anon]
+2026-03-02 11:28:57 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00022.ts → 200 (43ms) [anon]
+2026-03-02 11:28:58 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:28:58 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00023.ts → 200 (49ms) [anon]
+2026-03-02 11:28:58 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:28:59 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:28:59 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00023.ts → 200 (55ms) [anon]
+2026-03-02 11:29:00 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:29:00 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00025.ts → 200 (4ms) [anon]
+2026-03-02 11:29:02 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00023.ts → 200 (43ms) [anon]
+2026-03-02 11:29:03 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:29:03 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00024.ts → 200 (45ms) [anon]
+2026-03-02 11:29:03 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (0ms) [anon]
+2026-03-02 11:29:04 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:29:04 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00024.ts → 200 (5ms) [anon]
+2026-03-02 11:29:05 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:29:05 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00026.ts → 200 (4ms) [anon]
+2026-03-02 11:29:07 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00024.ts → 200 (45ms) [anon]
+2026-03-02 11:29:08 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:29:08 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00025.ts → 200 (50ms) [anon]
+2026-03-02 11:29:08 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:29:09 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:29:09 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00025.ts → 200 (64ms) [anon]
+2026-03-02 11:29:10 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:29:11 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00027.ts → 200 (5ms) [anon]
+2026-03-02 11:29:12 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00025.ts → 200 (43ms) [anon]
+2026-03-02 11:29:13 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:29:13 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00026.ts → 200 (50ms) [anon]
+2026-03-02 11:29:13 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:29:14 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (2ms) [anon]
+2026-03-02 11:29:14 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00026.ts → 200 (4ms) [anon]
+2026-03-02 11:29:16 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:29:16 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00028.ts → 200 (4ms) [anon]
+2026-03-02 11:29:17 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00026.ts → 200 (43ms) [anon]
+2026-03-02 11:29:18 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (0ms) [anon]
+2026-03-02 11:29:18 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00027.ts → 200 (44ms) [anon]
+2026-03-02 11:29:18 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (0ms) [anon]
+2026-03-02 11:29:19 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (0ms) [anon]
+2026-03-02 11:29:19 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00027.ts → 200 (4ms) [anon]
+2026-03-02 11:29:20 INFO [HTTP] GET / → 302 (1ms) [anon]
+2026-03-02 11:29:20 INFO [HTTP] GET /login → 200 (0ms) [anon]
+2026-03-02 11:29:21 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (0ms) [anon]
+2026-03-02 11:29:21 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00029.ts → 200 (3ms) [anon]
+2026-03-02 11:29:22 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00027.ts → 200 (46ms) [anon]
+2026-03-02 11:29:23 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (0ms) [anon]
+2026-03-02 11:29:23 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00028.ts → 200 (3ms) [anon]
+2026-03-02 11:29:23 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:29:24 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00028.ts → 200 (6ms) [anon]
+2026-03-02 11:29:24 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (0ms) [anon]
+2026-03-02 11:29:26 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:29:26 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00030.ts → 200 (4ms) [anon]
+2026-03-02 11:29:27 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00028.ts → 200 (46ms) [anon]
+2026-03-02 11:29:28 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:29:28 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00029.ts → 200 (4ms) [anon]
+2026-03-02 11:29:28 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:29:29 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00029.ts → 200 (4ms) [anon]
+2026-03-02 11:29:29 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:29:31 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (0ms) [anon]
+2026-03-02 11:29:31 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00031.ts → 200 (5ms) [anon]
+2026-03-02 11:29:32 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00029.ts → 200 (4ms) [anon]
+2026-03-02 11:29:33 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:29:33 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00030.ts → 200 (46ms) [anon]
+2026-03-02 11:29:34 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:29:34 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00030.ts → 200 (4ms) [anon]
+2026-03-02 11:29:34 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:29:37 INFO [HTTP] GET /api/stream/PXqX2hK5RF4/segment_00030.ts → 200 (46ms) [anon]
+2026-03-02 11:29:38 INFO [HTTP] GET /api/stream/PXqX2hK5RF4 → 200 (1ms) [anon]
+2026-03-02 11:29:51 INFO [HTTP] GET / → 302 (1ms) [anon]
+2026-03-02 11:29:51 INFO [HTTP] GET /login → 200 (1ms) [anon]
+2026-03-02 11:29:59 INFO [HTTP] GET /vod-proxy.m3u → 200 (2ms) [anon]
+2026-03-02 11:29:59 INFO [SmartPlayer] Init HLS: key=9O1fSxoDN7w status=none
+2026-03-02 11:29:59 INFO [hls-session] Sessao criada: key=9O1fSxoDN7w kind=vod dir=/tmp/tubewranglerr-hls/9O1fSxoDN7w
+2026-03-02 11:29:59 INFO [ytdlp-runner] Resolvendo URL (android) cookie=off: https://www.youtube.com/watch?v=9O1fSxoDN7w args=--user-agent Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0 --no-playlist --print %(url)s -f bestvideo[vcodec^=avc1]+bestaudio[ext=m4a]/best[ext=mp4]/best --extractor-args youtube:player_client=android https://www.youtube.com/watch?v=9O1fSxoDN7w
+2026-03-02 11:30:00 INFO [ytdlp-runner] 1 URL(s) resolvida(s) via android
+2026-03-02 11:30:00 INFO [hls-runner] Iniciando ffmpeg HLS (1 URL) dir=/tmp/tubewranglerr-hls/9O1fSxoDN7w
+2026-03-02 11:30:00 INFO [SmartPlayer] VOD HLS iniciado: key=9O1fSxoDN7w PID=78
+2026-03-02 11:30:07 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (8133ms) [anon]
+2026-03-02 11:30:13 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (0ms) [anon]
+2026-03-02 11:30:13 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00000.ts → 200 (7ms) [anon]
+2026-03-02 11:30:13 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00001.ts → 200 (2ms) [anon]
+2026-03-02 11:30:19 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (1ms) [anon]
+2026-03-02 11:30:19 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00002.ts → 200 (2ms) [anon]
+2026-03-02 11:30:21 INFO [HTTP] GET / → 302 (0ms) [anon]
+2026-03-02 11:30:21 INFO [HTTP] GET /login → 200 (1ms) [anon]
+2026-03-02 11:30:25 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (1ms) [anon]
+2026-03-02 11:30:25 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00003.ts → 200 (18ms) [anon]
+2026-03-02 11:30:25 INFO [hls-session] Sessao destruida: key=PXqX2hK5RF4 reason=idle-timeout
+2026-03-02 11:30:25 INFO [streamlink] SIGTERM → PID 30
+2026-03-02 11:30:26 INFO [streamlink-runner] Processo finalizado code=130 (encerramento solicitado)
+2026-03-02 11:30:26 INFO [streamlink] PID 30 encerrado
+2026-03-02 11:30:26 INFO [ffmpeg-hls-pipe] SIGTERM → PID 35
+2026-03-02 11:30:26 INFO [hls-runner] finalizado code=255
+2026-03-02 11:30:26 INFO [ffmpeg-hls-pipe] PID 35 encerrado
+2026-03-02 11:30:31 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (1ms) [anon]
+2026-03-02 11:30:31 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00004.ts → 200 (23ms) [anon]
+2026-03-02 11:30:37 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (1ms) [anon]
+2026-03-02 11:30:37 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00005.ts → 200 (5ms) [anon]
+2026-03-02 11:30:43 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (0ms) [anon]
+2026-03-02 11:30:43 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00006.ts → 200 (5ms) [anon]
+2026-03-02 11:30:47 INFO [HTTP] GET /vod-proxy.m3u → 200 (2ms) [anon]
+2026-03-02 11:30:47 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (2ms) [anon]
+2026-03-02 11:30:47 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00003.ts → 200 (14ms) [anon]
+2026-03-02 11:30:47 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00004.ts → 200 (3ms) [anon]
+2026-03-02 11:30:49 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00005.ts → 200 (2ms) [anon]
+2026-03-02 11:30:49 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (1ms) [anon]
+2026-03-02 11:30:49 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00007.ts → 200 (3ms) [anon]
+2026-03-02 11:30:51 INFO [HTTP] GET / → 302 (0ms) [anon]
+2026-03-02 11:30:51 INFO [HTTP] GET /login → 200 (1ms) [anon]
+2026-03-02 11:30:51 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00006.ts → 200 (2ms) [anon]
+2026-03-02 11:30:53 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (1ms) [anon]
+2026-03-02 11:30:55 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00007.ts → 200 (2ms) [anon]
+2026-03-02 11:30:55 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (1ms) [anon]
+2026-03-02 11:30:55 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00008.ts → 200 (19ms) [anon]
+2026-03-02 11:30:58 INFO [HTTP] GET /vod-proxy.m3u → 200 (1ms) [anon]
+2026-03-02 11:30:58 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (1ms) [anon]
+2026-03-02 11:30:58 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00005.ts → 200 (29ms) [anon]
+2026-03-02 11:30:58 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00006.ts → 200 (3ms) [anon]
+2026-03-02 11:30:59 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (1ms) [anon]
+2026-03-02 11:30:59 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00007.ts → 200 (1ms) [anon]
+2026-03-02 11:31:01 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00008.ts → 200 (7ms) [anon]
+2026-03-02 11:31:01 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (0ms) [anon]
+2026-03-02 11:31:02 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00009.ts → 200 (4ms) [anon]
+2026-03-02 11:31:02 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00008.ts → 200 (2ms) [anon]
+2026-03-02 11:31:04 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (1ms) [anon]
+2026-03-02 11:31:04 INFO [HTTP] GET /vod-proxy.m3u → 200 (1ms) [anon]
+2026-03-02 11:31:04 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (0ms) [anon]
+2026-03-02 11:31:04 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00006.ts → 200 (4ms) [anon]
+2026-03-02 11:31:04 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00007.ts → 200 (1ms) [anon]
+2026-03-02 11:31:05 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (1ms) [anon]
+2026-03-02 11:31:06 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00008.ts → 200 (3ms) [anon]
+2026-03-02 11:31:06 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00009.ts → 200 (2ms) [anon]
+2026-03-02 11:31:08 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (0ms) [anon]
+2026-03-02 11:31:08 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00010.ts → 200 (4ms) [anon]
+2026-03-02 11:31:08 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00009.ts → 200 (5ms) [anon]
+2026-03-02 11:31:09 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00009.ts → 200 (2ms) [anon]
+2026-03-02 11:31:10 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (1ms) [anon]
+2026-03-02 11:31:10 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (1ms) [anon]
+2026-03-02 11:31:11 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (1ms) [anon]
+2026-03-02 11:31:12 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00010.ts → 200 (1ms) [anon]
+2026-03-02 11:31:13 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00010.ts → 200 (2ms) [anon]
+2026-03-02 11:31:14 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (1ms) [anon]
+2026-03-02 11:31:14 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00011.ts → 200 (14ms) [anon]
+2026-03-02 11:31:14 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00010.ts → 200 (4ms) [anon]
+2026-03-02 11:31:15 INFO [Scheduler] 1 stream(s) na janela pré-evento.
+2026-03-02 11:31:15 INFO [Scheduler] 1 stream(s) live em monitoramento.
+2026-03-02 11:31:15 INFO [Scheduler] Verificação alta frequência: 2 stream(s).
+2026-03-02 11:31:16 INFO [Scheduler] Estado: 1 live | 21 upcoming | 10 vod.
+2026-03-02 11:31:16 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (1ms) [anon]
+2026-03-02 11:31:17 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (0ms) [anon]
+2026-03-02 11:31:17 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (1ms) [anon]
+2026-03-02 11:31:18 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00011.ts → 200 (10ms) [anon]
+2026-03-02 11:31:19 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00011.ts → 200 (11ms) [anon]
+2026-03-02 11:31:20 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (0ms) [anon]
+2026-03-02 11:31:20 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00012.ts → 200 (11ms) [anon]
+2026-03-02 11:31:20 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00011.ts → 200 (11ms) [anon]
+2026-03-02 11:31:21 INFO [HTTP] GET / → 302 (1ms) [anon]
+2026-03-02 11:31:21 INFO [HTTP] GET /login → 200 (1ms) [anon]
+2026-03-02 11:31:22 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (1ms) [anon]
+2026-03-02 11:31:23 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (1ms) [anon]
+2026-03-02 11:31:24 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (1ms) [anon]
+2026-03-02 11:31:24 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00012.ts → 200 (11ms) [anon]
+2026-03-02 11:31:25 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00012.ts → 200 (2ms) [anon]
+2026-03-02 11:31:26 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (1ms) [anon]
+2026-03-02 11:31:26 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00013.ts → 200 (13ms) [anon]
+2026-03-02 11:31:26 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00012.ts → 200 (11ms) [anon]
+2026-03-02 11:31:28 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (1ms) [anon]
+2026-03-02 11:31:29 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (0ms) [anon]
+2026-03-02 11:31:30 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (0ms) [anon]
+2026-03-02 11:31:31 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00013.ts → 200 (11ms) [anon]
+2026-03-02 11:31:31 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00013.ts → 200 (10ms) [anon]
+2026-03-02 11:31:32 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (1ms) [anon]
+2026-03-02 11:31:32 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00014.ts → 200 (11ms) [anon]
+2026-03-02 11:31:32 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00013.ts → 200 (2ms) [anon]
+2026-03-02 11:31:34 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (1ms) [anon]
+2026-03-02 11:31:35 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (0ms) [anon]
+2026-03-02 11:31:36 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (1ms) [anon]
+2026-03-02 11:31:37 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00014.ts → 200 (8ms) [anon]
+2026-03-02 11:31:38 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00014.ts → 200 (8ms) [anon]
+2026-03-02 11:31:38 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (1ms) [anon]
+2026-03-02 11:31:38 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00015.ts → 200 (12ms) [anon]
+2026-03-02 11:31:38 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00014.ts → 200 (7ms) [anon]
+2026-03-02 11:31:41 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (1ms) [anon]
+2026-03-02 11:31:41 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (1ms) [anon]
+2026-03-02 11:31:42 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (1ms) [anon]
+2026-03-02 11:31:43 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00015.ts → 200 (2ms) [anon]
+2026-03-02 11:31:43 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00015.ts → 200 (2ms) [anon]
+2026-03-02 11:31:44 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (0ms) [anon]
+2026-03-02 11:31:44 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00016.ts → 200 (21ms) [anon]
+2026-03-02 11:31:44 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00015.ts → 200 (2ms) [anon]
+2026-03-02 11:31:47 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (1ms) [anon]
+2026-03-02 11:31:47 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (0ms) [anon]
+2026-03-02 11:31:48 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (0ms) [anon]
+2026-03-02 11:31:49 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00016.ts → 200 (10ms) [anon]
+2026-03-02 11:31:50 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00016.ts → 200 (7ms) [anon]
+2026-03-02 11:31:50 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (0ms) [anon]
+2026-03-02 11:31:50 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00017.ts → 200 (11ms) [anon]
+2026-03-02 11:31:51 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00016.ts → 200 (7ms) [anon]
+2026-03-02 11:31:51 INFO [HTTP] GET / → 302 (1ms) [anon]
+2026-03-02 11:31:51 INFO [HTTP] GET /login → 200 (0ms) [anon]
+2026-03-02 11:31:53 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (0ms) [anon]
+2026-03-02 11:31:53 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (1ms) [anon]
+2026-03-02 11:31:54 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (1ms) [anon]
+2026-03-02 11:31:55 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00017.ts → 200 (8ms) [anon]
+2026-03-02 11:31:56 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00017.ts → 200 (2ms) [anon]
+2026-03-02 11:31:56 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (0ms) [anon]
+2026-03-02 11:31:56 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00018.ts → 200 (10ms) [anon]
+2026-03-02 11:31:57 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00017.ts → 200 (11ms) [anon]
+2026-03-02 11:31:59 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (0ms) [anon]
+2026-03-02 11:31:59 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (0ms) [anon]
+2026-03-02 11:32:00 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (1ms) [anon]
+2026-03-02 11:32:01 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00018.ts → 200 (3ms) [anon]
+2026-03-02 11:32:01 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00018.ts → 200 (10ms) [anon]
+2026-03-02 11:32:02 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00018.ts → 200 (7ms) [anon]
+2026-03-02 11:32:02 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (1ms) [anon]
+2026-03-02 11:32:03 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00019.ts → 200 (14ms) [anon]
+2026-03-02 11:32:05 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (0ms) [anon]
+2026-03-02 11:32:06 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (1ms) [anon]
+2026-03-02 11:32:06 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (1ms) [anon]
+2026-03-02 11:32:07 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00019.ts → 200 (1ms) [anon]
+2026-03-02 11:32:08 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00019.ts → 200 (7ms) [anon]
+2026-03-02 11:32:08 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00019.ts → 200 (7ms) [anon]
+2026-03-02 11:32:09 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (0ms) [anon]
+2026-03-02 11:32:09 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00020.ts → 200 (5ms) [anon]
+2026-03-02 11:32:11 INFO [SmartPlayer] Init HLS: key=gQKdGo8GRJw status=none
+2026-03-02 11:32:11 INFO [hls-session] Sessao criada: key=gQKdGo8GRJw kind=vod dir=/tmp/tubewranglerr-hls/gQKdGo8GRJw
+2026-03-02 11:32:11 INFO [ytdlp-runner] Resolvendo URL (android) cookie=off: https://www.youtube.com/watch?v=gQKdGo8GRJw args=--user-agent Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0 --no-playlist --print %(url)s -f bestvideo[vcodec^=avc1]+bestaudio[ext=m4a]/best[ext=mp4]/best --extractor-args youtube:player_client=android https://www.youtube.com/watch?v=gQKdGo8GRJw
+2026-03-02 11:32:11 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (1ms) [anon]
+2026-03-02 11:32:13 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (1ms) [anon]
+2026-03-02 11:32:13 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00020.ts → 200 (2ms) [anon]
+2026-03-02 11:32:13 INFO [ytdlp-runner] 1 URL(s) resolvida(s) via android
+2026-03-02 11:32:13 INFO [hls-runner] Iniciando ffmpeg HLS (1 URL) dir=/tmp/tubewranglerr-hls/gQKdGo8GRJw
+2026-03-02 11:32:13 INFO [SmartPlayer] VOD HLS iniciado: key=gQKdGo8GRJw PID=109
+2026-03-02 11:32:14 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00020.ts → 200 (22ms) [anon]
+2026-03-02 11:32:14 INFO [SmartPlayer] Init HLS: key=woXMZqd9j14 status=none
+2026-03-02 11:32:14 INFO [hls-session] Sessao criada: key=woXMZqd9j14 kind=vod dir=/tmp/tubewranglerr-hls/woXMZqd9j14
+2026-03-02 11:32:14 INFO [ytdlp-runner] Resolvendo URL (android) cookie=off: https://www.youtube.com/watch?v=woXMZqd9j14 args=--user-agent Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0 --no-playlist --print %(url)s -f bestvideo[vcodec^=avc1]+bestaudio[ext=m4a]/best[ext=mp4]/best --extractor-args youtube:player_client=android https://www.youtube.com/watch?v=woXMZqd9j14
+2026-03-02 11:32:15 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (1ms) [anon]
+2026-03-02 11:32:15 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00021.ts → 200 (6ms) [anon]
+2026-03-02 11:32:16 INFO [SmartPlayer] Init HLS: key=KruWlgjA2Us status=none
+2026-03-02 11:32:16 INFO [hls-session] Sessao criada: key=KruWlgjA2Us kind=vod dir=/tmp/tubewranglerr-hls/KruWlgjA2Us
+2026-03-02 11:32:16 INFO [ytdlp-runner] Resolvendo URL (android) cookie=off: https://www.youtube.com/watch?v=KruWlgjA2Us args=--user-agent Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0 --no-playlist --print %(url)s -f bestvideo[vcodec^=avc1]+bestaudio[ext=m4a]/best[ext=mp4]/best --extractor-args youtube:player_client=android https://www.youtube.com/watch?v=KruWlgjA2Us
+2026-03-02 11:32:16 INFO [ytdlp-runner] 1 URL(s) resolvida(s) via android
+2026-03-02 11:32:16 INFO [hls-runner] Iniciando ffmpeg HLS (1 URL) dir=/tmp/tubewranglerr-hls/woXMZqd9j14
+2026-03-02 11:32:16 INFO [SmartPlayer] VOD HLS iniciado: key=woXMZqd9j14 PID=118
+2026-03-02 11:32:18 INFO [ytdlp-runner] 1 URL(s) resolvida(s) via android
+2026-03-02 11:32:18 INFO [hls-runner] Iniciando ffmpeg HLS (1 URL) dir=/tmp/tubewranglerr-hls/KruWlgjA2Us
+2026-03-02 11:32:18 INFO [SmartPlayer] VOD HLS iniciado: key=KruWlgjA2Us PID=125
+2026-03-02 11:32:20 INFO [HTTP] GET /api/stream/gQKdGo8GRJw → 200 (9025ms) [anon]
+2026-03-02 11:32:21 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (1ms) [anon]
+2026-03-02 11:32:21 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00022.ts → 200 (12ms) [anon]
+2026-03-02 11:32:21 INFO [HTTP] GET / → 302 (1ms) [anon]
+2026-03-02 11:32:21 INFO [HTTP] GET /login → 200 (1ms) [anon]
+2026-03-02 11:32:22 INFO [HTTP] GET /api/stream/woXMZqd9j14 → 200 (8491ms) [anon]
+2026-03-02 11:32:26 INFO [HTTP] GET /api/stream/gQKdGo8GRJw → 200 (1ms) [anon]
+2026-03-02 11:32:26 INFO [HTTP] GET /api/stream/gQKdGo8GRJw/segment_00000.ts → 200 (8ms) [anon]
+2026-03-02 11:32:26 INFO [HTTP] GET /api/stream/gQKdGo8GRJw/segment_00001.ts → 200 (2ms) [anon]
+2026-03-02 11:32:27 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (1ms) [anon]
+2026-03-02 11:32:27 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00023.ts → 200 (13ms) [anon]
+2026-03-02 11:32:29 INFO [HTTP] GET /api/stream/woXMZqd9j14 → 200 (0ms) [anon]
+2026-03-02 11:32:29 INFO [HTTP] GET /api/stream/woXMZqd9j14/segment_00000.ts → 200 (4ms) [anon]
+2026-03-02 11:32:29 INFO [HTTP] GET /api/stream/woXMZqd9j14/segment_00001.ts → 200 (1ms) [anon]
+2026-03-02 11:32:30 INFO [HTTP] GET /api/stream/KruWlgjA2Us → 200 (14428ms) [anon]
+2026-03-02 11:32:32 INFO [HTTP] GET /api/stream/gQKdGo8GRJw → 200 (0ms) [anon]
+2026-03-02 11:32:32 INFO [HTTP] GET /api/stream/gQKdGo8GRJw/segment_00002.ts → 200 (14ms) [anon]
+2026-03-02 11:32:33 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (1ms) [anon]
+2026-03-02 11:32:33 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00024.ts → 200 (27ms) [anon]
+2026-03-02 11:32:35 INFO [HTTP] GET /api/stream/woXMZqd9j14 → 200 (0ms) [anon]
+2026-03-02 11:32:35 INFO [HTTP] GET /api/stream/woXMZqd9j14/segment_00002.ts → 200 (6ms) [anon]
+2026-03-02 11:32:37 INFO [HTTP] GET /api/stream/KruWlgjA2Us → 200 (1ms) [anon]
+2026-03-02 11:32:38 INFO [HTTP] GET /api/stream/gQKdGo8GRJw → 200 (0ms) [anon]
+2026-03-02 11:32:38 INFO [HTTP] GET /api/stream/gQKdGo8GRJw/segment_00003.ts → 200 (8ms) [anon]
+2026-03-02 11:32:39 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (0ms) [anon]
+2026-03-02 11:32:39 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00025.ts → 200 (12ms) [anon]
+2026-03-02 11:32:41 INFO [HTTP] GET /api/stream/woXMZqd9j14 → 200 (1ms) [anon]
+2026-03-02 11:32:41 INFO [HTTP] GET /api/stream/woXMZqd9j14/segment_00003.ts → 200 (18ms) [anon]
+2026-03-02 11:32:44 INFO [HTTP] GET /api/stream/gQKdGo8GRJw → 200 (1ms) [anon]
+2026-03-02 11:32:44 INFO [HTTP] GET /api/stream/gQKdGo8GRJw/segment_00004.ts → 200 (4ms) [anon]
+2026-03-02 11:32:45 INFO [HTTP] GET /api/stream/KruWlgjA2Us → 200 (0ms) [anon]
+2026-03-02 11:32:45 INFO [HTTP] GET /api/stream/KruWlgjA2Us/segment_00000.ts → 200 (6ms) [anon]
+2026-03-02 11:32:45 INFO [HTTP] GET /api/stream/KruWlgjA2Us/segment_00001.ts → 200 (2ms) [anon]
+2026-03-02 11:32:45 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (0ms) [anon]
+2026-03-02 11:32:45 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00026.ts → 200 (15ms) [anon]
+2026-03-02 11:32:47 INFO [HTTP] GET /api/stream/woXMZqd9j14 → 200 (0ms) [anon]
+2026-03-02 11:32:47 INFO [HTTP] GET /api/stream/woXMZqd9j14/segment_00004.ts → 200 (4ms) [anon]
+2026-03-02 11:32:50 INFO [HTTP] GET /api/stream/gQKdGo8GRJw → 200 (0ms) [anon]
+2026-03-02 11:32:51 INFO [HTTP] GET /api/stream/gQKdGo8GRJw/segment_00005.ts → 200 (7ms) [anon]
+2026-03-02 11:32:51 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (1ms) [anon]
+2026-03-02 11:32:51 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00027.ts → 200 (24ms) [anon]
+2026-03-02 11:32:52 INFO [HTTP] GET / → 302 (1ms) [anon]
+2026-03-02 11:32:52 INFO [HTTP] GET /login → 200 (1ms) [anon]
+2026-03-02 11:32:52 INFO [HTTP] GET /api/stream/KruWlgjA2Us → 200 (0ms) [anon]
+2026-03-02 11:32:53 INFO [HTTP] GET /api/stream/woXMZqd9j14 → 200 (0ms) [anon]
+2026-03-02 11:32:53 INFO [HTTP] GET /api/stream/woXMZqd9j14/segment_00005.ts → 200 (9ms) [anon]
+2026-03-02 11:32:57 INFO [HTTP] GET /api/stream/gQKdGo8GRJw → 200 (1ms) [anon]
+2026-03-02 11:32:57 INFO [HTTP] GET /api/stream/gQKdGo8GRJw/segment_00006.ts → 200 (5ms) [anon]
+2026-03-02 11:32:57 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (1ms) [anon]
+2026-03-02 11:32:58 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00028.ts → 200 (20ms) [anon]
+2026-03-02 11:32:59 INFO [HTTP] GET /api/stream/KruWlgjA2Us → 200 (1ms) [anon]
+2026-03-02 11:32:59 INFO [HTTP] GET /api/stream/KruWlgjA2Us/segment_00002.ts → 200 (8ms) [anon]
+2026-03-02 11:32:59 INFO [HTTP] GET /api/stream/woXMZqd9j14 → 200 (1ms) [anon]
+2026-03-02 11:32:59 INFO [HTTP] GET /api/stream/woXMZqd9j14/segment_00006.ts → 200 (3ms) [anon]
+2026-03-02 11:33:03 INFO [HTTP] GET /api/stream/gQKdGo8GRJw → 200 (0ms) [anon]
+2026-03-02 11:33:03 INFO [HTTP] GET /api/stream/gQKdGo8GRJw/segment_00007.ts → 200 (12ms) [anon]
+2026-03-02 11:33:04 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (1ms) [anon]
+2026-03-02 11:33:04 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00029.ts → 200 (14ms) [anon]
+2026-03-02 11:33:05 INFO [HTTP] GET /api/stream/woXMZqd9j14 → 200 (1ms) [anon]
+2026-03-02 11:33:05 INFO [HTTP] GET /api/stream/woXMZqd9j14/segment_00007.ts → 200 (4ms) [anon]
+2026-03-02 11:33:06 INFO [HTTP] GET /api/stream/KruWlgjA2Us → 200 (0ms) [anon]
+2026-03-02 11:33:06 INFO [HTTP] GET /api/stream/KruWlgjA2Us/segment_00003.ts → 200 (4ms) [anon]
+2026-03-02 11:33:09 INFO [HTTP] GET /api/stream/gQKdGo8GRJw → 200 (1ms) [anon]
+2026-03-02 11:33:09 INFO [HTTP] GET /api/stream/gQKdGo8GRJw/segment_00008.ts → 200 (7ms) [anon]
+2026-03-02 11:33:10 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (2ms) [anon]
+2026-03-02 11:33:10 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00030.ts → 200 (13ms) [anon]
+2026-03-02 11:33:11 INFO [HTTP] GET /api/stream/woXMZqd9j14 → 200 (1ms) [anon]
+2026-03-02 11:33:11 INFO [HTTP] GET /api/stream/woXMZqd9j14/segment_00008.ts → 200 (3ms) [anon]
+2026-03-02 11:33:13 INFO [HTTP] GET /api/stream/KruWlgjA2Us → 200 (1ms) [anon]
+2026-03-02 11:33:13 INFO [HTTP] GET /api/stream/KruWlgjA2Us/segment_00004.ts → 200 (12ms) [anon]
+2026-03-02 11:33:15 INFO [HTTP] GET /api/stream/gQKdGo8GRJw → 200 (0ms) [anon]
+2026-03-02 11:33:15 INFO [HTTP] GET /api/stream/gQKdGo8GRJw/segment_00009.ts → 200 (12ms) [anon]
+2026-03-02 11:33:16 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (0ms) [anon]
+2026-03-02 11:33:16 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00031.ts → 200 (4ms) [anon]
+2026-03-02 11:33:17 INFO [HTTP] GET /api/stream/woXMZqd9j14 → 200 (1ms) [anon]
+2026-03-02 11:33:17 INFO [HTTP] GET /api/stream/woXMZqd9j14/segment_00009.ts → 200 (11ms) [anon]
+2026-03-02 11:33:20 INFO [HTTP] GET /api/stream/KruWlgjA2Us → 200 (0ms) [anon]
+2026-03-02 11:33:20 INFO [HTTP] GET /api/stream/KruWlgjA2Us/segment_00005.ts → 200 (5ms) [anon]
+2026-03-02 11:33:22 INFO [HTTP] GET / → 302 (1ms) [anon]
+2026-03-02 11:33:22 INFO [HTTP] GET /login → 200 (1ms) [anon]
+2026-03-02 11:33:22 INFO [HTTP] GET /api/stream/9O1fSxoDN7w → 200 (1ms) [anon]
+2026-03-02 11:33:22 INFO [HTTP] GET /api/stream/9O1fSxoDN7w/segment_00032.ts → 200 (4ms) [anon]
+2026-03-02 11:33:23 INFO [HTTP] GET /api/stream/woXMZqd9j14 → 200 (1ms) [anon]
+2026-03-02 11:33:23 INFO [HTTP] GET /api/stream/woXMZqd9j14/segment_00010.ts → 200 (11ms) [anon]
+2026-03-02 11:33:48 INFO [HTTP] GET /upcoming-proxy.m3u → 200 (2ms) [anon]
+2026-03-02 11:33:48 INFO [SmartPlayer] Init HLS: key=-7biqdPkz0M status=upcoming
+2026-03-02 11:33:48 INFO [hls-session] Sessao criada: key=-7biqdPkz0M kind=upcoming dir=/tmp/tubewranglerr-hls/-7biqdPkz0M
+2026-03-02 11:33:48 INFO [hls-runner] Iniciando placeholder HLS dir=/tmp/tubewranglerr-hls/-7biqdPkz0M imageUrl=https://i.ytimg.com/vi/-7biqdPkz0M/maxresdefault_live.jpg
+2026-03-02 11:33:48 INFO [SmartPlayer] Placeholder HLS iniciado: key=-7biqdPkz0M PID=146
+2026-03-02 11:33:48 INFO [HTTP] GET /api/stream/-7biqdPkz0M → 200 (756ms) [anon]
+2026-03-02 11:33:48 INFO [HTTP] GET /api/stream/-7biqdPkz0M/segment_00002.ts → 200 (3ms) [anon]
+2026-03-02 11:33:48 INFO [HTTP] GET /api/stream/-7biqdPkz0M/segment_00003.ts → 200 (1ms) [anon]
+2026-03-02 11:33:48 INFO [HTTP] GET /api/stream/-7biqdPkz0M/segment_00004.ts → 200 (1ms) [anon]
+2026-03-02 11:33:48 INFO [HTTP] GET /api/stream/-7biqdPkz0M/segment_00005.ts → 200 (2ms) [anon]
+2026-03-02 11:33:50 INFO [HTTP] GET /api/stream/-7biqdPkz0M → 200 (0ms) [anon]
+2026-03-02 11:33:50 INFO [HTTP] GET /api/stream/-7biqdPkz0M/segment_00105.ts → 200 (2ms) [anon]
+2026-03-02 11:33:52 INFO [HTTP] GET / → 302 (0ms) [anon]
+2026-03-02 11:33:52 INFO [HTTP] GET /login → 200 (1ms) [anon]
+2026-03-02 11:33:57 INFO [HTTP] GET /upcoming-proxy.m3u → 200 (2ms) [anon]
+2026-03-02 11:33:57 INFO [HTTP] GET /api/stream/-7biqdPkz0M → 200 (1ms) [anon]
+2026-03-02 11:33:57 INFO [HTTP] GET /api/stream/-7biqdPkz0M/segment_00427.ts → 200 (1ms) [anon]
+2026-03-02 11:33:57 INFO [HTTP] GET /api/stream/-7biqdPkz0M/segment_00428.ts → 200 (1ms) [anon]
+2026-03-02 11:33:57 INFO [HTTP] GET /api/stream/-7biqdPkz0M/segment_00429.ts → 404 (1ms) [anon]
+2026-03-02 11:34:01 INFO [SmartPlayer] Init HLS: key=O6vgcSIxUUo status=upcoming
+2026-03-02 11:34:01 INFO [hls-session] Sessao criada: key=O6vgcSIxUUo kind=upcoming dir=/tmp/tubewranglerr-hls/O6vgcSIxUUo
+2026-03-02 11:34:01 INFO [hls-runner] Iniciando placeholder HLS dir=/tmp/tubewranglerr-hls/O6vgcSIxUUo imageUrl=https://i.ytimg.com/vi/O6vgcSIxUUo/maxresdefault_live.jpg
+2026-03-02 11:34:01 INFO [SmartPlayer] Placeholder HLS iniciado: key=O6vgcSIxUUo PID=185
+2026-03-02 11:34:02 INFO [HTTP] GET /api/stream/O6vgcSIxUUo → 200 (1259ms) [anon]
+2026-03-02 11:34:02 INFO [HTTP] GET /api/stream/O6vgcSIxUUo/segment_00001.ts → 200 (3ms) [anon]
+2026-03-02 11:34:02 INFO [HTTP] GET /api/stream/O6vgcSIxUUo/segment_00002.ts → 200 (2ms) [anon]
+2026-03-02 11:34:02 INFO [HTTP] GET /api/stream/O6vgcSIxUUo/segment_00003.ts → 200 (1ms) [anon]
+2026-03-02 11:34:03 INFO [HTTP] GET /upcoming-proxy.m3u → 200 (3ms) [anon]
+2026-03-02 11:34:03 INFO [HTTP] GET /api/stream/-7biqdPkz0M → 200 (0ms) [anon]
+2026-03-02 11:34:03 INFO [HTTP] GET /api/stream/-7biqdPkz0M/segment_00724.ts → 404 (1ms) [anon]
+2026-03-02 11:34:03 INFO [HTTP] GET /api/stream/O6vgcSIxUUo → 200 (1ms) [anon]
+2026-03-02 11:34:03 INFO [HTTP] GET /api/stream/O6vgcSIxUUo/segment_00016.ts → 200 (4ms) [anon]
+2026-03-02 11:34:03 INFO [HTTP] GET /api/stream/O6vgcSIxUUo/segment_00017.ts → 200 (1ms) [anon]
+2026-03-02 11:34:03 INFO [HTTP] GET /api/stream/O6vgcSIxUUo/segment_00018.ts → 200 (2ms) [anon]
+2026-03-02 11:34:03 INFO [HTTP] GET /api/stream/O6vgcSIxUUo/segment_00019.ts → 200 (1ms) [anon]
+2026-03-02 11:34:03 INFO [HTTP] GET /api/stream/O6vgcSIxUUo/segment_00020.ts → 200 (2ms) [anon]
+2026-03-02 11:34:03 INFO [HTTP] GET /api/stream/O6vgcSIxUUo/segment_00021.ts → 404 (2ms) [anon]
+2026-03-02 11:34:04 INFO [HTTP] GET /api/stream/O6vgcSIxUUo → 200 (1ms) [anon]
+2026-03-02 11:34:04 INFO [HTTP] GET /api/stream/O6vgcSIxUUo/segment_00080.ts → 200 (2ms) [anon]
+2026-03-02 11:34:05 INFO [HTTP] GET /api/stream/O6vgcSIxUUo → 200 (1ms) [anon]
+2026-03-02 11:34:05 INFO [hls-session] Sessao destruida: key=gQKdGo8GRJw reason=idle-timeout
+2026-03-02 11:34:05 INFO [ffmpeg-hls-urls] SIGTERM → PID 109
+2026-03-02 11:34:06 INFO [hls-runner] finalizado code=255
+2026-03-02 11:34:06 INFO [ffmpeg-hls-urls] PID 109 encerrado
+2026-03-02 11:34:06 INFO [hls-session] Sessao destruida: key=KruWlgjA2Us reason=idle-timeout
+2026-03-02 11:34:06 INFO [ffmpeg-hls-urls] SIGTERM → PID 125
+2026-03-02 11:34:06 INFO [hls-runner] finalizado code=255
+2026-03-02 11:34:06 INFO [ffmpeg-hls-urls] PID 125 encerrado
+2026-03-02 11:34:09 INFO [HTTP] GET /upcoming-proxy.m3u → 200 (2ms) [anon]
+2026-03-02 11:34:09 INFO [HTTP] GET /api/stream/-7biqdPkz0M → 200 (1ms) [anon]
+2026-03-02 11:34:09 INFO [HTTP] GET /api/stream/-7biqdPkz0M/segment_01012.ts → 200 (1ms) [anon]
+2026-03-02 11:34:09 INFO [HTTP] GET /api/stream/-7biqdPkz0M/segment_01013.ts → 404 (0ms) [anon]
+2026-03-02 11:34:11 INFO [HTTP] GET /api/stream/O6vgcSIxUUo → 200 (1ms) [anon]
+2026-03-02 11:34:11 INFO [HTTP] GET /api/stream/O6vgcSIxUUo/segment_00341.ts → 200 (2ms) [anon]
+2026-03-02 11:34:11 INFO [HTTP] GET /api/stream/O6vgcSIxUUo/segment_00342.ts → 200 (6ms) [anon]
+2026-03-02 11:34:11 INFO [HTTP] GET /api/stream/O6vgcSIxUUo/segment_00343.ts → 200 (4ms) [anon]
+2026-03-02 11:34:11 INFO [HTTP] GET /api/stream/O6vgcSIxUUo/segment_00344.ts → 404 (2ms) [anon]
+2026-03-02 11:34:13 INFO [SmartPlayer] Init HLS: key=TX4RfL29Cnc status=upcoming
+2026-03-02 11:34:13 INFO [hls-session] Sessao criada: key=TX4RfL29Cnc kind=upcoming dir=/tmp/tubewranglerr-hls/TX4RfL29Cnc
+2026-03-02 11:34:13 INFO [hls-runner] Iniciando placeholder HLS dir=/tmp/tubewranglerr-hls/TX4RfL29Cnc imageUrl=https://i.ytimg.com/vi/TX4RfL29Cnc/maxresdefault_live.jpg
+2026-03-02 11:34:13 INFO [SmartPlayer] Placeholder HLS iniciado: key=TX4RfL29Cnc PID=218
+2026-03-02 11:34:14 INFO [HTTP] GET /api/stream/TX4RfL29Cnc → 200 (1008ms) [anon]
+2026-03-02 11:34:14 INFO [HTTP] GET /api/stream/TX4RfL29Cnc/segment_00000.ts → 200 (2ms) [anon]
+2026-03-02 11:34:14 INFO [HTTP] GET /api/stream/TX4RfL29Cnc/segment_00001.ts → 200 (2ms) [anon]
+2026-03-02 11:34:14 INFO [HTTP] GET /api/stream/TX4RfL29Cnc/segment_00002.ts → 200 (2ms) [anon]
+2026-03-02 11:34:15 INFO [hls-session] Sessao destruida: key=9O1fSxoDN7w reason=idle-timeout
+2026-03-02 11:34:15 INFO [ffmpeg-hls-urls] SIGTERM → PID 78
+2026-03-02 11:34:16 INFO [hls-runner] finalizado code=255
+2026-03-02 11:34:16 INFO [ffmpeg-hls-urls] PID 78 encerrado
+2026-03-02 11:34:16 INFO [hls-session] Sessao destruida: key=woXMZqd9j14 reason=idle-timeout
+2026-03-02 11:34:16 INFO [ffmpeg-hls-urls] SIGTERM → PID 118
+2026-03-02 11:34:16 INFO [hls-runner] finalizado code=255
+2026-03-02 11:34:16 INFO [ffmpeg-hls-urls] PID 118 encerrado
+2026-03-02 11:34:16 INFO [HTTP] GET /api/stream/TX4RfL29Cnc → 200 (4ms) [anon]
+2026-03-02 11:34:16 INFO [HTTP] GET /api/stream/TX4RfL29Cnc/segment_00071.ts → 200 (3ms) [anon]
+2026-03-02 11:34:17 INFO [HTTP] GET /api/stream/TX4RfL29Cnc → 200 (1ms) [anon]
+2026-03-02 11:34:17 INFO [HTTP] GET /api/stream/TX4RfL29Cnc/segment_00115.ts → 200 (4ms) [anon]
+2026-03-02 11:34:18 INFO [HTTP] GET /api/stream/TX4RfL29Cnc/segment_00116.ts → 200 (5ms) [anon]
+2026-03-02 11:34:18 INFO [HTTP] GET /api/stream/TX4RfL29Cnc/segment_00117.ts → 200 (4ms) [anon]
+2026-03-02 11:34:18 INFO [HTTP] GET /api/stream/TX4RfL29Cnc/segment_00118.ts → 200 (2ms) [anon]
+2026-03-02 11:34:18 INFO [HTTP] GET /api/stream/TX4RfL29Cnc/segment_00119.ts → 404 (0ms) [anon]
+2026-03-02 11:34:20 INFO [HTTP] GET /api/stream/TX4RfL29Cnc → 200 (0ms) [anon]
+2026-03-02 11:34:22 INFO [HTTP] GET / → 302 (0ms) [anon]
+2026-03-02 11:34:22 INFO [HTTP] GET /login → 200 (1ms) [anon]
+2026-03-02 11:34:26 INFO [SmartPlayer] Init HLS: key=gNYzjbMPhBU status=upcoming
+2026-03-02 11:34:26 INFO [hls-session] Sessao criada: key=gNYzjbMPhBU kind=upcoming dir=/tmp/tubewranglerr-hls/gNYzjbMPhBU
+2026-03-02 11:34:26 INFO [hls-runner] Iniciando placeholder HLS dir=/tmp/tubewranglerr-hls/gNYzjbMPhBU imageUrl=https://i.ytimg.com/vi/gNYzjbMPhBU/maxresdefault_live.jpg
+2026-03-02 11:34:26 INFO [SmartPlayer] Placeholder HLS iniciado: key=gNYzjbMPhBU PID=256
+2026-03-02 11:34:27 INFO [HTTP] GET /api/stream/gNYzjbMPhBU → 200 (1268ms) [anon]
+2026-03-02 11:34:27 INFO [HTTP] GET /api/stream/gNYzjbMPhBU/segment_00000.ts → 200 (1ms) [anon]
+2026-03-02 11:34:27 INFO [HTTP] GET /api/stream/gNYzjbMPhBU/segment_00001.ts → 200 (3ms) [anon]
+2026-03-02 11:34:29 INFO [HTTP] GET /api/stream/gNYzjbMPhBU → 200 (1ms) [anon]
+2026-03-02 11:34:29 INFO [HTTP] GET /api/stream/gNYzjbMPhBU/segment_00054.ts → 200 (1ms) [anon]
+2026-03-02 11:34:53 INFO [HTTP] GET / → 302 (1ms) [anon]
+2026-03-02 11:34:53 INFO [HTTP] GET /login → 200 (4ms) [anon]
+2026-03-02 11:34:55 INFO [hls-session] Sessao destruida: key=-7biqdPkz0M reason=idle-timeout
+2026-03-02 11:34:55 INFO [ffmpeg-hls-placeholder] SIGTERM → PID 146
+2026-03-02 11:35:00 WARN [ffmpeg-hls-placeholder] SIGTERM timeout (5000ms) → SIGKILL PID 146
+2026-03-02 11:35:00 INFO [hls-placeholder] finalizado code=null
+2026-03-02 11:35:00 INFO [ffmpeg-hls-placeholder] PID 146 encerrado
+2026-03-02 11:35:05 INFO [hls-session] Sessao destruida: key=O6vgcSIxUUo reason=idle-timeout
+2026-03-02 11:35:05 INFO [ffmpeg-hls-placeholder] SIGTERM → PID 185
+2026-03-02 11:35:10 WARN [ffmpeg-hls-placeholder] SIGTERM timeout (5000ms) → SIGKILL PID 185
+2026-03-02 11:35:10 INFO [hls-placeholder] finalizado code=null
+2026-03-02 11:35:10 INFO [ffmpeg-hls-placeholder] PID 185 encerrado
+2026-03-02 11:35:10 INFO [hls-session] Sessao destruida: key=TX4RfL29Cnc reason=idle-timeout
+2026-03-02 11:35:10 INFO [ffmpeg-hls-placeholder] SIGTERM → PID 218
+2026-03-02 11:35:15 INFO [hls-session] Sessao destruida: key=gNYzjbMPhBU reason=idle-timeout
+2026-03-02 11:35:15 INFO [ffmpeg-hls-placeholder] SIGTERM → PID 256
+2026-03-02 11:35:15 WARN [ffmpeg-hls-placeholder] SIGTERM timeout (5000ms) → SIGKILL PID 218
+2026-03-02 11:35:15 INFO [hls-placeholder] finalizado code=null
+2026-03-02 11:35:15 INFO [ffmpeg-hls-placeholder] PID 218 encerrado
+2026-03-02 11:35:20 WARN [ffmpeg-hls-placeholder] SIGTERM timeout (5000ms) → SIGKILL PID 256
+2026-03-02 11:35:20 INFO [hls-placeholder] finalizado code=null
+2026-03-02 11:35:20 INFO [ffmpeg-hls-placeholder] PID 256 encerrado
+2026-03-02 11:35:23 INFO [HTTP] GET / → 302 (0ms) [anon]
+2026-03-02 11:35:23 INFO [HTTP] GET /login → 200 (0ms) [anon]

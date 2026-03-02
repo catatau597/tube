@@ -126,3 +126,11 @@
   - `upcoming`: placeholder passou a ser entregue em HLS.
   - `DOC/PROMPT_HLS_MIGRATION.md`: prompt/desenho da arquitetura implementada para referencia da branch.
   - Validação: `docker compose build` concluido com sucesso apos a migração.
+
+- ✅ Ajuste de bootstrap e janela HLS na branch `hls` (`2026-03-02`):
+  - `smart-player`: manifesto HLS agora so e liberado apos buffer minimo de 4 segmentos, reduzindo inicio prematuro na borda do live/VOD/upcoming.
+  - `smart-player`: playlists `live` e `upcoming` passam a anunciar `#EXT-X-START` com deslocamento negativo para incentivar o player a entrar alguns segundos atras do topo ao vivo.
+  - `hls-runner`: `live` recebeu janela maior (`hls_list_size=15`) e `hls_delete_threshold=15`, preservando mais historico para clientes em momentos diferentes.
+  - `hls-runner`: `vod` deixou de usar pacing de entrada (`-re`) e passou a manter janela maior sem `delete_segments`, reduzindo demora de abertura e microtravadas do cliente inicial.
+  - `hls-runner`: `upcoming` trocou o placeholder baseado em `loop` de filtro por entrada de imagem em loop real (`-loop 1 -framerate 1 -re`), evitando que os numeros de segmentos disparem e causem `404`/pulo de canal.
+  - Validação: `docker compose build` concluido com sucesso apos os ajustes.

@@ -25,6 +25,11 @@ interface CacheFile {
 
 const INIT_STREAM_TIMEOUT_MS = 15_000;
 const MANIFEST_WAIT_POLL_MS = 250;
+const MIN_READY_SEGMENTS: Record<HlsSession['kind'], number> = {
+  live: 4,
+  vod: 4,
+  upcoming: 4,
+};
 
 export class SmartPlayer {
   private readonly statePath = path.join('/data', 'state_cache.json');
@@ -321,7 +326,7 @@ export class SmartPlayer {
       dir: session.dir,
       urls,
       userAgent: yt.userAgent,
-      paceInput: true,
+      paceInput: false,
       onExit: () => {
         void hlsSessionRegistry.destroy(session.key, 'vod-exit');
       },
@@ -332,10 +337,14 @@ export class SmartPlayer {
 
   private async readPlaylist(session: HlsSession, videoId: string): Promise<string> {
     const startedAt = Date.now();
+    const minSegments = MIN_READY_SEGMENTS[session.kind] ?? 3;
     while (Date.now() - startedAt < INIT_STREAM_TIMEOUT_MS) {
       if (fs.existsSync(session.manifestPath) && fs.statSync(session.manifestPath).size > 0) {
         const raw = fs.readFileSync(session.manifestPath, 'utf-8');
-        return this.rewritePlaylist(raw, videoId);
+        const segmentLines = this.extractSegmentLines(raw);
+        if (segmentLines.length >= minSegments) {
+          return this.rewritePlaylist(raw, videoId, session.kind);
+        }
       }
       await new Promise(resolve => setTimeout(resolve, MANIFEST_WAIT_POLL_MS));
     }
@@ -343,9 +352,9 @@ export class SmartPlayer {
     throw new Error(`Manifesto HLS indisponivel para key=${videoId}`);
   }
 
-  private rewritePlaylist(playlist: string, videoId: string): string {
+  private rewritePlaylist(playlist: string, videoId: string, kind: HlsSession['kind']): string {
     const prefix = `/api/stream/${encodeURIComponent(videoId)}`;
-    return playlist
+    const rewritten = playlist
       .split('\n')
       .map((line) => {
         const trimmed = line.trim();
@@ -353,6 +362,29 @@ export class SmartPlayer {
         return `${prefix}/${trimmed}`;
       })
       .join('\n');
+
+    if (kind === 'live' || kind === 'upcoming') {
+      return this.injectStartOffset(rewritten, -8);
+    }
+
+    return rewritten;
+  }
+
+  private injectStartOffset(playlist: string, offsetSeconds: number): string {
+    if (playlist.includes('#EXT-X-START:')) return playlist;
+    const lines = playlist.split('\n');
+    const insertAt = lines.findIndex((line) => line.startsWith('#EXT-X-TARGETDURATION'));
+    if (insertAt === -1) return playlist;
+
+    lines.splice(insertAt + 1, 0, `#EXT-X-START:TIME-OFFSET=${offsetSeconds.toFixed(1)},PRECISE=NO`);
+    return lines.join('\n');
+  }
+
+  private extractSegmentLines(playlist: string): string[] {
+    return playlist
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => !!line && !line.startsWith('#'));
   }
 
   private clearSessionDir(dir: string): void {

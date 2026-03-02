@@ -2,21 +2,47 @@ import { ManagedProcess } from './process-manager';
 import { logger } from '../core/logger';
 
 const HLS_SEGMENT_TIME = '2';
-const HLS_LIST_SIZE = '8';
-const HLS_FLAGS = 'delete_segments+append_list+omit_endlist+independent_segments+program_date_time+temp_file';
 
-function commonHlsOutputArgs(): string[] {
-  return [
+interface HlsOutputOptions {
+  listSize: string;
+  flags: string;
+  deleteThreshold?: string;
+}
+
+const LIVE_HLS_OPTIONS: HlsOutputOptions = {
+  listSize: '15',
+  flags: 'delete_segments+append_list+omit_endlist+independent_segments+program_date_time+temp_file',
+  deleteThreshold: '15',
+};
+
+const VOD_HLS_OPTIONS: HlsOutputOptions = {
+  listSize: '24',
+  flags: 'append_list+omit_endlist+independent_segments+temp_file',
+};
+
+const UPCOMING_HLS_OPTIONS: HlsOutputOptions = {
+  listSize: '20',
+  flags: 'append_list+omit_endlist+independent_segments+program_date_time+temp_file',
+};
+
+function commonHlsOutputArgs(options: HlsOutputOptions): string[] {
+  const args = [
     '-f', 'hls',
     '-hls_time', HLS_SEGMENT_TIME,
-    '-hls_list_size', HLS_LIST_SIZE,
-    '-hls_flags', HLS_FLAGS,
+    '-hls_list_size', options.listSize,
+    '-hls_flags', options.flags,
     '-hls_allow_cache', '0',
     '-hls_segment_type', 'mpegts',
     '-start_number', '0',
     '-hls_segment_filename', 'segment_%05d.ts',
     'index.m3u8',
   ];
+
+  if (options.deleteThreshold) {
+    args.splice(args.length - 2, 0, '-hls_delete_threshold', options.deleteThreshold);
+  }
+
+  return args;
 }
 
 function attachFfmpegLogging(tag: string, proc: ManagedProcess, onExit: (code: number | null) => void): ManagedProcess {
@@ -60,7 +86,7 @@ export function startPipeToHls(params: PipeHlsParams): ManagedProcess {
     '-map', '0:v:0?',
     '-map', '0:a:0?',
     '-c', 'copy',
-    ...commonHlsOutputArgs(),
+    ...commonHlsOutputArgs(LIVE_HLS_OPTIONS),
   ];
 
   logger.info(`[hls-runner] Iniciando ffmpeg HLS via pipe dir=${dir}`);
@@ -106,7 +132,7 @@ export function startUrlsToHls(params: UrlHlsParams): ManagedProcess {
     args.push(...inputPrefix, '-i', urls[0], '-map', '0:v:0?', '-map', '0:a:0?');
   }
 
-  args.push('-c', 'copy', ...commonHlsOutputArgs());
+  args.push('-c', 'copy', ...commonHlsOutputArgs(VOD_HLS_OPTIONS));
 
   logger.info(`[hls-runner] Iniciando ffmpeg HLS (${urls.length} URL${urls.length > 1 ? 's' : ''}) dir=${dir}`);
   const proc = new ManagedProcess('ffmpeg-hls-urls', 'ffmpeg', args, {
@@ -152,11 +178,14 @@ export function startPlaceholderToHls(params: PlaceholderHlsParams): ManagedProc
   }
 
   const filterComplex =
-    `[0:v]scale=854:480,loop=-1:1:0${drawtext.length ? ',' + drawtext.join(',') : ''}[v]`;
+    `[0:v]scale=854:480${drawtext.length ? ',' + drawtext.join(',') : ''}[v]`;
 
   const args = [
     ...extraFlags,
     '-loglevel', 'error',
+    '-fflags', '+genpts',
+    '-loop', '1',
+    '-framerate', '1',
     '-re',
     '-user_agent', userAgent,
     '-i', imageUrl,
@@ -170,7 +199,7 @@ export function startPlaceholderToHls(params: PlaceholderHlsParams): ManagedProc
     '-pix_fmt', 'yuv420p',
     '-tune', 'stillimage',
     '-c:a', 'aac', '-b:a', '24k', '-ac', '1',
-    ...commonHlsOutputArgs(),
+    ...commonHlsOutputArgs(UPCOMING_HLS_OPTIONS),
   ];
 
   logger.info(`[hls-runner] Iniciando placeholder HLS dir=${dir} imageUrl=${imageUrl}`);
