@@ -19,6 +19,7 @@ interface ResolveAttempt {
 }
 
 type ResolveFailureKind = 'exit' | 'no-url' | 'timeout';
+export type YtDlpResolveStrategy = 'auto' | 'android-first' | 'web-first' | 'default-first';
 
 class ResolveAttemptError extends Error {
   constructor(
@@ -42,12 +43,39 @@ function hasArg(flags: string[], shortName: string, longName: string): boolean {
   return false;
 }
 
-function buildAttempts(cookieFile: string | null, extraFlags: string[]): ResolveAttempt[] {
+function buildAttempts(
+  cookieFile: string | null,
+  extraFlags: string[],
+  strategy: YtDlpResolveStrategy,
+): ResolveAttempt[] {
   const hasExtractorArgs = hasArg(extraFlags, '', '--extractor-args');
   if (hasExtractorArgs) return [{ label: 'profile' }];
 
+  if (strategy === 'android-first') {
+    return [
+      { label: 'android', extractorArgs: 'youtube:player_client=android' },
+      { label: 'web', extractorArgs: 'youtube:player_client=web' },
+      { label: 'default' },
+    ];
+  }
+
+  if (strategy === 'web-first') {
+    return [
+      { label: 'web', extractorArgs: 'youtube:player_client=web' },
+      { label: 'default' },
+      { label: 'android', extractorArgs: 'youtube:player_client=android' },
+    ];
+  }
+
+  if (strategy === 'default-first') {
+    return [
+      { label: 'default' },
+      { label: 'web', extractorArgs: 'youtube:player_client=web' },
+      { label: 'android', extractorArgs: 'youtube:player_client=android' },
+    ];
+  }
+
   if (!cookieFile) {
-    // Sem cookie, android costuma evitar o bloqueio/challenge do player web.
     return [
       { label: 'android', extractorArgs: 'youtube:player_client=android' },
       { label: 'web', extractorArgs: 'youtube:player_client=web' },
@@ -77,8 +105,9 @@ export async function resolveYtDlpUrls(
   userAgent: string,
   cookieFile: string | null,
   extraFlags: string[] = [],
+  strategy: YtDlpResolveStrategy = 'auto',
 ): Promise<string[]> {
-  const attempts = buildAttempts(cookieFile, extraFlags);
+  const attempts = buildAttempts(cookieFile, extraFlags, strategy);
   const hasCustomFormat = hasArg(extraFlags, '-f', '--format');
   const hasCustomExtractorArgs = hasArg(extraFlags, '', '--extractor-args');
 

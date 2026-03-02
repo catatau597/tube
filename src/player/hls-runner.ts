@@ -1,34 +1,18 @@
 import { ManagedProcess } from './process-manager';
 import { logger } from '../core/logger';
-
-const HLS_SEGMENT_TIME = '2';
+import { HlsStartProfileValues } from '../core/hls-start-profile-schema';
 
 interface HlsOutputOptions {
+  segmentDuration: string;
   listSize: string;
   flags: string;
   deleteThreshold?: string;
 }
 
-const LIVE_HLS_OPTIONS: HlsOutputOptions = {
-  listSize: '15',
-  flags: 'delete_segments+append_list+omit_endlist+independent_segments+program_date_time+temp_file',
-  deleteThreshold: '15',
-};
-
-const VOD_HLS_OPTIONS: HlsOutputOptions = {
-  listSize: '24',
-  flags: 'append_list+omit_endlist+independent_segments+temp_file',
-};
-
-const UPCOMING_HLS_OPTIONS: HlsOutputOptions = {
-  listSize: '20',
-  flags: 'append_list+omit_endlist+independent_segments+program_date_time+temp_file',
-};
-
 function commonHlsOutputArgs(options: HlsOutputOptions): string[] {
   const args = [
     '-f', 'hls',
-    '-hls_time', HLS_SEGMENT_TIME,
+    '-hls_time', options.segmentDuration,
     '-hls_list_size', options.listSize,
     '-hls_flags', options.flags,
     '-hls_allow_cache', '0',
@@ -46,6 +30,33 @@ function commonHlsOutputArgs(options: HlsOutputOptions): string[] {
   );
 
   return args;
+}
+
+function liveOptions(profile: HlsStartProfileValues): HlsOutputOptions {
+  return {
+    segmentDuration: String(profile.segmentDurationSeconds),
+    listSize: String(profile.maxSegments),
+    flags: 'delete_segments+append_list+omit_endlist+independent_segments+program_date_time+temp_file',
+    deleteThreshold: profile.deleteThreshold == null ? undefined : String(profile.deleteThreshold),
+  };
+}
+
+function vodOptions(profile: HlsStartProfileValues): HlsOutputOptions {
+  return {
+    segmentDuration: String(profile.segmentDurationSeconds),
+    listSize: String(profile.maxSegments),
+    flags: 'append_list+omit_endlist+independent_segments+temp_file',
+    deleteThreshold: profile.deleteThreshold == null ? undefined : String(profile.deleteThreshold),
+  };
+}
+
+function upcomingOptions(profile: HlsStartProfileValues): HlsOutputOptions {
+  return {
+    segmentDuration: String(profile.segmentDurationSeconds),
+    listSize: String(profile.maxSegments),
+    flags: 'append_list+omit_endlist+independent_segments+program_date_time+temp_file',
+    deleteThreshold: profile.deleteThreshold == null ? undefined : String(profile.deleteThreshold),
+  };
 }
 
 function attachFfmpegLogging(tag: string, proc: ManagedProcess, onExit: (code: number | null) => void): ManagedProcess {
@@ -75,12 +86,13 @@ function attachFfmpegLogging(tag: string, proc: ManagedProcess, onExit: (code: n
 
 export interface PipeHlsParams {
   dir: string;
+  profile: HlsStartProfileValues;
   extraFfmpegFlags?: string[];
   onExit: (code: number | null) => void;
 }
 
 export function startPipeToHls(params: PipeHlsParams): ManagedProcess {
-  const { dir, extraFfmpegFlags = [], onExit } = params;
+  const { dir, profile, extraFfmpegFlags = [], onExit } = params;
   const args = [
     ...extraFfmpegFlags,
     '-loglevel', 'error',
@@ -89,7 +101,7 @@ export function startPipeToHls(params: PipeHlsParams): ManagedProcess {
     '-map', '0:v:0?',
     '-map', '0:a:0?',
     '-c', 'copy',
-    ...commonHlsOutputArgs(LIVE_HLS_OPTIONS),
+    ...commonHlsOutputArgs(liveOptions(profile)),
   ];
 
   logger.info(`[hls-runner] Iniciando ffmpeg HLS via pipe dir=${dir}`);
@@ -102,6 +114,7 @@ export function startPipeToHls(params: PipeHlsParams): ManagedProcess {
 
 export interface UrlHlsParams {
   dir: string;
+  profile: HlsStartProfileValues;
   urls: string[];
   userAgent: string;
   extraFfmpegFlags?: string[];
@@ -110,7 +123,7 @@ export interface UrlHlsParams {
 }
 
 export function startUrlsToHls(params: UrlHlsParams): ManagedProcess {
-  const { dir, urls, userAgent, extraFfmpegFlags = [], paceInput = false, onExit } = params;
+  const { dir, profile, urls, userAgent, extraFfmpegFlags = [], paceInput = false, onExit } = params;
   const inputPrefix = [
     ...(paceInput ? ['-re'] : []),
     '-user_agent', userAgent,
@@ -135,7 +148,7 @@ export function startUrlsToHls(params: UrlHlsParams): ManagedProcess {
     args.push(...inputPrefix, '-i', urls[0], '-map', '0:v:0?', '-map', '0:a:0?');
   }
 
-  args.push('-c', 'copy', ...commonHlsOutputArgs(VOD_HLS_OPTIONS));
+  args.push('-c', 'copy', ...commonHlsOutputArgs(vodOptions(profile)));
 
   logger.info(`[hls-runner] Iniciando ffmpeg HLS (${urls.length} URL${urls.length > 1 ? 's' : ''}) dir=${dir}`);
   const proc = new ManagedProcess('ffmpeg-hls-urls', 'ffmpeg', args, {
@@ -147,6 +160,7 @@ export function startUrlsToHls(params: UrlHlsParams): ManagedProcess {
 
 export interface PlaceholderHlsParams {
   dir: string;
+  profile: HlsStartProfileValues;
   imageUrl: string;
   userAgent: string;
   extraFlags?: string[];
@@ -165,7 +179,7 @@ function escapeFfmpegText(text: string): string {
 }
 
 export function startPlaceholderToHls(params: PlaceholderHlsParams): ManagedProcess {
-  const { dir, imageUrl, userAgent, extraFlags = [], textLine1, textLine2, onExit } = params;
+  const { dir, profile, imageUrl, userAgent, extraFlags = [], textLine1, textLine2, onExit } = params;
   const fontPath = '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf';
   const drawtext: string[] = [];
 
@@ -202,7 +216,7 @@ export function startPlaceholderToHls(params: PlaceholderHlsParams): ManagedProc
     '-pix_fmt', 'yuv420p',
     '-tune', 'stillimage',
     '-c:a', 'aac', '-b:a', '24k', '-ac', '1',
-    ...commonHlsOutputArgs(UPCOMING_HLS_OPTIONS),
+    ...commonHlsOutputArgs(upcomingOptions(profile)),
   ];
 
   logger.info(`[hls-runner] Iniciando placeholder HLS dir=${dir} imageUrl=${imageUrl}`);

@@ -40,6 +40,32 @@ const TOOL_TEMPLATES = {
   'ffmpeg':     '',
 };
 
+const START_PROFILE_GROUP_TITLES = {
+  hls: 'HLS',
+  start: 'Start',
+  recovery: 'Recovery',
+  source: 'Source',
+};
+
+const START_PROFILE_KIND_META = {
+  live: 'Live',
+  vod: 'VOD',
+  upcoming: 'Upcoming',
+};
+
+const START_PROFILE_KEY_SUFFIX = {
+  segmentDurationSeconds: 'SEGMENT_DURATION',
+  maxSegments: 'MAX_SEGMENTS',
+  deleteThreshold: 'DELETE_THRESHOLD',
+  idleTimeoutSeconds: 'IDLE_TIMEOUT_SECONDS',
+  manifestTimeoutMs: 'MANIFEST_TIMEOUT_MS',
+  minReadySegments: 'MIN_READY_SEGMENTS',
+  startOffsetSeconds: 'START_OFFSET_SECONDS',
+  liveSourcePriority: 'LIVE_SOURCE_PRIORITY',
+  vodResolveStrategy: 'VOD_RESOLVE_STRATEGY',
+  vodPaceInput: 'VOD_PACE_INPUT',
+};
+
 /* ---------- helpers ---------- */
 
 function textFromError(payload, fallback) {
@@ -61,6 +87,11 @@ function escapeAttr(str) {
 function escapeHtml(str) {
   return String(str || '')
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function cfgValue(config, defaults, key) {
+  if (config && Object.prototype.hasOwnProperty.call(config, key) && String(config[key]) !== '') return String(config[key]);
+  return String((defaults && defaults[key]) ?? '');
 }
 
 function toggleSwitch(name, checked) {
@@ -161,6 +192,135 @@ function buildUAOptions(userAgents) {
 function buildCookieOptions(cookies) {
   return `<option value="">(sem cookie)</option>` +
     cookies.map((c) => `<option value="${c.id}">${escapeHtml(c.name)} (${escapeHtml(c.provider)})</option>`).join('');
+}
+
+function startSettingName(kind, fieldKey) {
+  return `HLS_START_${kind.toUpperCase()}_${START_PROFILE_KEY_SUFFIX[fieldKey]}`;
+}
+
+function renderStartProfileField(kind, field, config, schema) {
+  if (field.appliesTo !== 'all' && !field.appliesTo.includes(kind)) return '';
+  const name = startSettingName(kind, field.key);
+  const value = cfgValue(config, schema.defaults, name);
+
+  if (field.type === 'boolean') {
+    const checked = value === 'true';
+    return `
+      <label class="start-profile-field">
+        <span>${field.label}</span>
+        ${toggleSwitch(name, checked)}
+        <small>${field.help}</small>
+      </label>`;
+  }
+
+  if (field.type === 'select') {
+    const options = (field.options || []).map((option) =>
+      `<option value="${option.value}" ${option.value === value ? 'selected' : ''}>${escapeHtml(option.label)}</option>`
+    ).join('');
+    return `
+      <label class="start-profile-field">
+        <span>${field.label}</span>
+        <select name="${name}" data-start-advanced="${kind}">${options}</select>
+        <small>${field.help}</small>
+      </label>`;
+  }
+
+  return `
+    <label class="start-profile-field">
+      <span>${field.label}</span>
+      <input
+        name="${name}"
+        type="number"
+        value="${escapeAttr(value)}"
+        ${field.min != null ? `min="${field.min}"` : ''}
+        ${field.max != null ? `max="${field.max}"` : ''}
+        ${field.step != null ? `step="${field.step}"` : ''}
+        ${field.allowEmpty ? 'placeholder="vazio = preset"' : ''}
+        data-start-advanced="${kind}"
+      />
+      <small>${field.help}</small>
+    </label>`;
+}
+
+function renderStartProfileGroups(kind, config, schema) {
+  return Object.entries(START_PROFILE_GROUP_TITLES).map(([groupKey, title]) => {
+    const fields = schema.fields
+      .filter((field) => field.group === groupKey)
+      .map((field) => renderStartProfileField(kind, field, config, schema))
+      .filter(Boolean)
+      .join('');
+    if (!fields) return '';
+    return `
+      <div class="card" style="margin:0.75rem 0 0 0;padding:0.9rem">
+        <h4 style="margin:0 0 0.6rem 0">${title}</h4>
+        <div class="settings-grid">${fields}</div>
+      </div>`;
+  }).join('');
+}
+
+function renderStartProfileSection(kind, config, schema) {
+  const prefix = `HLS_START_${kind.toUpperCase()}`;
+  const inheritName = `${prefix}_INHERIT_GLOBAL`;
+  const profileName = `${prefix}_PROFILE`;
+  const inherit = cfgValue(config, schema.defaults, inheritName) === 'true';
+  const profile = cfgValue(config, schema.defaults, profileName);
+
+  return `
+    <details class="card" open style="margin-top:1rem" data-start-kind="${kind}">
+      <summary style="cursor:pointer;font-weight:600">${START_PROFILE_KIND_META[kind]}</summary>
+      <div style="display:flex;flex-wrap:wrap;gap:1rem;margin-top:1rem;align-items:center">
+        <label style="display:flex;align-items:center;gap:0.5rem">
+          ${toggleSwitch(inheritName, inherit)}
+          <span>Herdar preset global</span>
+        </label>
+        <label>
+          Preset
+          <select name="${profileName}" data-start-profile-select="${kind}">
+            <option value="aggressive" ${profile === 'aggressive' ? 'selected' : ''}>Agressivo</option>
+            <option value="moderate" ${profile === 'moderate' ? 'selected' : ''}>Moderado</option>
+            <option value="conservative" ${profile === 'conservative' ? 'selected' : ''}>Conservador</option>
+            <option value="custom" ${profile === 'custom' ? 'selected' : ''}>Custom</option>
+          </select>
+        </label>
+      </div>
+      <p style="opacity:0.65;font-size:0.82rem;margin-top:0.75rem" data-start-state-note="${kind}">
+        ${inherit
+          ? 'Usando preset global. Campos avancados ficam armazenados, mas nao entram em vigor ate desabilitar a heranca.'
+          : profile === 'custom'
+            ? 'Modo custom ativo. Os valores abaixo serao usados exatamente como configurados.'
+            : 'Usando preset local. Campos avancados ficam armazenados para futura troca para custom.'}
+      </p>
+      <div data-start-advanced-wrap="${kind}">
+        ${renderStartProfileGroups(kind, config, schema)}
+      </div>
+    </details>`;
+}
+
+function startProfilesCard(config, schema) {
+  const globalProfile = cfgValue(config, schema.defaults, 'HLS_START_GLOBAL_PROFILE');
+  return `
+    <div class="card">
+      <h3>Perfis de Start</h3>
+      <p style="opacity:0.7;font-size:0.85rem">
+        Controla bootstrap HLS, janela, timeout inicial e estrategia de entrada por tipo de playlist.
+      </p>
+      <form id="hls-start-profiles-form">
+        <div class="settings-grid">
+          <label>
+            Preset Global
+            <select name="HLS_START_GLOBAL_PROFILE">
+              <option value="aggressive" ${globalProfile === 'aggressive' ? 'selected' : ''}>Agressivo</option>
+              <option value="moderate" ${globalProfile === 'moderate' ? 'selected' : ''}>Moderado</option>
+              <option value="conservative" ${globalProfile === 'conservative' ? 'selected' : ''}>Conservador</option>
+            </select>
+          </label>
+        </div>
+        ${Object.keys(START_PROFILE_KIND_META).map((kind) => renderStartProfileSection(kind, config, schema)).join('')}
+        <div style="margin-top:1rem">
+          <button type="submit" class="action-btn">💾 Salvar Perfis de Start</button>
+        </div>
+      </form>
+    </div>`;
 }
 
 /* ---------- configFields por seção ---------- */
@@ -385,7 +545,7 @@ function settingsPayloadBySection(section, formData) {
 
 /* ---------- API section HTML ---------- */
 
-function apiCards(config, cookies, userAgents, toolProfiles) {
+function apiCards(config, cookies, userAgents, toolProfiles, startProfileSchema) {
   return `
     <div class="card">
       <h3>API Key YouTube</h3>
@@ -421,6 +581,8 @@ function apiCards(config, cookies, userAgents, toolProfiles) {
         <tbody id="ua-tbody">${renderUARows(userAgents)}</tbody>
       </table>
     </div>
+
+    ${startProfileSchema ? startProfilesCard(config, startProfileSchema) : ''}
 
     <div class="card">
       <h3>⚙️ Perfis de Ferramenta</h3>
@@ -496,6 +658,7 @@ export async function renderSettings(root, api, hash = '/settings') {
     let cookies = [];
     let userAgents = [];
     let toolProfiles = [];
+    let startProfileSchema = null;
     let cacheHTML = '';
 
     try {
@@ -506,6 +669,7 @@ export async function renderSettings(root, api, hash = '/settings') {
           requestJson(api, '/api/credentials',    undefined, 'Falha ao carregar UAs.'),
           requestJson(api, '/api/tool-profiles',  undefined, 'Falha ao carregar perfis.'),
         ]);
+        startProfileSchema = await requestJson(api, '/api/config/hls-start-profiles/schema', undefined, '');
       } else if (isCache) {
         config   = await requestJson(api, '/api/config', undefined, 'Falha ao carregar config.');
         cacheHTML = await cacheCards(api, config);
@@ -530,7 +694,7 @@ export async function renderSettings(root, api, hash = '/settings') {
             </div>
           </form>` : ''}
       </div>
-      ${isApi   ? apiCards(config, cookies, userAgents, toolProfiles) : ''}
+      ${isApi   ? apiCards(config, cookies, userAgents, toolProfiles, startProfileSchema) : ''}
       ${isCache ? cacheHTML : ''}
       ${section === 'tech' ? `
         <div class="card">
@@ -691,6 +855,54 @@ export async function renderSettings(root, api, hash = '/settings') {
       attachToolProfileListeners();
     }
 
+    function collectStartProfilesPayload(form, schema) {
+      const formData = new FormData(form);
+      const payload = {
+        HLS_START_GLOBAL_PROFILE: String(formData.get('HLS_START_GLOBAL_PROFILE') || 'moderate'),
+      };
+
+      Object.keys(START_PROFILE_KIND_META).forEach((kind) => {
+        const prefix = `HLS_START_${kind.toUpperCase()}`;
+        const inheritInput = form.querySelector(`[name="${prefix}_INHERIT_GLOBAL"]`);
+        payload[`${prefix}_INHERIT_GLOBAL`] = inheritInput?.checked ? 'true' : 'false';
+        payload[`${prefix}_PROFILE`] = String(formData.get(`${prefix}_PROFILE`) || 'moderate');
+
+        schema.fields.forEach((field) => {
+          if (field.appliesTo !== 'all' && !field.appliesTo.includes(kind)) return;
+          const name = startSettingName(kind, field.key);
+          const input = form.querySelector(`[name="${name}"]`);
+          if (!input) return;
+          if (field.type === 'boolean') {
+            payload[name] = input.checked ? 'true' : 'false';
+            return;
+          }
+          payload[name] = String(formData.get(name) ?? '').trim();
+        });
+      });
+
+      return payload;
+    }
+
+    function applyStartProfileUiState() {
+      Object.keys(START_PROFILE_KIND_META).forEach((kind) => {
+        const inherit = document.querySelector(`[name="HLS_START_${kind.toUpperCase()}_INHERIT_GLOBAL"]`)?.checked;
+        const preset = document.querySelector(`[name="HLS_START_${kind.toUpperCase()}_PROFILE"]`)?.value;
+        const customActive = !inherit && preset === 'custom';
+        document.querySelectorAll(`[data-start-advanced="${kind}"]`).forEach((node) => {
+          node.disabled = !customActive;
+          node.closest('.start-profile-field')?.style.setProperty('opacity', customActive ? '1' : '0.65');
+        });
+        const note = document.querySelector(`[data-start-state-note="${kind}"]`);
+        if (note) {
+          note.textContent = inherit
+            ? 'Usando preset global. Campos avancados ficam armazenados, mas nao entram em vigor ate desabilitar a heranca.'
+            : customActive
+              ? 'Modo custom ativo. Os valores abaixo serao usados exatamente como configurados.'
+              : 'Usando preset local. Campos avancados ficam armazenados para futura troca para custom.';
+        }
+      });
+    }
+
     /* --- Cookie listeners --- */
     function attachCookieListeners() {
       document.querySelectorAll('[data-cookie-toggle]').forEach((btn) => {
@@ -848,6 +1060,27 @@ export async function renderSettings(root, api, hash = '/settings') {
     attachCookieListeners();
     attachUAListeners();
     attachToolProfileListeners();
+    applyStartProfileUiState();
+
+    document.querySelectorAll('[data-start-profile-select], input[name$="_INHERIT_GLOBAL"]').forEach((node) => {
+      node.addEventListener('change', applyStartProfileUiState);
+    });
+
+    document.getElementById('hls-start-profiles-form')?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (!startProfileSchema) return;
+      try {
+        await requestJson(api, '/api/config', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(collectStartProfilesPayload(event.target, startProfileSchema)),
+        }, 'Falha ao salvar perfis de start.');
+        setNotice('success', 'Perfis de start salvos.');
+        await load();
+      } catch (err) {
+        setNotice('error', err instanceof Error ? err.message : 'Falha ao salvar perfis de start.');
+      }
+    });
 
     /* --- API Key --- */
     document.getElementById('api-key-save')?.addEventListener('click', async () => {

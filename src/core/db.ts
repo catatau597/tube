@@ -3,6 +3,7 @@ import path from 'path';
 import Database from 'better-sqlite3';
 import bcrypt from 'bcrypt';
 import { logger } from './logger';
+import { getHlsStartDefaultSettings } from './hls-start-profile-schema';
 
 const DATA_DIR = '/data';
 const DB_PATH = path.join(DATA_DIR, 'tubewranglerr.db');
@@ -44,6 +45,7 @@ const DEFAULT_SETTINGS: Record<string, string> = {
   TUBEWRANGLERR_URL: '',
   PROXY_THUMBNAIL_CACHE_HOURS: '24',
   LOG_LEVEL: 'INFO',
+  ...getHlsStartDefaultSettings(),
 };
 
 export function getDefaultSettings(): Record<string, string> {

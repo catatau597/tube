@@ -1,12 +1,14 @@
 import fs from 'fs';
 import path from 'path';
 import { logger } from '../core/logger';
+import { HlsStartProfileValues } from '../core/hls-start-profile-schema';
 
 export type HlsSessionKind = 'live' | 'vod' | 'upcoming';
 
 export interface HlsSession {
   key: string;
   kind: HlsSessionKind;
+  profile: HlsStartProfileValues;
   dir: string;
   manifestPath: string;
   createdAt: number;
@@ -16,7 +18,6 @@ export interface HlsSession {
 }
 
 const HLS_ROOT_DIR = path.join('/tmp', 'tubewranglerr-hls');
-const SESSION_IDLE_TIMEOUT_MS = 45_000;
 const SESSION_SWEEP_INTERVAL_MS = 10_000;
 
 function sanitizeKey(key: string): string {
@@ -43,7 +44,7 @@ class HlsSessionRegistry {
     return this.sessions.get(key);
   }
 
-  create(key: string, kind: HlsSessionKind): HlsSession {
+  create(key: string, kind: HlsSessionKind, profile: HlsStartProfileValues): HlsSession {
     const existing = this.sessions.get(key);
     if (existing) return existing;
 
@@ -54,6 +55,7 @@ class HlsSessionRegistry {
     const session: HlsSession = {
       key,
       kind,
+      profile,
       dir,
       manifestPath: path.join(dir, 'index.m3u8'),
       createdAt: Date.now(),
@@ -108,7 +110,7 @@ class HlsSessionRegistry {
 
     for (const session of this.sessions.values()) {
       if (session.destroyed) continue;
-      if (now - session.lastAccessAt >= SESSION_IDLE_TIMEOUT_MS) idleKeys.push(session.key);
+      if (now - session.lastAccessAt >= session.profile.idleTimeoutSeconds * 1000) idleKeys.push(session.key);
     }
 
     for (const key of idleKeys) {

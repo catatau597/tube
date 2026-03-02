@@ -5,6 +5,7 @@ import {
   resetConfig,
 } from "../../core/config-manager";
 import { getDefaultSettings } from "../../core/db";
+import { getHlsStartSchema } from "../../core/hls-start-profile-schema";
 import { logger } from "../../core/logger";
 
 /**
@@ -15,6 +16,10 @@ export function createConfigRouter(): Router {
 
   router.get("/", (_request, response) => {
     response.json(getAllConfig());
+  });
+
+  router.get("/hls-start-profiles/schema", (_request, response) => {
+    response.json(getHlsStartSchema());
   });
 
   router.patch("/", (request, response) => {

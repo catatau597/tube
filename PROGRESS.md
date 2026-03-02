@@ -152,3 +152,16 @@
   - `smart-player`: VOD voltou a usar pacing em tempo real (`-re`) e passou a publicar `#EXT-X-START` negativo para que clientes novos entrem perto do ponto atual da sessao.
   - `smart-player`: manifest bootstrap de VOD ficou em 3 segmentos para reduzir a demora inicial sem soltar manifesto cedo demais.
   - Validação: `docker compose build` concluido com sucesso apos a correção.
+
+- ✅ Perfis avancados de bootstrap HLS na branch `hls` (`2026-03-02`):
+  - `src/core/hls-start-profile-schema.ts`: novo schema central com nomes exatos dos campos, presets `aggressive/moderate/conservative`, defaults flat persistidos e metadata para UI.
+  - `src/player/hls-advanced-config.ts`: novo resolvedor do perfil efetivo por playlist (`live`, `vod`, `upcoming`) com heranca do preset global e modo `custom`.
+  - `src/core/db.ts`: defaults de `settings` expandidos com `HLS_START_*`.
+  - `src/api/routes/config.ts`: novo endpoint `GET /api/config/hls-start-profiles/schema` para alimentar a UI administrativa.
+  - `src/player/hls-session-registry.ts`: sessao HLS passa a carregar snapshot do perfil e usar `idleTimeoutSeconds` por playlist no sweep.
+  - `src/player/hls-runner.ts`: flags HLS do ffmpeg passaram a usar `segmentDurationSeconds`, `maxSegments` e `deleteThreshold` do perfil.
+  - `src/player/smart-player.ts`: bootstrap do manifesto, `#EXT-X-START`, ordem de fonte live, estrategia de resolve VOD e pacing VOD passaram a consumir o perfil efetivo da sessao.
+  - `src/player/ytdlp-runner.ts`: suporte a estrategia configuravel de resolve (`auto`, `android-first`, `web-first`, `default-first`).
+  - `public/js/settings.js`: novo card `Perfis de Start` em `API & Credenciais`, com preset global, override por playlist e campos avancados agrupados em `HLS`, `Start`, `Recovery` e `Source`.
+  - `IMPLANTATION_HLS_ADVANCE.md`: especificacao objetiva da implantacao, incluindo estrutura JSON conceitual, chaves flat persistidas, tabelas de presets e decisoes/correcoes alem do plano.
+  - Validação: `docker compose build` concluido com sucesso apos a implantacao.

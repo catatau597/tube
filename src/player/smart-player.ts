@@ -3,6 +3,7 @@ import path from 'path';
 import { Request, Response } from 'express';
 import { ToolProfileManager, ResolvedToolProfile } from './tool-profile-manager';
 import { hlsSessionRegistry, HlsSession } from './hls-session-registry';
+import { resolveHlsProfile } from './hls-advanced-config';
 import { startPlaceholderToHls, startPipeToHls, startUrlsToHls } from './hls-runner';
 import { startStreamlink } from './streamlink-runner';
 import { resolveYtDlpUrls } from './ytdlp-runner';
@@ -23,13 +24,8 @@ interface CacheFile {
   streams: Record<string, CacheStream>;
 }
 
-const INIT_STREAM_TIMEOUT_MS = 15_000;
+const SESSION_INIT_TIMEOUT_MS = 45_000;
 const MANIFEST_WAIT_POLL_MS = 250;
-const MIN_READY_SEGMENTS: Record<HlsSession['kind'], number> = {
-  live: 4,
-  vod: 3,
-  upcoming: 4,
-};
 
 export class SmartPlayer {
   private readonly statePath = path.join('/data', 'state_cache.json');
@@ -106,7 +102,7 @@ export class SmartPlayer {
     await Promise.race([
       initPromise,
       new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error(`Init timeout key=${key}`)), INIT_STREAM_TIMEOUT_MS);
+        setTimeout(() => reject(new Error(`Init timeout key=${key}`)), SESSION_INIT_TIMEOUT_MS);
       }),
     ]);
   }
@@ -125,7 +121,7 @@ export class SmartPlayer {
       if (!stream) {
         const placeholder = getConfig('PLACEHOLDER_IMAGE_URL');
         if (!placeholder) throw new Error('Stream nao encontrado e sem placeholder configurado');
-        const session = hlsSessionRegistry.create(videoId, 'upcoming');
+        const session = hlsSessionRegistry.create(videoId, 'upcoming', resolveHlsProfile('upcoming'));
         createdSession = true;
         this.spawnPlaceholderSession(session, placeholder, ffProfile, undefined, undefined);
         return;
@@ -135,20 +131,20 @@ export class SmartPlayer {
         const texts = this.readTextsCache()[videoId] ?? { line1: '', line2: '' };
         const image = stream.thumbnailUrl || getConfig('PLACEHOLDER_IMAGE_URL');
         if (!image) throw new Error('Sem thumbnail/placeholder para stream upcoming');
-        const session = hlsSessionRegistry.create(videoId, 'upcoming');
+        const session = hlsSessionRegistry.create(videoId, 'upcoming', resolveHlsProfile('upcoming'));
         createdSession = true;
         this.spawnPlaceholderSession(session, image, ffProfile, texts.line1, texts.line2);
         return;
       }
 
       if (stream.status === 'live' && this.isGenuinelyLive(stream)) {
-        const session = hlsSessionRegistry.create(videoId, 'live');
+        const session = hlsSessionRegistry.create(videoId, 'live', resolveHlsProfile('live'));
         createdSession = true;
         this.spawnLiveSession(session, stream.watchUrl, slProfile, ytProfile);
         return;
       }
 
-      const session = hlsSessionRegistry.create(videoId, 'vod');
+      const session = hlsSessionRegistry.create(videoId, 'vod', resolveHlsProfile('vod'));
       createdSession = true;
       await this.spawnVodSession(session, stream.watchUrl, ytProfile);
     } catch (err) {
@@ -174,6 +170,7 @@ export class SmartPlayer {
 
     procRef = startPlaceholderToHls({
       dir: session.dir,
+      profile: session.profile,
       imageUrl,
       userAgent: ff.userAgent,
       textLine1,
@@ -208,6 +205,7 @@ export class SmartPlayer {
       if (state.writer) return state.writer;
       state.writer = startPipeToHls({
         dir: session.dir,
+        profile: session.profile,
         onExit: () => {
           if (!state.replacing) {
             void hlsSessionRegistry.destroy(session.key, 'live-writer-exit');
@@ -223,6 +221,12 @@ export class SmartPlayer {
       if (state.writer) await state.writer.kill(3000);
       state.replacing = false;
     });
+
+    if (session.profile.liveSourcePriority === 'yt-dlp-first') {
+      logger.info(`[SmartPlayer] Live HLS configurado para yt-dlp primeiro: key=${session.key}`);
+      void this.switchLiveSessionToYtDlp(session, url, yt, state);
+      return;
+    }
 
     const startedAt = Date.now();
     state.source = startStreamlink({
@@ -279,11 +283,12 @@ export class SmartPlayer {
       }
       this.clearSessionDir(session.dir);
 
-      const urls = await resolveYtDlpUrls(url, yt.userAgent, yt.cookieFile, yt.flags);
+      const urls = await resolveYtDlpUrls(url, yt.userAgent, yt.cookieFile, yt.flags, session.profile.vodResolveStrategy);
       if (!hlsSessionRegistry.has(session.key)) return;
 
       state.writer = startUrlsToHls({
         dir: session.dir,
+        profile: session.profile,
         urls,
         userAgent: yt.userAgent,
         paceInput: false,
@@ -315,7 +320,7 @@ export class SmartPlayer {
     url: string,
     yt: ResolvedToolProfile,
   ): Promise<void> {
-    const urls = await resolveYtDlpUrls(url, yt.userAgent, yt.cookieFile, yt.flags);
+    const urls = await resolveYtDlpUrls(url, yt.userAgent, yt.cookieFile, yt.flags, session.profile.vodResolveStrategy);
     let procRef: ManagedProcess | null = null;
 
     hlsSessionRegistry.setKillFn(session.key, async () => {
@@ -324,9 +329,10 @@ export class SmartPlayer {
 
     procRef = startUrlsToHls({
       dir: session.dir,
+      profile: session.profile,
       urls,
       userAgent: yt.userAgent,
-      paceInput: true,
+      paceInput: session.profile.vodPaceInput,
       onExit: (code) => {
         if (code === 0) {
           this.finalizeVodManifest(session.manifestPath);
@@ -342,13 +348,13 @@ export class SmartPlayer {
 
   private async readPlaylist(session: HlsSession, videoId: string): Promise<string> {
     const startedAt = Date.now();
-    const minSegments = MIN_READY_SEGMENTS[session.kind] ?? 3;
-    while (Date.now() - startedAt < INIT_STREAM_TIMEOUT_MS) {
+    const minSegments = session.profile.minReadySegments;
+    while (Date.now() - startedAt < session.profile.manifestTimeoutMs) {
       if (fs.existsSync(session.manifestPath) && fs.statSync(session.manifestPath).size > 0) {
         const raw = fs.readFileSync(session.manifestPath, 'utf-8');
         const segmentLines = this.extractSegmentLines(raw);
         if (segmentLines.length >= minSegments) {
-          return this.rewritePlaylist(raw, videoId, session.kind);
+          return this.rewritePlaylist(raw, videoId, session);
         }
       }
       await new Promise(resolve => setTimeout(resolve, MANIFEST_WAIT_POLL_MS));
@@ -357,7 +363,7 @@ export class SmartPlayer {
     throw new Error(`Manifesto HLS indisponivel para key=${videoId}`);
   }
 
-  private rewritePlaylist(playlist: string, videoId: string, kind: HlsSession['kind']): string {
+  private rewritePlaylist(playlist: string, videoId: string, session: HlsSession): string {
     const prefix = `/api/stream/${encodeURIComponent(videoId)}`;
     const rewritten = playlist
       .split('\n')
@@ -368,12 +374,8 @@ export class SmartPlayer {
       })
       .join('\n');
 
-    if (kind === 'live' || kind === 'upcoming') {
-      return this.injectStartOffset(rewritten, -8);
-    }
-
-    if (kind === 'vod') {
-      return this.injectStartOffset(rewritten, -6);
+    if (session.profile.startOffsetSeconds < 0) {
+      return this.injectStartOffset(rewritten, session.profile.startOffsetSeconds);
     }
 
     return rewritten;
