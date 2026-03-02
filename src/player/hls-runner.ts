@@ -36,17 +36,20 @@ function commonHlsOutputArgs(options: HlsOutputOptions): string[] {
     '-hls_allow_cache', '0',
     '-hls_segment_type', 'mpegts',
     '-start_number', '0',
-    '-hls_segment_filename', 'segment_%05d.ts',
-    'index.m3u8',
   ];
 
   if (options.deleteThreshold) {
-    args.splice(args.length - 2, 0, '-hls_delete_threshold', options.deleteThreshold);
+    args.push('-hls_delete_threshold', options.deleteThreshold);
   }
 
   if (options.playlistType) {
-    args.splice(args.length - 2, 0, '-hls_playlist_type', options.playlistType);
+    args.push('-hls_playlist_type', options.playlistType);
   }
+
+  args.push(
+    '-hls_segment_filename', 'segment_%05d.ts',
+    'index.m3u8',
+  );
 
   return args;
 }

@@ -140,3 +140,8 @@
   - `hls-runner`: VOD passou a usar playlist HLS do tipo `event` e `hls_list_size=0`, abandonando o modelo de janela deslizante para comportamento de VOD estatico.
   - `smart-player`: saida normal (`code=0`) do pipeline VOD agora preserva a sessao/segmentos; destruicao automatica ficou restrita a saida anormal.
   - Validação: `docker compose build` concluido com sucesso apos a correção.
+
+- ✅ Correção da abertura VOD apos ajuste HLS (`2026-03-02`):
+  - Causa identificada em log: `-hls_playlist_type` foi inserido na posicao errada da linha de comando do `ffmpeg`, sendo interpretado como template de segmento (`Invalid segment filename template '-hls_playlist_type'`).
+  - `hls-runner`: montagem de argumentos HLS refeita para anexar flags opcionais antes de `-hls_segment_filename` e do arquivo `index.m3u8`.
+  - Validação: `docker compose build` concluido com sucesso apos o ajuste.
