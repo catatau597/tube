@@ -179,3 +179,8 @@
   - `src/player/hls-session-registry.ts`: sessao HLS passou a registrar `bootstrapManifestServedAt`.
   - `src/player/smart-player.ts`: durante o `cold-start`, `vod` e `upcoming` podem responder com manifesto shell antes do primeiro segmento real existir; o manifesto real continua assumindo o fluxo assim que houver midia.
   - `DOC/PROMPT_HLS_MIGRATION.md` e `IMPLANTATION_HLS_ADVANCE.md`: documentado que a reducao de tempo agora ataca o tempo de resposta do proxy, sem mexer em reencode.
+
+- ✅ Correcao do build Docker para `better-sqlite3` na branch `hls` (`2026-03-03`):
+  - `Dockerfile`: stage `builder` passou a instalar `python3 make g++` antes do `npm ci`, corrigindo falha de `node-gyp` ao compilar `better-sqlite3` em `node:20-alpine`.
+  - `Dockerfile`: stage `runtime` tambem passou a instalar `make g++` junto de `python3`, mantendo o ambiente consistente caso dependencias nativas precisem ser recompiladas no `npm ci --omit=dev`.
+  - Validação: `docker compose build` concluido com sucesso apos a correcao.
