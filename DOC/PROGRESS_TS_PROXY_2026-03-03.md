@@ -92,3 +92,13 @@ Esta entrada registra a fase de levantamento e desenho inicial da implantacao TS
 - `src/player/stream-registry.ts` foi removido por nao ter mais referencias ativas.
 - Comentarios do router e texto de UI foram ajustados para "proxy TS".
 - A limpeza foi limitada ao escopo do player; playlists IPTV e referencias historicas em documentacao nao foram apagadas.
+
+## Atualizacao de robustez no mesmo dia
+
+- `src/player/smart-player.ts` passou a reagir tambem a:
+  - `req.aborted`
+  - `req.socket.close`
+  - `res.socket.close`
+  - `socket.error`
+- `src/player/ts-client-stream.ts` ganhou watchdog por cliente no modelo novo.
+- O watchdog corta conexoes fantasma quando o cliente fica em `writableNeedDrain` por tempo prolongado sem progresso de escrita.

@@ -74,3 +74,5 @@
 - Fase 5 iniciada com remocao do fluxo legado de `smart-player`.
 - `src/player/stream-registry.ts` foi removido do projeto por ter ficado sem uso.
 - O endpoint do player e os textos de UI ligados ao player foram atualizados de "proxy HLS" para "proxy TS" onde fazia sentido.
+- Pos-implantacao: ampliados gatilhos de cleanup para `req.aborted`, `req.socket.close`, `res.socket.close` e `socket.error`.
+- Pos-implantacao: adicionado watchdog por cliente no modelo novo para cortar conexoes fantasma quando houver `writableNeedDrain` prolongado sem progresso.

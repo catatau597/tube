@@ -199,20 +199,33 @@ export class SmartPlayer {
     });
 
     let cleaned = false;
-    const cleanup = (): void => {
+    const cleanup = (reason: string): void => {
       if (cleaned) return;
       cleaned = true;
+      client.stop(reason);
       tsSessionRegistry.removeClient(key);
     };
 
-    res.once('close', cleanup);
-    res.once('error', cleanup);
-    req.once('close', cleanup);
+    const sockets = new Set<NodeJS.EventEmitter>();
+    const registerSocket = (socket: NodeJS.EventEmitter | null | undefined, prefix: string): void => {
+      if (!socket || sockets.has(socket)) return;
+      sockets.add(socket);
+      socket.once('close', () => cleanup(`${prefix}-close`));
+      socket.once('error', () => cleanup(`${prefix}-error`));
+    };
+
+    res.once('close', () => cleanup('res-close'));
+    res.once('error', () => cleanup('res-error'));
+    req.once('close', () => cleanup('req-close'));
+    req.once('aborted', () => cleanup('req-aborted'));
+
+    registerSocket(req.socket, 'req-socket');
+    registerSocket(res.socket, 'res-socket');
 
     try {
       await client.pipeToResponse(res);
     } finally {
-      cleanup();
+      cleanup('stream-finally');
     }
   }
 
