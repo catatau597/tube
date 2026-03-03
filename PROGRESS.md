@@ -166,19 +166,12 @@
   - `IMPLANTATION_HLS_ADVANCE.md`: especificacao objetiva da implantacao, incluindo estrutura JSON conceitual, chaves flat persistidas, tabelas de presets e decisoes/correcoes alem do plano.
   - Validação: `docker compose build` concluido com sucesso apos a implantacao.
 
-- ✅ Ajuste de bootstrap HLS em duas fases na branch `hls` (`2026-03-03`):
-  - `DOC/PROMPT_HLS_MIGRATION.md`: documentada a estrategia de `cold-start` vs `steady-state` para recuperar abertura rapida sem reencode.
-  - `src/player/hls-session-registry.ts`: sessao HLS passou a guardar `firstManifestServedAt` e `manifestServeCount`.
-  - `src/player/smart-player.ts`: leitura do manifesto agora usa politica derivada por fase:
-    - primeiro manifesto usa gate mais agressivo por tipo (`live`, `vod`, `upcoming`);
-    - manifestos seguintes voltam automaticamente ao preset estavel da sessao;
-    - timeout de manifesto ganhou pequena extensao baseada em progresso de segmentos para reduzir `500` tardio em sessao que esta aquecendo.
-  - `IMPLANTATION_HLS_ADVANCE.md`: documentada a decisao de manter presets/campos e mudar apenas a semantica de runtime para bootstrap inicial.
-
-- ✅ Manifesto shell imediato para `vod`/`upcoming` na branch `hls` (`2026-03-03`):
-  - `src/player/hls-session-registry.ts`: sessao HLS passou a registrar `bootstrapManifestServedAt`.
-  - `src/player/smart-player.ts`: durante o `cold-start`, `vod` e `upcoming` podem responder com manifesto shell antes do primeiro segmento real existir; o manifesto real continua assumindo o fluxo assim que houver midia.
-  - `DOC/PROMPT_HLS_MIGRATION.md` e `IMPLANTATION_HLS_ADVANCE.md`: documentado que a reducao de tempo agora ataca o tempo de resposta do proxy, sem mexer em reencode.
+- ✅ Ajuste de sessao HLS para `fast-start` e `warm-join` na branch `hls` (`2026-03-03`):
+  - `DOC/PROMPT_HLS_MIGRATION.md`: registrado o plano tecnico para abertura agressiva do primeiro cliente e entrada protegida dos clientes seguintes.
+  - `src/player/hls-session-registry.ts`: sessao HLS agora rastreia `firstSegmentServedAt`, `warmAt` e `lastKnownSegmentCount`, alem de `firstManifestServedAt` e `manifestServeCount`.
+  - `src/player/smart-player.ts`: manifesto shell foi removido; o primeiro cliente usa `fast-start` derivado do preset e a sessao so passa a `warm-join` depois de acumular segmentos reais suficientes.
+  - `src/player/smart-player.ts`: timeout de manifesto continua aceitando extensao curta baseada em progresso de segmentos enquanto a sessao ainda aquece.
+  - `IMPLANTATION_HLS_ADVANCE.md`: documentadas a correcao de rumo, o descarte do manifesto shell e a semantica atual dos presets como alvo estavel de `warm-join`.
 
 - ✅ Correcao do build Docker para `better-sqlite3` na branch `hls` (`2026-03-03`):
   - `Dockerfile`: stage `builder` passou a instalar `python3 make g++` antes do `npm ci`, corrigindo falha de `node-gyp` ao compilar `better-sqlite3` em `node:20-alpine`.

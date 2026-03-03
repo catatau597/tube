@@ -34,49 +34,64 @@ Validacao minima:
 - `live`, `vod` e `upcoming` devem abrir via playlist proxy
 - segundo cliente deve entrar pela mesma sessao HLS, sem fan-out bruto
 
-## Ajuste Pos-Migracao: Bootstrap em Duas Fases sem Reencode
+## Plano Tecnico: Fast-Start para o Primeiro Cliente e Warm-Join para os Demais
 
-Objetivo: recuperar parte da abertura rapida observada no inicio da branch `hls`, sem abandonar a arquitetura HLS compartilhada e sem voltar ao fan-out fragil do `mpegts` continuo.
+Objetivo: recuperar a abertura rapida observada no inicio da branch `hls`, sem abandonar a arquitetura HLS compartilhada e sem voltar ao fan-out fragil do `mpegts` continuo.
 
 Problema observado:
 - o estado atual ficou estavel com 1 ou varios clientes;
-- a abertura piorou porque a sessao passou a usar o mesmo criterio para:
-  - primeiro manifesto de uma sessao nova;
-  - clientes posteriores em uma sessao ja aquecida.
+- a abertura piorou porque a sessao passou a usar a mesma politica para:
+  - o primeiro cliente de uma sessao nova;
+  - clientes adicionais entrando numa sessao ja aquecida.
 
-Estrategia:
-- manter o preset configurado como alvo de `steady-state`;
-- derivar automaticamente um `cold-start` mais agressivo so para o primeiro manifesto servido da sessao;
-- depois do primeiro manifesto, voltar imediatamente para a politica estavel do preset.
+Decisao:
+- o primeiro cliente usa `fast-start`;
+- clientes seguintes usam `warm-join`;
+- os presets continuam definindo o alvo estavel da sessao;
+- o bootstrap inicial continua derivado automaticamente no runtime.
+
+Estado de sessao necessario:
+- `firstManifestServedAt`
+- `firstSegmentServedAt`
+- `warmAt`
+- `lastKnownSegmentCount`
+- `manifestServeCount`
+
+Estados logicos:
+- `fast-start`
+  - usado enquanto a sessao ainda nao aqueceu;
+  - serve o primeiro cliente com gate mais agressivo.
+- `warm-join`
+  - usado depois que a sessao acumulou segmentos reais suficientes;
+  - protege a entrada dos clientes seguintes.
 
 Regras de runtime:
 - `live`
-  - `cold-start`: `minReadySegments = max(2, steady - 2)`
-  - `cold-start`: `startOffsetSeconds` mais proximo do topo ao vivo
-  - `steady-state`: usa os valores do preset atual
+  - `fast-start`: `minReadySegments = max(2, steady - 2)`
+  - `fast-start`: `startOffsetSeconds` mais proximo do topo ao vivo
+  - `warm-join`: usa exatamente o preset atual
+  - aquecimento: `segments >= max(3, steady)`
 - `vod`
-  - `cold-start`: `minReadySegments = max(1, steady - 2)`
-  - `cold-start`: sem `#EXT-X-START`, para abrir o primeiro cliente no inicio util do manifesto
-  - `steady-state`: volta a usar `startOffsetSeconds` e `minReadySegments` do preset
+  - `fast-start`: `minReadySegments = max(1, steady - 2)`
+  - `fast-start`: sem `#EXT-X-START`
+  - `warm-join`: usa exatamente o preset atual
+  - aquecimento: `segments >= max(2, steady)`
 - `upcoming`
-  - `cold-start`: `minReadySegments = 1`
-  - `cold-start`: sem offset inicial
-  - `steady-state`: usa o preset atual
+  - `fast-start`: `minReadySegments = 1`
+  - `fast-start`: sem offset inicial
+  - `warm-join`: usa exatamente o preset atual
+  - aquecimento: `segments >= 2`
 
 Regra de progresso:
 - o timeout do manifesto continua vindo do preset;
 - se a sessao estiver progredindo em numero de segmentos, o runtime pode conceder uma pequena extensao de graca por tipo (`live`, `vod`, `upcoming`) antes de declarar erro de manifesto indisponivel.
 
 Impacto esperado:
-- primeiro cliente abre mais cedo;
-- clientes posteriores continuam entrando na sessao estabilizada;
-- os presets continuam validos sem exigir novos campos na UI.
-
-Ajuste adicional:
-- para `vod` e `upcoming`, o runtime pode servir um manifesto shell imediatamente durante o `cold-start`, antes mesmo do primeiro segmento existir;
-- quando os segmentos reais aparecerem, a sessao passa a responder com o manifesto HLS normal.
+- primeiro cliente abre com politica agressiva;
+- clientes adicionais so entram com a sessao aquecida;
+- evita repetir o erro da fase inicial da branch, onde clientes extras entravam cedo demais e travavam.
 
 Impacto nos presets:
 - nao cria novos presets nem novos campos obrigatorios;
-- `minReadySegments` e `startOffsetSeconds` passam a representar o alvo estavel da sessao;
-- o bootstrap inicial passa a ser derivado automaticamente desses valores.
+- `minReadySegments` e `startOffsetSeconds` passam a representar o alvo de `warm-join`;
+- `fast-start` e calculado automaticamente a partir do preset efetivo da playlist.

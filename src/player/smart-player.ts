@@ -38,7 +38,7 @@ const MANIFEST_PROGRESS_EXTENSION_MS: Record<HlsSession['kind'], number> = {
 };
 
 interface ManifestPolicy {
-  mode: 'cold-start' | 'steady-state';
+  mode: 'fast-start' | 'warm-join';
   minSegments: number;
   startOffsetSeconds: number;
   timeoutMs: number;
@@ -77,6 +77,10 @@ export class SmartPlayer {
     }
 
     hlsSessionRegistry.touch(videoId);
+    if (session.firstSegmentServedAt === null) {
+      session.firstSegmentServedAt = Date.now();
+      logger.info(`[SmartPlayer] Primeiro segmento HLS servido: key=${videoId}`);
+    }
     res.setHeader('Cache-Control', 'no-cache');
     if (segmentName.endsWith('.ts')) {
       res.type('video/mp2t');
@@ -368,7 +372,7 @@ export class SmartPlayer {
   private async readPlaylist(session: HlsSession, videoId: string): Promise<string> {
     const startedAt = Date.now();
     const policy = this.resolveManifestPolicy(session);
-    let bestSegments = 0;
+    let bestSegments = session.lastKnownSegmentCount;
     let deadlineAt = startedAt + policy.timeoutMs;
     const maxDeadlineAt = deadlineAt + policy.maxProgressExtensionMs;
 
@@ -376,6 +380,7 @@ export class SmartPlayer {
       if (fs.existsSync(session.manifestPath) && fs.statSync(session.manifestPath).size > 0) {
         const raw = fs.readFileSync(session.manifestPath, 'utf-8');
         const segmentLines = this.extractSegmentLines(raw);
+        this.updateSessionWarmState(session, segmentLines.length);
 
         if (segmentLines.length > bestSegments) {
           bestSegments = segmentLines.length;
@@ -389,11 +394,6 @@ export class SmartPlayer {
         }
       }
 
-      if (this.shouldServeBootstrapManifest(session, policy)) {
-        this.markBootstrapManifestServed(session, policy);
-        return this.buildBootstrapPlaylist(videoId, session);
-      }
-
       await new Promise(resolve => setTimeout(resolve, MANIFEST_WAIT_POLL_MS));
     }
 
@@ -401,9 +401,9 @@ export class SmartPlayer {
   }
 
   private resolveManifestPolicy(session: HlsSession): ManifestPolicy {
-    if (session.firstManifestServedAt !== null) {
+    if (session.firstManifestServedAt !== null && session.warmAt !== null) {
       return {
-        mode: 'steady-state',
+        mode: 'warm-join',
         minSegments: session.profile.minReadySegments,
         startOffsetSeconds: session.profile.startOffsetSeconds,
         timeoutMs: session.profile.manifestTimeoutMs,
@@ -413,39 +413,41 @@ export class SmartPlayer {
     }
 
     return {
-      mode: 'cold-start',
-      minSegments: this.resolveColdStartMinSegments(session),
-      startOffsetSeconds: this.resolveColdStartOffsetSeconds(session),
+      mode: 'fast-start',
+      minSegments: this.resolveFastStartMinSegments(session),
+      startOffsetSeconds: this.resolveFastStartOffsetSeconds(session),
       timeoutMs: session.profile.manifestTimeoutMs,
       progressGraceMs: MANIFEST_PROGRESS_GRACE_MS[session.kind] ?? 0,
       maxProgressExtensionMs: MANIFEST_PROGRESS_EXTENSION_MS[session.kind] ?? 0,
     };
   }
 
-  private resolveColdStartMinSegments(session: HlsSession): number {
+  private resolveFastStartMinSegments(session: HlsSession): number {
     if (session.kind === 'upcoming') return 1;
     if (session.kind === 'vod') return Math.max(1, session.profile.minReadySegments - 2);
     return Math.max(2, session.profile.minReadySegments - 2);
   }
 
-  private resolveColdStartOffsetSeconds(session: HlsSession): number {
+  private resolveFastStartOffsetSeconds(session: HlsSession): number {
     if (session.kind === 'vod' || session.kind === 'upcoming') return 0;
     if (session.profile.startOffsetSeconds >= 0) return 0;
     return Math.min(-2, Math.ceil(session.profile.startOffsetSeconds / 2));
   }
 
-  private shouldServeBootstrapManifest(session: HlsSession, policy: ManifestPolicy): boolean {
-    return policy.mode === 'cold-start'
-      && session.kind !== 'live';
+  private resolveWarmThreshold(session: HlsSession): number {
+    if (session.kind === 'upcoming') return 2;
+    if (session.kind === 'vod') return Math.max(2, session.profile.minReadySegments);
+    return Math.max(3, session.profile.minReadySegments);
   }
 
-  private markBootstrapManifestServed(session: HlsSession, policy: ManifestPolicy): void {
-    session.manifestServeCount += 1;
-    if (session.bootstrapManifestServedAt !== null) return;
+  private updateSessionWarmState(session: HlsSession, segmentCount: number): void {
+    session.lastKnownSegmentCount = Math.max(session.lastKnownSegmentCount, segmentCount);
+    if (session.warmAt !== null) return;
+    if (segmentCount < this.resolveWarmThreshold(session)) return;
 
-    session.bootstrapManifestServedAt = Date.now();
+    session.warmAt = Date.now();
     logger.info(
-      `[SmartPlayer] Manifesto bootstrap HLS servido: key=${session.key} mode=${policy.mode} kind=${session.kind}`,
+      `[SmartPlayer] Sessao HLS aquecida: key=${session.key} kind=${session.kind} segments=${segmentCount}`,
     );
   }
 
@@ -457,20 +459,6 @@ export class SmartPlayer {
     logger.info(
       `[SmartPlayer] Primeiro manifesto HLS servido: key=${session.key} mode=${policy.mode} segments=${segmentCount} timeoutMs=${policy.timeoutMs} startOffset=${policy.startOffsetSeconds}`,
     );
-  }
-
-  private buildBootstrapPlaylist(videoId: string, session: HlsSession): string {
-    const prefix = `/api/stream/${encodeURIComponent(videoId)}`;
-    const targetDuration = Math.max(1, Math.ceil(session.profile.segmentDurationSeconds));
-    return [
-      '#EXTM3U',
-      '#EXT-X-VERSION:3',
-      `#EXT-X-TARGETDURATION:${targetDuration}`,
-      '#EXT-X-MEDIA-SEQUENCE:0',
-      `#EXT-X-PROGRAM-DATE-TIME:${new Date().toISOString()}`,
-      `# bootstrap ${prefix}`,
-      '',
-    ].join('\n');
   }
 
   private rewritePlaylist(playlist: string, videoId: string, startOffsetSeconds: number): string {

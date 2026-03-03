@@ -344,30 +344,48 @@ Motivo:
 - bootstrap do manifesto agora e configuravel por playlist;
 - a criacao da sessao precisa de um limite independente.
 
-### 7. Bootstrap em duas fases sem novos campos
+### 7. Fast-start e warm-join sem novos campos
 
 Decisao:
 
 - manter o schema/presets atuais;
-- tratar `minReadySegments` e `startOffsetSeconds` como alvo de `steady-state`;
-- derivar um `cold-start` mais agressivo apenas para o primeiro manifesto servido.
+- tratar `minReadySegments` e `startOffsetSeconds` como alvo de `warm-join`;
+- derivar um `fast-start` mais agressivo apenas para o primeiro cliente da sessao;
+- marcar a sessao como `warm` somente apos acumular segmentos reais suficientes.
 
 Motivo:
 
 - a branch `hls` inicial abria mais rapido porque liberava o manifesto cedo demais;
 - o estado mais recente ficou estavel porque passou a esperar buffer minimo para todos os casos;
-- a melhor conciliacao sem reencode e separar a politica do primeiro manifesto da politica dos clientes seguintes.
+- a melhor conciliacao sem reencode e separar a politica do primeiro cliente da politica de join dos clientes seguintes.
 
-### 8. Manifesto shell para `vod` e `upcoming`
+### 8. Manifesto shell descartado
 
 Decisao:
 
-- durante o `cold-start`, `vod` e `upcoming` podem responder imediatamente com um manifesto HLS shell, mesmo antes do primeiro segmento existir.
+- a abordagem de manifesto shell para `vod` e `upcoming` foi abandonada.
 
 Motivo:
 
-- o log mostrou que, mesmo com `minReadySegments = 1`, a abertura ainda ficava travada esperando o primeiro segmento fisico;
-- o manifesto shell reduz o tempo de resposta do proxy sem alterar a politica estavel da sessao depois que a midia real aparece.
+- ela reduzia apenas o tempo de resposta HTTP do proxy;
+- nao reduzia o tempo ate o primeiro segmento util/decodificavel;
+- portanto nao melhorava a abertura percebida no player.
+
+### 9. Estado adicional de sessao HLS
+
+Correcao feita durante a implantacao:
+
+- a sessao HLS passou a rastrear:
+  - `firstManifestServedAt`
+  - `firstSegmentServedAt`
+  - `warmAt`
+  - `lastKnownSegmentCount`
+  - `manifestServeCount`
+
+Motivo:
+
+- distinguir primeira abertura de join tardio;
+- marcar quando a sessao esta aquecida para entrada segura de clientes adicionais.
 
 ## Estado final desta implantacao
 
@@ -378,4 +396,5 @@ Implementado na branch `hls`:
 3. card administrativo em `API & Credenciais`;
 4. endpoint de schema para a UI;
 5. consumo real dos valores de bootstrap/HLS no runtime;
-6. documentacao desta implantacao.
+6. documentacao desta implantacao;
+7. correcao da estrategia de bootstrap para `fast-start` no primeiro cliente e `warm-join` para os demais, descartando o manifesto shell.
