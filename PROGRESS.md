@@ -165,3 +165,12 @@
   - `public/js/settings.js`: novo card `Perfis de Start` em `API & Credenciais`, com preset global, override por playlist e campos avancados agrupados em `HLS`, `Start`, `Recovery` e `Source`.
   - `IMPLANTATION_HLS_ADVANCE.md`: especificacao objetiva da implantacao, incluindo estrutura JSON conceitual, chaves flat persistidas, tabelas de presets e decisoes/correcoes alem do plano.
   - Validação: `docker compose build` concluido com sucesso apos a implantacao.
+
+- ✅ Ajuste de bootstrap HLS em duas fases na branch `hls` (`2026-03-03`):
+  - `DOC/PROMPT_HLS_MIGRATION.md`: documentada a estrategia de `cold-start` vs `steady-state` para recuperar abertura rapida sem reencode.
+  - `src/player/hls-session-registry.ts`: sessao HLS passou a guardar `firstManifestServedAt` e `manifestServeCount`.
+  - `src/player/smart-player.ts`: leitura do manifesto agora usa politica derivada por fase:
+    - primeiro manifesto usa gate mais agressivo por tipo (`live`, `vod`, `upcoming`);
+    - manifestos seguintes voltam automaticamente ao preset estavel da sessao;
+    - timeout de manifesto ganhou pequena extensao baseada em progresso de segmentos para reduzir `500` tardio em sessao que esta aquecendo.
+  - `IMPLANTATION_HLS_ADVANCE.md`: documentada a decisao de manter presets/campos e mudar apenas a semantica de runtime para bootstrap inicial.

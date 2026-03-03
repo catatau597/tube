@@ -26,6 +26,25 @@ interface CacheFile {
 
 const SESSION_INIT_TIMEOUT_MS = 45_000;
 const MANIFEST_WAIT_POLL_MS = 250;
+const MANIFEST_PROGRESS_GRACE_MS: Record<HlsSession['kind'], number> = {
+  live: 1_500,
+  vod: 2_000,
+  upcoming: 1_000,
+};
+const MANIFEST_PROGRESS_EXTENSION_MS: Record<HlsSession['kind'], number> = {
+  live: 4_000,
+  vod: 6_000,
+  upcoming: 2_000,
+};
+
+interface ManifestPolicy {
+  mode: 'cold-start' | 'steady-state';
+  minSegments: number;
+  startOffsetSeconds: number;
+  timeoutMs: number;
+  progressGraceMs: number;
+  maxProgressExtensionMs: number;
+}
 
 export class SmartPlayer {
   private readonly statePath = path.join('/data', 'state_cache.json');
@@ -348,13 +367,25 @@ export class SmartPlayer {
 
   private async readPlaylist(session: HlsSession, videoId: string): Promise<string> {
     const startedAt = Date.now();
-    const minSegments = session.profile.minReadySegments;
-    while (Date.now() - startedAt < session.profile.manifestTimeoutMs) {
+    const policy = this.resolveManifestPolicy(session);
+    let bestSegments = 0;
+    let deadlineAt = startedAt + policy.timeoutMs;
+    const maxDeadlineAt = deadlineAt + policy.maxProgressExtensionMs;
+
+    while (Date.now() < deadlineAt) {
       if (fs.existsSync(session.manifestPath) && fs.statSync(session.manifestPath).size > 0) {
         const raw = fs.readFileSync(session.manifestPath, 'utf-8');
         const segmentLines = this.extractSegmentLines(raw);
-        if (segmentLines.length >= minSegments) {
-          return this.rewritePlaylist(raw, videoId, session);
+
+        if (segmentLines.length > bestSegments) {
+          bestSegments = segmentLines.length;
+          deadlineAt = Math.min(maxDeadlineAt, Math.max(deadlineAt, Date.now() + policy.progressGraceMs));
+        }
+
+        if (segmentLines.length >= policy.minSegments) {
+          const playlist = this.rewritePlaylist(raw, videoId, policy.startOffsetSeconds);
+          this.markManifestServed(session, policy, segmentLines.length);
+          return playlist;
         }
       }
       await new Promise(resolve => setTimeout(resolve, MANIFEST_WAIT_POLL_MS));
@@ -363,7 +394,51 @@ export class SmartPlayer {
     throw new Error(`Manifesto HLS indisponivel para key=${videoId}`);
   }
 
-  private rewritePlaylist(playlist: string, videoId: string, session: HlsSession): string {
+  private resolveManifestPolicy(session: HlsSession): ManifestPolicy {
+    if (session.firstManifestServedAt !== null) {
+      return {
+        mode: 'steady-state',
+        minSegments: session.profile.minReadySegments,
+        startOffsetSeconds: session.profile.startOffsetSeconds,
+        timeoutMs: session.profile.manifestTimeoutMs,
+        progressGraceMs: 0,
+        maxProgressExtensionMs: 0,
+      };
+    }
+
+    return {
+      mode: 'cold-start',
+      minSegments: this.resolveColdStartMinSegments(session),
+      startOffsetSeconds: this.resolveColdStartOffsetSeconds(session),
+      timeoutMs: session.profile.manifestTimeoutMs,
+      progressGraceMs: MANIFEST_PROGRESS_GRACE_MS[session.kind] ?? 0,
+      maxProgressExtensionMs: MANIFEST_PROGRESS_EXTENSION_MS[session.kind] ?? 0,
+    };
+  }
+
+  private resolveColdStartMinSegments(session: HlsSession): number {
+    if (session.kind === 'upcoming') return 1;
+    if (session.kind === 'vod') return Math.max(1, session.profile.minReadySegments - 2);
+    return Math.max(2, session.profile.minReadySegments - 2);
+  }
+
+  private resolveColdStartOffsetSeconds(session: HlsSession): number {
+    if (session.kind === 'vod' || session.kind === 'upcoming') return 0;
+    if (session.profile.startOffsetSeconds >= 0) return 0;
+    return Math.min(-2, Math.ceil(session.profile.startOffsetSeconds / 2));
+  }
+
+  private markManifestServed(session: HlsSession, policy: ManifestPolicy, segmentCount: number): void {
+    session.manifestServeCount += 1;
+    if (session.firstManifestServedAt !== null) return;
+
+    session.firstManifestServedAt = Date.now();
+    logger.info(
+      `[SmartPlayer] Primeiro manifesto HLS servido: key=${session.key} mode=${policy.mode} segments=${segmentCount} timeoutMs=${policy.timeoutMs} startOffset=${policy.startOffsetSeconds}`,
+    );
+  }
+
+  private rewritePlaylist(playlist: string, videoId: string, startOffsetSeconds: number): string {
     const prefix = `/api/stream/${encodeURIComponent(videoId)}`;
     const rewritten = playlist
       .split('\n')
@@ -374,8 +449,8 @@ export class SmartPlayer {
       })
       .join('\n');
 
-    if (session.profile.startOffsetSeconds < 0) {
-      return this.injectStartOffset(rewritten, session.profile.startOffsetSeconds);
+    if (startOffsetSeconds < 0) {
+      return this.injectStartOffset(rewritten, startOffsetSeconds);
     }
 
     return rewritten;

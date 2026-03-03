@@ -344,6 +344,20 @@ Motivo:
 - bootstrap do manifesto agora e configuravel por playlist;
 - a criacao da sessao precisa de um limite independente.
 
+### 7. Bootstrap em duas fases sem novos campos
+
+Decisao:
+
+- manter o schema/presets atuais;
+- tratar `minReadySegments` e `startOffsetSeconds` como alvo de `steady-state`;
+- derivar um `cold-start` mais agressivo apenas para o primeiro manifesto servido.
+
+Motivo:
+
+- a branch `hls` inicial abria mais rapido porque liberava o manifesto cedo demais;
+- o estado mais recente ficou estavel porque passou a esperar buffer minimo para todos os casos;
+- a melhor conciliacao sem reencode e separar a politica do primeiro manifesto da politica dos clientes seguintes.
+
 ## Estado final desta implantacao
 
 Implementado na branch `hls`:
