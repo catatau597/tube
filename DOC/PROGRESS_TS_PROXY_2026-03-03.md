@@ -102,3 +102,7 @@ Esta entrada registra a fase de levantamento e desenho inicial da implantacao TS
   - `socket.error`
 - `src/player/ts-client-stream.ts` ganhou watchdog por cliente no modelo novo.
 - O watchdog corta conexoes fantasma quando o cliente fica em `writableNeedDrain` por tempo prolongado sem progresso de escrita.
+- `src/player/ts-session-registry.ts` passou a rastrear clientes por `clientId`, com heartbeat e snapshot de socket/resposta.
+- Foi adicionado watchdog por sessao para diagnostico periodico e remocao de cliente sem heartbeat ou ja marcado como terminal no heartbeat.
+- `src/player/smart-player.ts` passou a logar `cleanup(reason)` com estado de `req`, `res` e `socket`, alem de registrar cada evento individual recebido.
+- `src/player/ts-client-stream.ts` passou a considerar tambem `writableLength` e `socket.bufferSize` estagnados como sinal de cliente fantasma.

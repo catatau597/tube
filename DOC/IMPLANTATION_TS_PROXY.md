@@ -353,6 +353,14 @@ Campos recomendados:
 
 - Mitigacao: idle timeout so apos ausencia real de clientes e com logs claros.
 
+### Observabilidade de teardown
+
+- O caminho TS precisa logar explicitamente:
+  - eventos `req.close`, `req.aborted`, `req.socket.close`, `res.close`, `res.finish`, `res.socket.close`, `socket.error`
+  - `cleanup(reason)` com estado observado de `res.writableEnded`, `res.destroyed`, `req.aborted`, `socket.destroyed`, `socket.writable`
+  - heartbeat por cliente com `localIndex`, `headIndex`, `writableLength`, `socket.bufferSize` e `writableNeedDrain`
+- O registry de sessao deve manter diagnostico por `clientId`, nao apenas `clientCount`, para permitir identificar cliente fantasma preso no contador mas ja terminal no socket.
+
 ## Validacao minima
 
 - `docker compose build`

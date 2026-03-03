@@ -76,3 +76,7 @@
 - O endpoint do player e os textos de UI ligados ao player foram atualizados de "proxy HLS" para "proxy TS" onde fazia sentido.
 - Pos-implantacao: ampliados gatilhos de cleanup para `req.aborted`, `req.socket.close`, `res.socket.close` e `socket.error`.
 - Pos-implantacao: adicionado watchdog por cliente no modelo novo para cortar conexoes fantasma quando houver `writableNeedDrain` prolongado sem progresso.
+- Pos-implantacao: `tsSessionRegistry` passou a rastrear clientes por `clientId`, com heartbeat e snapshot do estado de escrita/socket.
+- Pos-implantacao: adicionado watchdog por sessao para registrar diagnostico periodico, detectar cliente sem heartbeat e remover cliente em estado terminal observado pelo heartbeat.
+- Pos-implantacao: `smart-player` passou a logar explicitamente cada evento de teardown (`req/res/socket`) e o estado final observado no `cleanup(reason)`.
+- Pos-implantacao: `ts-client-stream` passou a emitir heartbeat detalhado e a cortar cliente com `writableLength`/`socket.bufferSize` presos por tempo prolongado, mesmo sem `writableNeedDrain=true`.

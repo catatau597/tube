@@ -4,7 +4,7 @@ import { Request, Response } from 'express';
 import { getConfig } from '../core/config-manager';
 import { logger } from '../core/logger';
 import { TsClientStream } from './ts-client-stream';
-import { TsSessionKind, tsSessionRegistry } from './ts-session-registry';
+import { TsSessionClientSnapshot, TsSessionKind, tsSessionRegistry } from './ts-session-registry';
 import { TsSourceManager } from './ts-source-manager';
 
 interface CacheStream {
@@ -186,38 +186,69 @@ export class SmartPlayer {
 
     res.setHeader('Content-Type', 'video/mp2t');
 
-    const session = tsSessionRegistry.addClient(key);
+    const clientId = this.createClientId();
+    const session = tsSessionRegistry.addClient(key, clientId);
     if (!session) {
       logger.warn(`[SmartPlayer] Sessao TS nao encontrada ao conectar cliente: key=${key}`);
       if (!res.writableEnded) res.status(503).end();
       return;
     }
 
+    let lastSnapshot: TsSessionClientSnapshot | null = null;
     const client = new TsClientStream({
-      clientId: this.createClientId(),
+      clientId,
       session,
+      onStateChange: (snapshot, reason) => {
+        lastSnapshot = snapshot;
+        tsSessionRegistry.heartbeatClient(key, clientId, snapshot, reason);
+      },
     });
 
     let cleaned = false;
     const cleanup = (reason: string): void => {
       if (cleaned) return;
       cleaned = true;
+      logger.info(
+        `[SmartPlayer] Cleanup cliente TS: key=${key} client=${clientId} reason=${reason} resEnded=${res.writableEnded} resDestroyed=${res.destroyed} writableLength=${res.writableLength ?? 0} reqAborted=${req.aborted ?? false} socketDestroyed=${req.socket?.destroyed ?? false} socketWritable=${req.socket?.writable ?? true} lastStopReason=${lastSnapshot?.stopReason ?? 'null'} lastLocalIndex=${lastSnapshot?.localIndex ?? -1} lastHeadIndex=${lastSnapshot?.headIndex ?? -1}`,
+      );
       client.stop(reason);
-      tsSessionRegistry.removeClient(key);
+      tsSessionRegistry.removeClient(key, clientId, reason);
     };
 
     const sockets = new Set<NodeJS.EventEmitter>();
     const registerSocket = (socket: NodeJS.EventEmitter | null | undefined, prefix: string): void => {
       if (!socket || sockets.has(socket)) return;
       sockets.add(socket);
-      socket.once('close', () => cleanup(`${prefix}-close`));
-      socket.once('error', () => cleanup(`${prefix}-error`));
+      socket.once('close', () => {
+        logger.info(`[SmartPlayer] Evento cliente TS: key=${key} client=${clientId} event=${prefix}-close`);
+        cleanup(`${prefix}-close`);
+      });
+      socket.once('error', () => {
+        logger.warn(`[SmartPlayer] Evento cliente TS: key=${key} client=${clientId} event=${prefix}-error`);
+        cleanup(`${prefix}-error`);
+      });
     };
 
-    res.once('close', () => cleanup('res-close'));
-    res.once('error', () => cleanup('res-error'));
-    req.once('close', () => cleanup('req-close'));
-    req.once('aborted', () => cleanup('req-aborted'));
+    res.once('close', () => {
+      logger.info(`[SmartPlayer] Evento cliente TS: key=${key} client=${clientId} event=res-close`);
+      cleanup('res-close');
+    });
+    res.once('finish', () => {
+      logger.info(`[SmartPlayer] Evento cliente TS: key=${key} client=${clientId} event=res-finish`);
+      cleanup('res-finish');
+    });
+    res.once('error', () => {
+      logger.warn(`[SmartPlayer] Evento cliente TS: key=${key} client=${clientId} event=res-error`);
+      cleanup('res-error');
+    });
+    req.once('close', () => {
+      logger.info(`[SmartPlayer] Evento cliente TS: key=${key} client=${clientId} event=req-close`);
+      cleanup('req-close');
+    });
+    req.once('aborted', () => {
+      logger.warn(`[SmartPlayer] Evento cliente TS: key=${key} client=${clientId} event=req-aborted`);
+      cleanup('req-aborted');
+    });
 
     registerSocket(req.socket, 'req-socket');
     registerSocket(res.socket, 'res-socket');

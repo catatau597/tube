@@ -1,7 +1,7 @@
 import { Response } from 'express';
 import { getConfigNumber } from '../core/config-manager';
 import { logger } from '../core/logger';
-import { TsSession } from './ts-session-registry';
+import { TsSession, TsSessionClientSnapshot } from './ts-session-registry';
 
 const DEFAULT_GHOST_CLIENT_THRESHOLD = 30;
 const DEFAULT_READ_BATCH_CHUNKS = 4;
@@ -20,6 +20,7 @@ export interface TsClientStreamOptions {
   drainTimeoutMs?: number;
   clientIdleTimeoutMs?: number;
   clientWatchdogIntervalMs?: number;
+  onStateChange?: (snapshot: TsSessionClientSnapshot, reason: string) => void;
 }
 
 export interface TsClientStreamResult {
@@ -46,6 +47,8 @@ export class TsClientStream {
   private skippedAheadCount = 0;
   private lastProgressAt = Date.now();
   private stopReason: string | null = null;
+  private lastBufferedOutputAt = 0;
+  private maxObservedBufferedOutput = 0;
 
   constructor(
     private readonly options: TsClientStreamOptions,
@@ -88,12 +91,14 @@ export class TsClientStream {
   stop(reason: string): void {
     if (this.stopReason) return;
     this.stopReason = reason;
+    this.emitState(reason);
   }
 
   async pipeToResponse(response: Response): Promise<TsClientStreamResult> {
     logger.info(
       `[ts-client-stream] Cliente iniciou: key=${this.options.session.key} client=${this.options.clientId} localIndex=${this.localIndex} headIndex=${this.options.session.buffer.getCurrentIndex()}`,
     );
+    this.emitState('start');
 
     const watchdogTimer = this.startWatchdog(response);
 
@@ -109,6 +114,7 @@ export class TsClientStream {
           logger.warn(
             `[ts-client-stream] Cliente saltou para frente: key=${this.options.session.key} client=${this.options.clientId} from=${previousIndex} to=${nextIndex} headIndex=${this.options.session.buffer.getCurrentIndex()}`,
           );
+          this.emitState('skip-ahead', response);
         }
 
         const readResult = this.options.session.buffer.readFrom(this.localIndex, this.readBatchChunks);
@@ -129,6 +135,7 @@ export class TsClientStream {
               `[ts-client-stream] Cliente encerrado por atraso: key=${this.options.session.key} client=${this.options.clientId} localIndex=${this.localIndex} headIndex=${this.options.session.buffer.getCurrentIndex()}`,
             );
             this.safeEnd(response);
+            this.emitState('drain-timeout', response);
             return this.buildResult('drain-timeout');
           }
 
@@ -142,6 +149,7 @@ export class TsClientStream {
       return this.buildResult(response.writableEnded ? 'response-ended' : 'response-destroyed');
     } finally {
       clearInterval(watchdogTimer);
+      this.emitState('finalize', response);
     }
   }
 
@@ -159,6 +167,7 @@ export class TsClientStream {
         `[ts-client-stream] Cliente encerrado por ghost: key=${this.options.session.key} client=${this.options.clientId} localIndex=${this.localIndex} headIndex=${this.options.session.buffer.getCurrentIndex()} emptyReads=${this.consecutiveEmptyReads}`,
       );
       this.safeEnd(response);
+      this.emitState('ghost-empty-read', response);
       return 'ghost-client';
     }
 
@@ -176,8 +185,10 @@ export class TsClientStream {
       const writeOk = response.write(chunk);
       if (writeOk) {
         this.markProgress();
+        this.emitState('write-ok', response);
         return true;
       }
+      this.emitState('write-backpressure', response);
       return this.waitForDrain(response);
     } catch (error) {
       logger.warn(
@@ -203,14 +214,17 @@ export class TsClientStream {
 
       const onDrain = (): void => {
         this.markProgress();
+        this.emitState('drain', response);
         finish(true);
       };
       const onClose = (): void => {
         this.stop('response-close');
+        this.emitState('response-close', response);
         finish(false);
       };
       const onError = (): void => {
         this.stop('response-error');
+        this.emitState('response-error', response);
         finish(false);
       };
       const timer = setTimeout(() => finish(false), this.drainTimeoutMs);
@@ -222,6 +236,7 @@ export class TsClientStream {
   }
 
   private buildResult(reason: string): TsClientStreamResult {
+    this.emitState(`result:${reason}`);
     logger.info(
       `[ts-client-stream] Cliente finalizado: key=${this.options.session.key} client=${this.options.clientId} reason=${reason} localIndex=${this.localIndex} chunksSent=${this.chunksSent} skippedAhead=${this.skippedAheadCount}`,
     );
@@ -254,8 +269,18 @@ export class TsClientStream {
       const socket = response.socket;
       const idleMs = Date.now() - this.lastProgressAt;
       const writableNeedDrain = (response as unknown as { writableNeedDrain?: boolean }).writableNeedDrain ?? false;
+      const writableLength = response.writableLength ?? 0;
+      const socketBufferSize = socket?.bufferSize ?? 0;
+      const bufferedOutput = writableLength + socketBufferSize;
       const socketDestroyed = socket?.destroyed ?? false;
       const socketWritable = socket?.writable ?? true;
+
+      if (bufferedOutput > 0) {
+        if (this.lastBufferedOutputAt === 0) this.lastBufferedOutputAt = Date.now();
+        this.maxObservedBufferedOutput = Math.max(this.maxObservedBufferedOutput, bufferedOutput);
+      } else {
+        this.lastBufferedOutputAt = 0;
+      }
 
       if (socketDestroyed || !socketWritable) {
         logger.warn(
@@ -263,6 +288,7 @@ export class TsClientStream {
         );
         this.stop('socket-closed');
         this.safeEnd(response);
+        this.emitState('watchdog-socket', response);
         return;
       }
 
@@ -272,12 +298,53 @@ export class TsClientStream {
         );
         this.stop('ghost-client');
         this.safeEnd(response);
+        this.emitState('watchdog-need-drain', response);
+        return;
       }
+
+      if (bufferedOutput > 0 && this.lastBufferedOutputAt > 0 && (Date.now() - this.lastBufferedOutputAt) >= this.clientIdleTimeoutMs) {
+        logger.warn(
+          `[ts-client-stream] Cliente encerrado por buffer parado: key=${this.options.session.key} client=${this.options.clientId} localIndex=${this.localIndex} headIndex=${this.options.session.buffer.getCurrentIndex()} idleMs=${idleMs} bufferedOutput=${bufferedOutput} maxBufferedOutput=${this.maxObservedBufferedOutput}`,
+        );
+        this.stop('ghost-buffered-output');
+        this.safeEnd(response);
+        this.emitState('watchdog-buffered-output', response);
+        return;
+      }
+
+      this.emitState('watchdog', response);
     }, this.clientWatchdogIntervalMs);
   }
 
   private markProgress(): void {
     this.lastProgressAt = Date.now();
+    this.lastBufferedOutputAt = 0;
+    this.maxObservedBufferedOutput = 0;
+  }
+
+  private emitState(reason: string, response?: Response): void {
+    if (!this.options.onStateChange) return;
+
+    const socket = response?.socket;
+    this.options.onStateChange(
+      {
+        clientId: this.options.clientId,
+        localIndex: this.localIndex,
+        headIndex: this.options.session.buffer.getCurrentIndex(),
+        bytesSent: this.bytesSent,
+        chunksSent: this.chunksSent,
+        consecutiveEmptyReads: this.consecutiveEmptyReads,
+        writableLength: response?.writableLength ?? 0,
+        socketBufferSize: socket?.bufferSize ?? 0,
+        writableNeedDrain: (response as unknown as { writableNeedDrain?: boolean } | undefined)?.writableNeedDrain ?? false,
+        responseDestroyed: response?.destroyed ?? false,
+        responseEnded: response?.writableEnded ?? false,
+        socketDestroyed: socket?.destroyed ?? false,
+        socketWritable: socket?.writable ?? true,
+        stopReason: this.stopReason,
+      },
+      reason,
+    );
   }
 
   private safeEnd(response: Response): void {
