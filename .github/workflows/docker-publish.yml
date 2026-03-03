@@ -2,7 +2,8 @@ name: CI & Docker Publish
 
 on:
   push:
-    branches: [main, dev]
+    branches: [main, dev, ts-buffered-proxy]
+    tags: [ts-buffered-proxy]
   workflow_dispatch:
 
 permissions:
@@ -10,7 +11,7 @@ permissions:
   packages: write
 
 jobs:
-  build-and-publish:
+  build-test-and-publish:
     runs-on: ubuntu-latest
 
     steps:
@@ -28,6 +29,33 @@ jobs:
       - name: Build TypeScript
         run: npm run build
 
+      - name: Build Docker image for integration tests
+        run: docker build -t tube-ci-test:${{ github.sha }} .
+
+      - name: Start app container
+        run: |
+          docker run -d --name tube-ci -p 8888:8888 tube-ci-test:${{ github.sha }}
+
+      - name: Wait for healthcheck
+        run: |
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:8888/health >/dev/null; then
+              echo "Healthcheck OK"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Healthcheck timeout"
+          docker logs tube-ci || true
+          exit 1
+
+      - name: Run integration tests
+        run: APP_URL=http://127.0.0.1:8888 npm run test:integration
+
+      - name: Stop app container
+        if: always()
+        run: docker rm -f tube-ci || true
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -38,22 +66,31 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push image (main)
-        if: github.ref == 'refs/heads/main'
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: true
-          tags: ghcr.io/${{ github.repository_owner }}/tube:latest
-          labels: |
-            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+      - name: Resolve image tags
+        id: tags
+        run: |
+          IMAGE_BASE="ghcr.io/${{ github.repository_owner }}/tube"
+          TAGS="${IMAGE_BASE}:sha-${GITHUB_SHA::12}"
 
-      - name: Build and push image (dev)
-        if: github.ref == 'refs/heads/dev'
+          if [ "${GITHUB_REF}" = "refs/heads/main" ]; then
+            TAGS="${TAGS},${IMAGE_BASE}:latest"
+          fi
+
+          if [ "${GITHUB_REF}" = "refs/heads/dev" ]; then
+            TAGS="${TAGS},${IMAGE_BASE}:dev"
+          fi
+
+          if [ "${GITHUB_REF}" = "refs/heads/ts-buffered-proxy" ] || [ "${GITHUB_REF}" = "refs/tags/ts-buffered-proxy" ]; then
+            TAGS="${TAGS},${IMAGE_BASE}:ts-buffered-proxy"
+          fi
+
+          echo "tags=${TAGS}" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push image
         uses: docker/build-push-action@v6
         with:
           context: .
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/tube:dev
+          tags: ${{ steps.tags.outputs.tags }}
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
