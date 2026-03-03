@@ -72,6 +72,10 @@ Impacto esperado:
 - clientes posteriores continuam entrando na sessao estabilizada;
 - os presets continuam validos sem exigir novos campos na UI.
 
+Ajuste adicional:
+- para `vod` e `upcoming`, o runtime pode servir um manifesto shell imediatamente durante o `cold-start`, antes mesmo do primeiro segmento existir;
+- quando os segmentos reais aparecerem, a sessao passa a responder com o manifesto HLS normal.
+
 Impacto nos presets:
 - nao cria novos presets nem novos campos obrigatorios;
 - `minReadySegments` e `startOffsetSeconds` passam a representar o alvo estavel da sessao;

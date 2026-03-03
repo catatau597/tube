@@ -358,6 +358,17 @@ Motivo:
 - o estado mais recente ficou estavel porque passou a esperar buffer minimo para todos os casos;
 - a melhor conciliacao sem reencode e separar a politica do primeiro manifesto da politica dos clientes seguintes.
 
+### 8. Manifesto shell para `vod` e `upcoming`
+
+Decisao:
+
+- durante o `cold-start`, `vod` e `upcoming` podem responder imediatamente com um manifesto HLS shell, mesmo antes do primeiro segmento existir.
+
+Motivo:
+
+- o log mostrou que, mesmo com `minReadySegments = 1`, a abertura ainda ficava travada esperando o primeiro segmento fisico;
+- o manifesto shell reduz o tempo de resposta do proxy sem alterar a politica estavel da sessao depois que a midia real aparece.
+
 ## Estado final desta implantacao
 
 Implementado na branch `hls`:

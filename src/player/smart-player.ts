@@ -388,6 +388,12 @@ export class SmartPlayer {
           return playlist;
         }
       }
+
+      if (this.shouldServeBootstrapManifest(session, policy)) {
+        this.markBootstrapManifestServed(session, policy);
+        return this.buildBootstrapPlaylist(videoId, session);
+      }
+
       await new Promise(resolve => setTimeout(resolve, MANIFEST_WAIT_POLL_MS));
     }
 
@@ -428,6 +434,21 @@ export class SmartPlayer {
     return Math.min(-2, Math.ceil(session.profile.startOffsetSeconds / 2));
   }
 
+  private shouldServeBootstrapManifest(session: HlsSession, policy: ManifestPolicy): boolean {
+    return policy.mode === 'cold-start'
+      && session.kind !== 'live';
+  }
+
+  private markBootstrapManifestServed(session: HlsSession, policy: ManifestPolicy): void {
+    session.manifestServeCount += 1;
+    if (session.bootstrapManifestServedAt !== null) return;
+
+    session.bootstrapManifestServedAt = Date.now();
+    logger.info(
+      `[SmartPlayer] Manifesto bootstrap HLS servido: key=${session.key} mode=${policy.mode} kind=${session.kind}`,
+    );
+  }
+
   private markManifestServed(session: HlsSession, policy: ManifestPolicy, segmentCount: number): void {
     session.manifestServeCount += 1;
     if (session.firstManifestServedAt !== null) return;
@@ -436,6 +457,20 @@ export class SmartPlayer {
     logger.info(
       `[SmartPlayer] Primeiro manifesto HLS servido: key=${session.key} mode=${policy.mode} segments=${segmentCount} timeoutMs=${policy.timeoutMs} startOffset=${policy.startOffsetSeconds}`,
     );
+  }
+
+  private buildBootstrapPlaylist(videoId: string, session: HlsSession): string {
+    const prefix = `/api/stream/${encodeURIComponent(videoId)}`;
+    const targetDuration = Math.max(1, Math.ceil(session.profile.segmentDurationSeconds));
+    return [
+      '#EXTM3U',
+      '#EXT-X-VERSION:3',
+      `#EXT-X-TARGETDURATION:${targetDuration}`,
+      '#EXT-X-MEDIA-SEQUENCE:0',
+      `#EXT-X-PROGRAM-DATE-TIME:${new Date().toISOString()}`,
+      `# bootstrap ${prefix}`,
+      '',
+    ].join('\n');
   }
 
   private rewritePlaylist(playlist: string, videoId: string, startOffsetSeconds: number): string {

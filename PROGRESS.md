@@ -174,3 +174,8 @@
     - manifestos seguintes voltam automaticamente ao preset estavel da sessao;
     - timeout de manifesto ganhou pequena extensao baseada em progresso de segmentos para reduzir `500` tardio em sessao que esta aquecendo.
   - `IMPLANTATION_HLS_ADVANCE.md`: documentada a decisao de manter presets/campos e mudar apenas a semantica de runtime para bootstrap inicial.
+
+- ✅ Manifesto shell imediato para `vod`/`upcoming` na branch `hls` (`2026-03-03`):
+  - `src/player/hls-session-registry.ts`: sessao HLS passou a registrar `bootstrapManifestServedAt`.
+  - `src/player/smart-player.ts`: durante o `cold-start`, `vod` e `upcoming` podem responder com manifesto shell antes do primeiro segmento real existir; o manifesto real continua assumindo o fluxo assim que houver midia.
+  - `DOC/PROMPT_HLS_MIGRATION.md` e `IMPLANTATION_HLS_ADVANCE.md`: documentado que a reducao de tempo agora ataca o tempo de resposta do proxy, sem mexer em reencode.

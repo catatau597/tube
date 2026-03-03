@@ -13,6 +13,7 @@ export interface HlsSession {
   manifestPath: string;
   createdAt: number;
   lastAccessAt: number;
+  bootstrapManifestServedAt: number | null;
   firstManifestServedAt: number | null;
   manifestServeCount: number;
   killFn: (() => Promise<void>) | null;
@@ -62,6 +63,7 @@ class HlsSessionRegistry {
       manifestPath: path.join(dir, 'index.m3u8'),
       createdAt: Date.now(),
       lastAccessAt: Date.now(),
+      bootstrapManifestServedAt: null,
       firstManifestServedAt: null,
       manifestServeCount: 0,
       killFn: null,
