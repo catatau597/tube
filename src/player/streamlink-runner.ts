@@ -63,8 +63,16 @@ export interface StreamlinkParams {
 /** Tamanho maximo do buffer de stderr acumulado para diagnostico. */
 const STDERR_TAIL_MAX = 6_000;
 
-export function startStreamlink(params: StreamlinkParams): ManagedProcess {
-  const { url, userAgent, cookieFile, extraFlags, onData, onExit } = params;
+interface StartStreamlinkProcessParams {
+  url: string;
+  userAgent: string;
+  cookieFile: string | null;
+  extraFlags: string[];
+  onExit: (code: number | null) => void;
+}
+
+export function startStreamlinkProcess(params: StartStreamlinkProcessParams): ManagedProcess {
+  const { url, userAgent, cookieFile, extraFlags, onExit } = params;
   const args = buildArgs(url, userAgent, cookieFile, extraFlags);
   const sanitizedCmd = args
     .map((part) => sanitizeStreamlinkLog(part))
@@ -87,8 +95,6 @@ export function startStreamlink(params: StreamlinkParams): ManagedProcess {
     finished = true;
     onExit(code);
   };
-
-  proc.stdout?.on('data', (chunk: Buffer) => onData(chunk));
 
   proc.stderr?.on('data', (chunk: Buffer) => {
     const text = chunk.toString();
@@ -129,5 +135,12 @@ export function startStreamlink(params: StreamlinkParams): ManagedProcess {
     finish(null);
   });
 
+  return proc;
+}
+
+export function startStreamlink(params: StreamlinkParams): ManagedProcess {
+  const { onData, ...processParams } = params;
+  const proc = startStreamlinkProcess(processParams);
+  proc.stdout?.on('data', (chunk: Buffer) => onData(chunk));
   return proc;
 }

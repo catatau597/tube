@@ -288,7 +288,7 @@ function configFields(section, config) {
         </div>
         <div style="display:flex;align-items:center;gap:0.5rem">
           ${toggleSwitch('PROXY_ENABLE_ANALYTICS', proxyAnalytics)}
-          <label style="margin:0" title="Logs de requisições HTTP ao proxy HLS (/stream/:videoId). Não são logs de yt-dlp/ffmpeg/streamlink.">Proxy Analytics (logs de requisições ao proxy HLS) ℹ️</label>
+          <label style="margin:0" title="Logs de requisições HTTP ao proxy TS (/stream/:videoId). Não são logs de yt-dlp/ffmpeg/streamlink.">Proxy Analytics (logs de requisições ao proxy TS) ℹ️</label>
         </div>
       </div>
       <label>Porta HTTP

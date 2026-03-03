@@ -20,6 +20,12 @@ export interface FfmpegPlaceholderParams {
   onExit: (code: number | null) => void;
 }
 
+export interface FfmpegTsNormalizerParams {
+  extraFlags?: string[];
+  onData: (chunk: Buffer) => void;
+  onExit: (code: number | null) => void;
+}
+
 export function startFfmpegPlaceholder(params: FfmpegPlaceholderParams): ManagedProcess {
   const { imageUrl, userAgent, extraFlags = [], textLine1, textLine2, onData, onExit } = params;
 
@@ -83,6 +89,55 @@ export function startFfmpegPlaceholder(params: FfmpegPlaceholderParams): Managed
   });
   proc.onError((err) => {
     logger.error(`[ffmpeg-runner] Erro: ${err}`);
+    finish(null);
+  });
+
+  return proc;
+}
+
+export function startFfmpegTsNormalizer(params: FfmpegTsNormalizerParams): ManagedProcess {
+  const { extraFlags = [], onData, onExit } = params;
+
+  const args: string[] = [
+    ...extraFlags,
+    '-loglevel', 'error',
+    '-fflags', '+genpts+discardcorrupt',
+    '-analyzeduration', '1000000',
+    '-probesize', '1000000',
+    '-i', 'pipe:0',
+    '-map', '0:v:0?',
+    '-map', '0:a:0?',
+    '-c', 'copy',
+    '-mpegts_flags', '+resend_headers',
+    '-muxpreload', '0',
+    '-muxdelay', '0',
+    '-f', 'mpegts',
+    'pipe:1',
+  ];
+
+  logger.info('[ffmpeg-runner] Iniciando normalizador TS por stdin/stdout');
+
+  const proc = new ManagedProcess('ffmpeg-ts-normalizer', 'ffmpeg', args, {
+    stdio: ['pipe', 'pipe', 'pipe'],
+  });
+
+  let finished = false;
+  const finish = (code: number | null) => {
+    if (finished) return;
+    finished = true;
+    onExit(code);
+  };
+
+  proc.stdout?.on('data', (chunk: Buffer) => onData(chunk));
+  proc.stderr?.on('data', (chunk: Buffer) =>
+    logger.warn(`[ffmpeg-runner][ts-normalizer stderr] ${chunk.toString().trim()}`),
+  );
+  proc.onClose((code) => {
+    logger.info(`[ffmpeg-runner] Normalizador TS finalizado code=${code}`);
+    finish(code);
+  });
+  proc.onError((err) => {
+    logger.error(`[ffmpeg-runner] Erro no normalizador TS: ${err}`);
     finish(null);
   });
 

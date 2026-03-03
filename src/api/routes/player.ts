@@ -19,14 +19,14 @@ export function createPlayerRouter(): Router {
   /**
    * IMPORTANTE: serveVideo() e fire-and-forget.
    *
-   * Nao usar await aqui — serveVideo() sobe o processo filho, subscreve o
-   * cliente via res.write(), e so finaliza quando o stream morre. Se aguardarmos
-   * a Promise, Express trava o handler por 30-60s.
+   * Nao usar await aqui. O smart player gerencia a sessao TS, a origem e o
+   * lifecycle da resposta HTTP por cliente.
    *
    * serveVideo() cuida de:
    * - Setar headers (Content-Type, etc)
-   * - Conectar stdout do processo filho ao res via broadcast()
-   * - Fechar res quando stream morre
+   * - Entrar ou criar a sessao TS bufferizada
+   * - Conectar o cliente com cursor proprio
+   * - Fechar res quando o stream ou o cliente terminarem
    *
    * Express nao precisa fazer nada apos chamar serveVideo().
    */
