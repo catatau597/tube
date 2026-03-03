@@ -3,7 +3,6 @@ name: CI & Docker Publish
 on:
   push:
     branches: [main, dev, ts-buffered-proxy]
-    tags: [ts-buffered-proxy]
   workflow_dispatch:
 
 permissions:
@@ -13,6 +12,9 @@ permissions:
 jobs:
   build-test-and-publish:
     runs-on: ubuntu-latest
+    concurrency:
+      group: ci-docker-${{ github.ref_name }}
+      cancel-in-progress: true
 
     steps:
       - name: Checkout
@@ -70,18 +72,23 @@ jobs:
         id: tags
         run: |
           IMAGE_BASE="ghcr.io/${{ github.repository_owner }}/tube"
-          TAGS="${IMAGE_BASE}:sha-${GITHUB_SHA::12}"
+          TAGS=""
 
           if [ "${GITHUB_REF}" = "refs/heads/main" ]; then
-            TAGS="${TAGS},${IMAGE_BASE}:latest"
+            TAGS="${IMAGE_BASE}:latest"
           fi
 
           if [ "${GITHUB_REF}" = "refs/heads/dev" ]; then
-            TAGS="${TAGS},${IMAGE_BASE}:dev"
+            TAGS="${IMAGE_BASE}:dev"
           fi
 
-          if [ "${GITHUB_REF}" = "refs/heads/ts-buffered-proxy" ] || [ "${GITHUB_REF}" = "refs/tags/ts-buffered-proxy" ]; then
-            TAGS="${TAGS},${IMAGE_BASE}:ts-buffered-proxy"
+          if [ "${GITHUB_REF}" = "refs/heads/ts-buffered-proxy" ]; then
+            TAGS="${IMAGE_BASE}:ts-buffered-proxy"
+          fi
+
+          if [ -z "${TAGS}" ]; then
+            echo "No image tag configured for ref ${GITHUB_REF}" >&2
+            exit 1
           fi
 
           echo "tags=${TAGS}" >> "$GITHUB_OUTPUT"
