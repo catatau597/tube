@@ -39,6 +39,15 @@ async function main() {
   const meJson = JSON.parse(me.body);
   assert.equal(meJson.username, 'admin', 'usuário autenticado deve ser admin');
 
+  if (meJson.mustChangePassword === true) {
+    const changePassword = await request('/api/auth/password', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', Cookie: cookie },
+      body: JSON.stringify({ current: 'tubewranglerr', new: 'tubewranglerr' }),
+    });
+    assert.equal(changePassword.response.status, 200, 'deve permitir alterar senha obrigatória inicial');
+  }
+
   const channels = await request('/api/channels', {
     headers: { Cookie: cookie },
   });
