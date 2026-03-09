@@ -1,8 +1,12 @@
 import { getConfigNumber } from '../core/config-manager';
+import { logger } from '../core/logger';
 
 const DEFAULT_INITIAL_BEHIND_CHUNKS = 6;
 const DEFAULT_MAX_CLIENT_LAG_CHUNKS = 180;
 const DEFAULT_MAX_BUFFERED_CHUNKS = 720;
+const TS_PACKET_SIZE = 188;
+const TS_PACKETS_PER_CHUNK = 7;
+const TS_CHUNK_SIZE = TS_PACKET_SIZE * TS_PACKETS_PER_CHUNK;
 
 interface BufferWaiter {
   minIndex: number;
@@ -36,6 +40,7 @@ export class TsStreamBuffer {
 
   private readonly chunks: Buffer[] = [];
   private readonly waiters = new Set<BufferWaiter>();
+  private pendingBytes = Buffer.alloc(0);
 
   private startIndex = 0;
   private nextIndex = 0;
@@ -59,14 +64,22 @@ export class TsStreamBuffer {
   append(chunk: Buffer): void {
     if (this.closed || chunk.length === 0) return;
 
-    if (this.chunks.length === this.maxBufferedChunks) {
-      this.chunks.shift();
-      this.startIndex += 1;
+    const merged = this.pendingBytes.length > 0
+      ? Buffer.concat([this.pendingBytes, chunk])
+      : chunk;
+    const aligned = this.alignToPacketBoundary(merged);
+    if (aligned.length < TS_CHUNK_SIZE) {
+      this.pendingBytes = aligned;
+      return;
     }
 
-    this.chunks.push(chunk);
-    this.nextIndex += 1;
-    this.releaseWaiters();
+    const completeLen = aligned.length - (aligned.length % TS_CHUNK_SIZE);
+    for (let offset = 0; offset < completeLen; offset += TS_CHUNK_SIZE) {
+      const packetChunk = Buffer.from(aligned.subarray(offset, offset + TS_CHUNK_SIZE));
+      this.pushChunk(packetChunk);
+    }
+
+    this.pendingBytes = Buffer.from(aligned.subarray(completeLen));
   }
 
   getCurrentIndex(): number {
@@ -114,11 +127,18 @@ export class TsStreamBuffer {
     return lagChunks > this.maxClientLagChunks;
   }
 
-  skipAheadIndex(): number {
+  skipAheadIndex(currentIndex?: number): number {
     if (this.chunks.length === 0) return this.nextIndex;
 
-    const rewindChunks = Math.max(1, this.initialBehindChunks);
-    return Math.max(this.startIndex, this.nextIndex - rewindChunks);
+    // Evita salto agressivo para "quase ao vivo", que pode causar perdas grandes
+    // e discontinuity no decoder. Reposiciona apenas o suficiente para voltar
+    // para dentro da janela aceitavel de lag.
+    const targetLagAfterSkip = Math.max(1, this.maxClientLagChunks - this.initialBehindChunks);
+    const targetIndex = Math.max(this.startIndex, this.nextIndex - targetLagAfterSkip);
+    if (typeof currentIndex === 'number') {
+      return Math.max(targetIndex, Math.min(currentIndex, this.nextIndex));
+    }
+    return targetIndex;
   }
 
   async waitForIndex(minIndex: number, timeoutMs: number): Promise<boolean> {
@@ -155,6 +175,56 @@ export class TsStreamBuffer {
     }
 
     this.waiters.clear();
+    this.pendingBytes = Buffer.alloc(0);
+  }
+
+  private pushChunk(chunk: Buffer): void {
+    if (this.chunks.length === this.maxBufferedChunks) {
+      this.chunks.shift();
+      this.startIndex += 1;
+    }
+
+    this.chunks.push(chunk);
+    this.nextIndex += 1;
+    this.releaseWaiters();
+  }
+
+  private alignToPacketBoundary(data: Buffer): Buffer {
+    if (data.length < TS_PACKET_SIZE * 3) return data;
+    if (this.isLikelyAligned(data, 0)) return data;
+
+    const offset = this.findSyncOffset(data);
+    if (offset >= 0) {
+      if (offset > 0) {
+        logger.warn(`[ts-stream-buffer] Realinhando stream TS: descartando ${offset} byte(s) fora de sync`);
+      }
+      return data.subarray(offset);
+    }
+
+    // Sem sync confiavel ainda; guarda apenas o tail necessario para
+    // tentar recuperar alinhamento no proximo append.
+    const keep = Math.min(data.length, TS_PACKET_SIZE * 2);
+    return data.subarray(data.length - keep);
+  }
+
+  private isLikelyAligned(data: Buffer, offset: number): boolean {
+    if (offset < 0 || offset >= data.length) return false;
+    if (data[offset] !== 0x47) return false;
+
+    const second = offset + TS_PACKET_SIZE;
+    const third = second + TS_PACKET_SIZE;
+    if (second >= data.length) return true;
+    if (data[second] !== 0x47) return false;
+    if (third >= data.length) return true;
+    return data[third] === 0x47;
+  }
+
+  private findSyncOffset(data: Buffer): number {
+    const maxOffset = Math.min(TS_PACKET_SIZE - 1, data.length - (TS_PACKET_SIZE * 3));
+    for (let offset = 0; offset <= maxOffset; offset += 1) {
+      if (this.isLikelyAligned(data, offset)) return offset;
+    }
+    return -1;
   }
 
   private releaseWaiters(): void {

@@ -228,7 +228,14 @@ export function startYtDlpFfmpeg(params: YtDlpFfmpegParams): ManagedProcess {
     args.push(...inputPrefix, '-i', urls[0]);
   }
 
-  args.push('-c', 'copy', '-f', 'mpegts', 'pipe:1');
+  args.push(
+    '-c', 'copy',
+    '-mpegts_flags', '+resend_headers',
+    '-muxpreload', '0',
+    '-muxdelay', '0',
+    '-f', 'mpegts',
+    'pipe:1',
+  );
 
   logger.info(`[ytdlp-runner] Iniciando ffmpeg (${urls.length} URL${urls.length > 1 ? 's' : ''})`);
 

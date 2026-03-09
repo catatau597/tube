@@ -304,43 +304,43 @@ function configFields(section, config) {
         <h4 style="margin:0 0 0.3rem 0">Proxy TS (avançado)</h4>
         <small style="opacity:0.7">Ajustes de buffer/watchdog para estabilidade com múltiplos clientes.</small>
       </div>
-      <label>Initial Behind Chunks
+      <label title="Define quantos chunks atras do head um cliente novo comeca a reproduzir.">Initial Behind Chunks
         <input name="TS_PROXY_INITIAL_BEHIND_CHUNKS" type="number" min="1" max="120" value="${config.TS_PROXY_INITIAL_BEHIND_CHUNKS || 6}" />
       </label>
-      <label>Max Client Lag Chunks
+      <label title="Atraso maximo permitido por cliente. Se ultrapassar, ele salta para mais perto do tempo real.">Max Client Lag Chunks
         <input name="TS_PROXY_MAX_CLIENT_LAG_CHUNKS" type="number" min="4" max="500" value="${config.TS_PROXY_MAX_CLIENT_LAG_CHUNKS || 180}" />
       </label>
-      <label>Max Buffered Chunks
+      <label title="Limite total de chunks mantidos no buffer da sessao para atender clientes em ritmos diferentes.">Max Buffered Chunks
         <input name="TS_PROXY_MAX_BUFFERED_CHUNKS" type="number" min="16" max="1000" value="${config.TS_PROXY_MAX_BUFFERED_CHUNKS || 720}" />
       </label>
-      <label>Session Idle Timeout (ms)
+      <label title="Tempo sem clientes conectados antes de encerrar a sessao e a origem do stream.">Session Idle Timeout (ms)
         <input name="TS_PROXY_IDLE_TIMEOUT_MS" type="number" min="1000" max="600000" value="${config.TS_PROXY_IDLE_TIMEOUT_MS || 45000}" />
       </label>
-      <label>Session Watchdog Interval (ms)
+      <label title="Intervalo entre verificacoes periodicas da sessao (estado geral, clientes e buffer).">Session Watchdog Interval (ms)
         <input name="TS_PROXY_SESSION_WATCHDOG_INTERVAL_MS" type="number" min="1000" max="120000" value="${config.TS_PROXY_SESSION_WATCHDOG_INTERVAL_MS || 5000}" />
       </label>
-      <label>Stale Client Timeout (ms)
+      <label title="Tempo maximo sem heartbeat de um cliente antes de ser tratado como stale (travado/desconectado).">Stale Client Timeout (ms)
         <input name="TS_PROXY_STALE_CLIENT_TIMEOUT_MS" type="number" min="1000" max="600000" value="${config.TS_PROXY_STALE_CLIENT_TIMEOUT_MS || 30000}" />
       </label>
-      <label>Ghost Empty Reads Threshold
+      <label title="Quantidade de leituras vazias consecutivas permitidas antes de encerrar um cliente fantasma.">Ghost Empty Reads Threshold
         <input name="TS_PROXY_GHOST_CLIENT_THRESHOLD" type="number" min="1" max="500" value="${config.TS_PROXY_GHOST_CLIENT_THRESHOLD || 30}" />
       </label>
-      <label>Read Batch Chunks
+      <label title="Quantidade de chunks lidos e enviados por iteracao do loop de cada cliente.">Read Batch Chunks
         <input name="TS_PROXY_READ_BATCH_CHUNKS" type="number" min="1" max="100" value="${config.TS_PROXY_READ_BATCH_CHUNKS || 6}" />
       </label>
-      <label>Client Wait Timeout (ms)
+      <label title="Quanto tempo o cliente espera por novos chunks quando chega no head do buffer.">Client Wait Timeout (ms)
         <input name="TS_PROXY_CLIENT_WAIT_TIMEOUT_MS" type="number" min="1" max="60000" value="${config.TS_PROXY_CLIENT_WAIT_TIMEOUT_MS || 250}" />
       </label>
-      <label>Drain Timeout (ms)
+      <label title="Tempo maximo aguardando evento de drain quando ha backpressure na escrita do socket.">Drain Timeout (ms)
         <input name="TS_PROXY_DRAIN_TIMEOUT_MS" type="number" min="1000" max="600000" value="${config.TS_PROXY_DRAIN_TIMEOUT_MS || 30000}" />
       </label>
-      <label>First Byte Timeout (ms)
+      <label title="Tempo maximo para entregar o primeiro byte ao cliente antes de encerrar a conexao.">First Byte Timeout (ms)
         <input name="TS_PROXY_FIRST_BYTE_TIMEOUT_MS" type="number" min="1000" max="600000" value="${config.TS_PROXY_FIRST_BYTE_TIMEOUT_MS || 25000}" />
       </label>
-      <label>Client Idle Timeout (ms)
+      <label title="Tempo maximo sem progresso de envio para um cliente antes de considerar a conexao ociosa.">Client Idle Timeout (ms)
         <input name="TS_PROXY_CLIENT_IDLE_TIMEOUT_MS" type="number" min="1000" max="600000" value="${config.TS_PROXY_CLIENT_IDLE_TIMEOUT_MS || 30000}" />
       </label>
-      <label>Client Watchdog Interval (ms)
+      <label title="Intervalo entre verificacoes de saude de cada cliente conectado.">Client Watchdog Interval (ms)
         <input name="TS_PROXY_CLIENT_WATCHDOG_INTERVAL_MS" type="number" min="1000" max="120000" value="${config.TS_PROXY_CLIENT_WATCHDOG_INTERVAL_MS || 5000}" />
       </label>
       <label style="grid-column:1/-1">TubeWranglerr URL <small>(deixe vazio para usar o IP da requisição automaticamente)</small>

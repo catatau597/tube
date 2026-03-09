@@ -113,7 +113,7 @@ export class TsClientStream {
       while (!response.writableEnded && !response.destroyed && !this.stopReason) {
         if (this.options.session.buffer.isTooFarBehind(this.localIndex)) {
           const previousIndex = this.localIndex;
-          const nextIndex = this.options.session.buffer.skipAheadIndex();
+          const nextIndex = this.options.session.buffer.skipAheadIndex(this.localIndex);
           this.localIndex = nextIndex;
           this.skippedAheadCount += 1;
           this.consecutiveEmptyReads = 0;
