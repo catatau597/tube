@@ -7,6 +7,9 @@ import { ToolProfileManager } from './tool-profile-manager';
 import { resolveYtDlpUrls, startYtDlpFfmpeg } from './ytdlp-runner';
 
 const LIVE_STREAMLINK_NO_FIRST_BYTE_TIMEOUT_MS = 5_000;
+const LIVE_FALLBACK_RESTART_DELAY_MS = 1_000;
+const LIVE_FALLBACK_MAX_RESTARTS = 5;
+const LIVE_FALLBACK_RESTART_WINDOW_MS = 60_000;
 
 export interface StartTsSourceOptions {
   session: TsSession;
@@ -110,6 +113,8 @@ export class TsSourceManager {
     let finalized = false;
     let noFirstByteTimer: ReturnType<typeof setTimeout> | null = null;
     let streamlink: ManagedProcess;
+    let fallbackRestartWindowStartedAt = 0;
+    let fallbackRestartCountInWindow = 0;
 
     const finalizeSession = (reason: string): void => {
       if (finalized) return;
@@ -145,7 +150,44 @@ export class TsSourceManager {
         `[ts-source-manager] Ativando fallback yt-dlp: key=${options.session.key} trigger=${trigger}`,
       );
 
-      void this.activateLiveYtDlpFallback(options, streamlink, normalizer)
+      void this.activateLiveYtDlpFallback(
+        options,
+        streamlink,
+        normalizer,
+        (code) => {
+          if (finalized) return;
+          fallbackActivated = false;
+
+          if (!tsSessionRegistry.has(options.session.key)) return;
+          if (options.session.clientCount <= 0) {
+            finalizeSession('ytdlp-fallback-exit-no-clients');
+            return;
+          }
+
+          const now = Date.now();
+          if (fallbackRestartWindowStartedAt === 0 || (now - fallbackRestartWindowStartedAt) > LIVE_FALLBACK_RESTART_WINDOW_MS) {
+            fallbackRestartWindowStartedAt = now;
+            fallbackRestartCountInWindow = 0;
+          }
+          fallbackRestartCountInWindow += 1;
+
+          if (fallbackRestartCountInWindow > LIVE_FALLBACK_MAX_RESTARTS) {
+            logger.error(
+              `[ts-source-manager] Fallback live excedeu reinicios: key=${options.session.key} code=${code} restarts=${fallbackRestartCountInWindow} windowMs=${LIVE_FALLBACK_RESTART_WINDOW_MS}`,
+            );
+            finalizeSession('ytdlp-fallback-too-many-restarts');
+            return;
+          }
+
+          logger.warn(
+            `[ts-source-manager] Fallback live encerrado, reanexando origem: key=${options.session.key} code=${code} restart=${fallbackRestartCountInWindow}/${LIVE_FALLBACK_MAX_RESTARTS}`,
+          );
+          setTimeout(() => {
+            if (finalized || !tsSessionRegistry.has(options.session.key) || options.session.clientCount <= 0) return;
+            activateFallback(`ytdlp-fallback-exit code=${code}`);
+          }, LIVE_FALLBACK_RESTART_DELAY_MS);
+        },
+      )
         .then(async (fallbackProc) => {
           fallbackInProgress = false;
           fallbackActivated = true;
@@ -252,6 +294,7 @@ export class TsSourceManager {
     options: StartTsSourceOptions,
     streamlink: ManagedProcess,
     normalizer: ManagedProcess,
+    onFallbackExit: (code: number | null) => void,
   ): Promise<ManagedProcess> {
     if (!options.watchUrl) {
       throw new Error(`Fallback live sem watchUrl para key=${options.session.key}`);
@@ -278,7 +321,7 @@ export class TsSourceManager {
         logger.info(
           `[ts-source-manager] Origem finalizada: key=${options.session.key} kind=live stage=ytdlp-fallback code=${code}`,
         );
-        void tsSessionRegistry.destroy(options.session.key, 'ytdlp-fallback-exit');
+        onFallbackExit(code);
       },
     });
   }
