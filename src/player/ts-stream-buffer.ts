@@ -2,12 +2,12 @@ import { getConfigNumber } from '../core/config-manager';
 import { logger } from '../core/logger';
 
 const DEFAULT_INITIAL_BEHIND_CHUNKS = 6;
-const DEFAULT_MAX_CLIENT_LAG_CHUNKS = 180;
-const DEFAULT_MAX_BUFFERED_CHUNKS = 720;
+const DEFAULT_MAX_CLIENT_LAG_CHUNKS = 600;
+const DEFAULT_MAX_BUFFERED_CHUNKS = 3600;
 const TS_PACKET_SIZE = 188;
 // Chunk maior reduz custo de syscalls/res.write e evita lag artificial
 // causado por granularidade muito fina (que dispara skip-ahead em cascata).
-const TS_PACKETS_PER_CHUNK = 56;
+const TS_PACKETS_PER_CHUNK = 21;
 const TS_CHUNK_SIZE = TS_PACKET_SIZE * TS_PACKETS_PER_CHUNK;
 
 interface BufferWaiter {
@@ -132,10 +132,12 @@ export class TsStreamBuffer {
   skipAheadIndex(currentIndex?: number): number {
     if (this.chunks.length === 0) return this.nextIndex;
 
-    // Evita salto agressivo para "quase ao vivo", que pode causar perdas grandes
-    // e discontinuity no decoder. Reposiciona apenas o suficiente para voltar
-    // para dentro da janela aceitavel de lag.
-    const targetLagAfterSkip = Math.max(1, this.maxClientLagChunks - this.initialBehindChunks);
+    // Após detectar atraso excessivo, reposiciona para uma zona de lag menor
+    // para evitar sequencias de skip em cascata.
+    const targetLagAfterSkip = Math.max(
+      this.initialBehindChunks,
+      Math.trunc(this.maxClientLagChunks * 0.25),
+    );
     const targetIndex = Math.max(this.startIndex, this.nextIndex - targetLagAfterSkip);
     if (typeof currentIndex === 'number') {
       return Math.max(targetIndex, Math.min(currentIndex, this.nextIndex));

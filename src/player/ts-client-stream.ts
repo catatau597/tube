@@ -10,6 +10,7 @@ const DEFAULT_DRAIN_TIMEOUT_MS = 30_000;
 const DEFAULT_CLIENT_IDLE_TIMEOUT_MS = 30_000;
 const DEFAULT_CLIENT_WATCHDOG_INTERVAL_MS = 5_000;
 const DEFAULT_FIRST_BYTE_TIMEOUT_MS = 25_000;
+const DEFAULT_SKIP_COOLDOWN_MS = 2_000;
 
 export interface TsClientStreamOptions {
   clientId: string;
@@ -41,6 +42,7 @@ export class TsClientStream {
   private readonly clientIdleTimeoutMs: number;
   private readonly clientWatchdogIntervalMs: number;
   private readonly firstByteTimeoutMs: number;
+  private readonly skipCooldownMs: number;
 
   private localIndex: number;
   private consecutiveEmptyReads = 0;
@@ -52,6 +54,7 @@ export class TsClientStream {
   private stopReason: string | null = null;
   private lastBufferedOutputAt = 0;
   private maxObservedBufferedOutput = 0;
+  private lastSkipAt = 0;
 
   constructor(
     private readonly options: TsClientStreamOptions,
@@ -85,6 +88,10 @@ export class TsClientStream {
       getConfigNumber('TS_PROXY_FIRST_BYTE_TIMEOUT_MS', DEFAULT_FIRST_BYTE_TIMEOUT_MS),
       DEFAULT_FIRST_BYTE_TIMEOUT_MS,
     );
+    this.skipCooldownMs = this.normalizePositiveInt(
+      getConfigNumber('TS_PROXY_SKIP_COOLDOWN_MS', DEFAULT_SKIP_COOLDOWN_MS),
+      DEFAULT_SKIP_COOLDOWN_MS,
+    );
   }
 
   getClientId(): string {
@@ -112,16 +119,22 @@ export class TsClientStream {
     try {
       while (!response.writableEnded && !response.destroyed && !this.stopReason) {
         if (this.options.session.buffer.isTooFarBehind(this.localIndex)) {
-          const previousIndex = this.localIndex;
-          const nextIndex = this.options.session.buffer.skipAheadIndex(this.localIndex);
-          this.localIndex = nextIndex;
-          this.skippedAheadCount += 1;
-          this.consecutiveEmptyReads = 0;
+          const now = Date.now();
+          if ((now - this.lastSkipAt) < this.skipCooldownMs) {
+            this.emitState('skip-cooldown', response);
+          } else {
+            const previousIndex = this.localIndex;
+            const nextIndex = this.options.session.buffer.skipAheadIndex(this.localIndex);
+            this.localIndex = nextIndex;
+            this.skippedAheadCount += 1;
+            this.consecutiveEmptyReads = 0;
+            this.lastSkipAt = now;
 
-          logger.warn(
-            `[ts-client-stream] Cliente saltou para frente: key=${this.options.session.key} client=${this.options.clientId} from=${previousIndex} to=${nextIndex} headIndex=${this.options.session.buffer.getCurrentIndex()}`,
-          );
-          this.emitState('skip-ahead', response);
+            logger.warn(
+              `[ts-client-stream] Cliente saltou para frente: key=${this.options.session.key} client=${this.options.clientId} from=${previousIndex} to=${nextIndex} headIndex=${this.options.session.buffer.getCurrentIndex()}`,
+            );
+            this.emitState('skip-ahead', response);
+          }
         }
 
         const readResult = this.options.session.buffer.readFrom(this.localIndex, this.readBatchChunks);

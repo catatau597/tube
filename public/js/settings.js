@@ -308,10 +308,10 @@ function configFields(section, config) {
         <input name="TS_PROXY_INITIAL_BEHIND_CHUNKS" type="number" min="1" max="120" value="${config.TS_PROXY_INITIAL_BEHIND_CHUNKS || 6}" />
       </label>
       <label title="Atraso maximo permitido por cliente. Se ultrapassar, ele salta para mais perto do tempo real.">Max Client Lag Chunks
-        <input name="TS_PROXY_MAX_CLIENT_LAG_CHUNKS" type="number" min="4" max="500" value="${config.TS_PROXY_MAX_CLIENT_LAG_CHUNKS || 180}" />
+        <input name="TS_PROXY_MAX_CLIENT_LAG_CHUNKS" type="number" min="4" max="5000" value="${config.TS_PROXY_MAX_CLIENT_LAG_CHUNKS || 600}" />
       </label>
       <label title="Limite total de chunks mantidos no buffer da sessao para atender clientes em ritmos diferentes.">Max Buffered Chunks
-        <input name="TS_PROXY_MAX_BUFFERED_CHUNKS" type="number" min="16" max="1000" value="${config.TS_PROXY_MAX_BUFFERED_CHUNKS || 720}" />
+        <input name="TS_PROXY_MAX_BUFFERED_CHUNKS" type="number" min="16" max="20000" value="${config.TS_PROXY_MAX_BUFFERED_CHUNKS || 3600}" />
       </label>
       <label title="Tempo sem clientes conectados antes de encerrar a sessao e a origem do stream.">Session Idle Timeout (ms)
         <input name="TS_PROXY_IDLE_TIMEOUT_MS" type="number" min="1000" max="600000" value="${config.TS_PROXY_IDLE_TIMEOUT_MS || 45000}" />
@@ -330,6 +330,9 @@ function configFields(section, config) {
       </label>
       <label title="Quanto tempo o cliente espera por novos chunks quando chega no head do buffer.">Client Wait Timeout (ms)
         <input name="TS_PROXY_CLIENT_WAIT_TIMEOUT_MS" type="number" min="1" max="60000" value="${config.TS_PROXY_CLIENT_WAIT_TIMEOUT_MS || 250}" />
+      </label>
+      <label title="Intervalo minimo entre dois skip-ahead do mesmo cliente para evitar cascata de saltos.">Skip Cooldown (ms)
+        <input name="TS_PROXY_SKIP_COOLDOWN_MS" type="number" min="1" max="60000" value="${config.TS_PROXY_SKIP_COOLDOWN_MS || 2000}" />
       </label>
       <label title="Tempo maximo aguardando evento de drain quando ha backpressure na escrita do socket.">Drain Timeout (ms)
         <input name="TS_PROXY_DRAIN_TIMEOUT_MS" type="number" min="1000" max="600000" value="${config.TS_PROXY_DRAIN_TIMEOUT_MS || 30000}" />
@@ -417,14 +420,15 @@ function settingsPayloadBySection(section, formData) {
       LOCAL_TIMEZONE:         pick('LOCAL_TIMEZONE', 'America/Sao_Paulo'),
       STALE_HOURS:            pick('STALE_HOURS',    '6'),
       TS_PROXY_INITIAL_BEHIND_CHUNKS:       pick('TS_PROXY_INITIAL_BEHIND_CHUNKS', '6'),
-      TS_PROXY_MAX_CLIENT_LAG_CHUNKS:       pick('TS_PROXY_MAX_CLIENT_LAG_CHUNKS', '180'),
-      TS_PROXY_MAX_BUFFERED_CHUNKS:         pick('TS_PROXY_MAX_BUFFERED_CHUNKS', '720'),
+      TS_PROXY_MAX_CLIENT_LAG_CHUNKS:       pick('TS_PROXY_MAX_CLIENT_LAG_CHUNKS', '600'),
+      TS_PROXY_MAX_BUFFERED_CHUNKS:         pick('TS_PROXY_MAX_BUFFERED_CHUNKS', '3600'),
       TS_PROXY_IDLE_TIMEOUT_MS:             pick('TS_PROXY_IDLE_TIMEOUT_MS', '45000'),
       TS_PROXY_SESSION_WATCHDOG_INTERVAL_MS:pick('TS_PROXY_SESSION_WATCHDOG_INTERVAL_MS', '5000'),
       TS_PROXY_STALE_CLIENT_TIMEOUT_MS:     pick('TS_PROXY_STALE_CLIENT_TIMEOUT_MS', '30000'),
       TS_PROXY_GHOST_CLIENT_THRESHOLD:      pick('TS_PROXY_GHOST_CLIENT_THRESHOLD', '30'),
       TS_PROXY_READ_BATCH_CHUNKS:           pick('TS_PROXY_READ_BATCH_CHUNKS', '6'),
       TS_PROXY_CLIENT_WAIT_TIMEOUT_MS:      pick('TS_PROXY_CLIENT_WAIT_TIMEOUT_MS', '250'),
+      TS_PROXY_SKIP_COOLDOWN_MS:            pick('TS_PROXY_SKIP_COOLDOWN_MS', '2000'),
       TS_PROXY_DRAIN_TIMEOUT_MS:            pick('TS_PROXY_DRAIN_TIMEOUT_MS', '30000'),
       TS_PROXY_FIRST_BYTE_TIMEOUT_MS:       pick('TS_PROXY_FIRST_BYTE_TIMEOUT_MS', '25000'),
       TS_PROXY_CLIENT_IDLE_TIMEOUT_MS:      pick('TS_PROXY_CLIENT_IDLE_TIMEOUT_MS', '30000'),
