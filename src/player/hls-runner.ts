@@ -41,6 +41,24 @@ function outputTimingArgs(): string[] {
   ];
 }
 
+function liveVideoTranscodeArgs(profile: HlsStartProfileValues): string[] {
+  // Live with c:v copy may create long/irregular GOP-aligned segments (multi-second stalls).
+  // Force stable GOP cadence to keep HLS segment cadence predictable for multiple clients.
+  const keyframeIntervalSeconds = Math.max(1, profile.segmentDurationSeconds);
+  const keyint = Math.max(30, keyframeIntervalSeconds * 30);
+
+  return [
+    '-c:v', 'libx264',
+    '-preset', 'veryfast',
+    '-tune', 'zerolatency',
+    '-pix_fmt', 'yuv420p',
+    '-g', String(keyint),
+    '-keyint_min', String(keyint),
+    '-sc_threshold', '0',
+    '-force_key_frames', `expr:gte(t,n_forced*${keyframeIntervalSeconds})`,
+  ];
+}
+
 function liveOptions(profile: HlsStartProfileValues): HlsOutputOptions {
   return {
     segmentDuration: String(profile.segmentDurationSeconds),
@@ -109,7 +127,7 @@ export function startPipeToHls(params: PipeHlsParams): ManagedProcess {
     '-i', 'pipe:0',
     '-map', '0:v:0?',
     '-map', '0:a:0?',
-    '-c:v', 'copy',
+    ...liveVideoTranscodeArgs(profile),
     '-c:a', 'aac',
     '-ar', '48000',
     '-ac', '2',
@@ -174,8 +192,11 @@ export function startUrlsToHls(params: UrlHlsParams): ManagedProcess {
   }
 
   const hlsOptions = outputMode === 'live' ? liveOptions(profile) : vodOptions(profile);
+  const videoArgs = outputMode === 'live'
+    ? liveVideoTranscodeArgs(profile)
+    : ['-c:v', 'copy'];
   args.push(
-    '-c:v', 'copy',
+    ...videoArgs,
     '-c:a', 'aac',
     '-ar', '48000',
     '-ac', '2',

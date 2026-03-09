@@ -77,11 +77,33 @@ export class SmartPlayer {
       return;
     }
 
-    const segmentPath = path.resolve(session.dir, segmentName);
+    const segmentPathRequested = path.resolve(session.dir, segmentName);
     const sessionDir = path.resolve(session.dir) + path.sep;
-    if (!segmentPath.startsWith(sessionDir) || !fs.existsSync(segmentPath) || !fs.statSync(segmentPath).isFile()) {
+    if (!segmentPathRequested.startsWith(sessionDir)) {
       res.status(404).json({ error: 'Segmento HLS nao encontrado' });
       return;
+    }
+
+    let segmentPathToServe = segmentPathRequested;
+    let segmentNameToServe = segmentName;
+    if (!this.isExistingFile(segmentPathToServe)) {
+      if (session.kind === 'live') {
+        const fallback = this.resolveLiveSegmentFallback(session, segmentName);
+        if (fallback) {
+          segmentPathToServe = fallback.path;
+          segmentNameToServe = fallback.segmentName;
+          logger.warn(
+            `[SmartPlayer] Segmento live ausente, aplicando fallback: key=${videoId} requested=${segmentName} requestedIndex=${fallback.requestedIndex ?? 'na'} served=${fallback.segmentName} servedIndex=${fallback.servedIndex} window=[${fallback.minIndex}..${fallback.maxIndex}] count=${fallback.count}`,
+          );
+        } else {
+          logger.warn(`[SmartPlayer] Segmento live ausente sem fallback: key=${videoId} requested=${segmentName}`);
+          res.status(404).json({ error: 'Segmento HLS nao encontrado' });
+          return;
+        }
+      } else {
+        res.status(404).json({ error: 'Segmento HLS nao encontrado' });
+        return;
+      }
     }
 
     hlsSessionRegistry.touch(videoId);
@@ -90,12 +112,13 @@ export class SmartPlayer {
       logger.info(`[SmartPlayer] Primeiro segmento HLS servido: key=${videoId}`);
     }
     res.setHeader('Cache-Control', 'no-cache');
-    if (segmentName.endsWith('.ts')) {
+    res.setHeader('X-HLS-Segment', segmentNameToServe);
+    if (segmentNameToServe.endsWith('.ts')) {
       res.type('video/mp2t');
-    } else if (segmentName.endsWith('.m3u8')) {
+    } else if (segmentNameToServe.endsWith('.m3u8')) {
       res.type('application/vnd.apple.mpegurl');
     }
-    res.sendFile(segmentPath);
+    res.sendFile(segmentPathToServe);
   }
 
   getThumbnailUrl(videoId: string): string | null {
@@ -517,6 +540,9 @@ export class SmartPlayer {
       await new Promise(resolve => setTimeout(resolve, MANIFEST_WAIT_POLL_MS));
     }
 
+    logger.warn(
+      `[SmartPlayer] Manifesto indisponivel: key=${videoId} kind=${session.kind} mode=${policy.mode} bestSegments=${bestSegments} lastKnown=${session.lastKnownSegmentCount} waitedMs=${Date.now() - startedAt} timeoutMs=${policy.timeoutMs} extendedMaxMs=${policy.maxProgressExtensionMs}`,
+    );
     throw new Error(`Manifesto HLS indisponivel para key=${videoId}`);
   }
 
@@ -630,6 +656,65 @@ export class SmartPlayer {
 
   private isGenuinelyLive(stream: CacheStream): boolean {
     return stream.status === 'live' && !!stream.actualStart && !stream.actualEnd;
+  }
+
+  private isExistingFile(filePath: string): boolean {
+    try {
+      return fs.existsSync(filePath) && fs.statSync(filePath).isFile();
+    } catch {
+      return false;
+    }
+  }
+
+  private parseSegmentIndex(segmentName: string): number | null {
+    const match = /^segment_(\d+)\.ts$/i.exec(segmentName);
+    if (!match) return null;
+    const parsed = Number(match[1]);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  private resolveLiveSegmentFallback(
+    session: HlsSession,
+    requestedSegmentName: string,
+  ): { path: string; segmentName: string; requestedIndex: number | null; servedIndex: number; minIndex: number; maxIndex: number; count: number } | null {
+    if (!fs.existsSync(session.manifestPath)) return null;
+
+    let raw = '';
+    try {
+      raw = fs.readFileSync(session.manifestPath, 'utf-8');
+    } catch {
+      return null;
+    }
+    if (!raw.trim()) return null;
+
+    const requestedIndex = this.parseSegmentIndex(requestedSegmentName);
+    const candidates = this.extractSegmentLines(raw)
+      .map((segmentName) => ({ segmentName, index: this.parseSegmentIndex(segmentName) }))
+      .filter((entry): entry is { segmentName: string; index: number } => entry.index !== null)
+      .sort((a, b) => a.index - b.index);
+
+    if (candidates.length === 0) return null;
+
+    const minIndex = candidates[0].index;
+    const maxIndex = candidates[candidates.length - 1].index;
+    let chosen = candidates[0];
+    if (requestedIndex !== null) {
+      chosen = candidates.find((entry) => entry.index >= requestedIndex) ?? candidates[candidates.length - 1];
+    }
+
+    const fallbackPath = path.resolve(session.dir, chosen.segmentName);
+    const sessionDir = path.resolve(session.dir) + path.sep;
+    if (!fallbackPath.startsWith(sessionDir) || !this.isExistingFile(fallbackPath)) return null;
+
+    return {
+      path: fallbackPath,
+      segmentName: chosen.segmentName,
+      requestedIndex,
+      servedIndex: chosen.index,
+      minIndex,
+      maxIndex,
+      count: candidates.length,
+    };
   }
 
   private normalizeLiveSourceError(err: unknown): string {
