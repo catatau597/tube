@@ -5,7 +5,9 @@ const DEFAULT_INITIAL_BEHIND_CHUNKS = 6;
 const DEFAULT_MAX_CLIENT_LAG_CHUNKS = 180;
 const DEFAULT_MAX_BUFFERED_CHUNKS = 720;
 const TS_PACKET_SIZE = 188;
-const TS_PACKETS_PER_CHUNK = 7;
+// Chunk maior reduz custo de syscalls/res.write e evita lag artificial
+// causado por granularidade muito fina (que dispara skip-ahead em cascata).
+const TS_PACKETS_PER_CHUNK = 56;
 const TS_CHUNK_SIZE = TS_PACKET_SIZE * TS_PACKETS_PER_CHUNK;
 
 interface BufferWaiter {

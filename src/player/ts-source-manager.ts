@@ -6,6 +6,8 @@ import { startStreamlinkProcess } from './streamlink-runner';
 import { ToolProfileManager } from './tool-profile-manager';
 import { resolveYtDlpUrls, startYtDlpFfmpeg } from './ytdlp-runner';
 
+const LIVE_STREAMLINK_NO_FIRST_BYTE_TIMEOUT_MS = 5_000;
+
 export interface StartTsSourceOptions {
   session: TsSession;
   kind: TsSessionKind;
@@ -106,10 +108,16 @@ export class TsSourceManager {
     let fallbackInProgress = false;
     let fallbackActivated = false;
     let finalized = false;
+    let noFirstByteTimer: ReturnType<typeof setTimeout> | null = null;
+    let streamlink: ManagedProcess;
 
     const finalizeSession = (reason: string): void => {
       if (finalized) return;
       finalized = true;
+      if (noFirstByteTimer) {
+        clearTimeout(noFirstByteTimer);
+        noFirstByteTimer = null;
+      }
       void tsSessionRegistry.destroy(options.session.key, reason);
     };
 
@@ -125,7 +133,44 @@ export class TsSourceManager {
       },
     });
 
-    const streamlink = startStreamlinkProcess({
+    const activateFallback = (trigger: string): void => {
+      if (fallbackActivated || fallbackInProgress || finalized) return;
+      fallbackInProgress = true;
+      if (noFirstByteTimer) {
+        clearTimeout(noFirstByteTimer);
+        noFirstByteTimer = null;
+      }
+
+      logger.warn(
+        `[ts-source-manager] Ativando fallback yt-dlp: key=${options.session.key} trigger=${trigger}`,
+      );
+
+      void this.activateLiveYtDlpFallback(options, streamlink, normalizer)
+        .then(async (fallbackProc) => {
+          fallbackInProgress = false;
+          fallbackActivated = true;
+
+          if (!tsSessionRegistry.has(options.session.key)) {
+            await fallbackProc.kill(5_000);
+            return;
+          }
+
+          tsSessionRegistry.setDestroyHandler(options.session.key, null);
+          this.activateSessionSource(options.session, fallbackProc, 'live');
+          logger.warn(
+            `[ts-source-manager] Fallback live ativo via yt-dlp: key=${options.session.key} pid=${fallbackProc.pid ?? 'null'}`,
+          );
+        })
+        .catch((error) => {
+          fallbackInProgress = false;
+          logger.error(
+            `[ts-source-manager] Falha no fallback yt-dlp: key=${options.session.key} err=${String(error)}`,
+          );
+          finalizeSession('live-fallback-failed');
+        });
+    };
+
+    streamlink = startStreamlinkProcess({
       url: options.watchUrl,
       userAgent: streamlinkProfile.userAgent,
       cookieFile: streamlinkProfile.cookieFile,
@@ -145,33 +190,7 @@ export class TsSourceManager {
         }
 
         if (code !== 0 && streamlinkBytes === 0) {
-          fallbackInProgress = true;
-          logger.warn(
-            `[ts-source-manager] Streamlink falhou sem first-byte, ativando fallback yt-dlp: key=${options.session.key} code=${code}`,
-          );
-          void this.activateLiveYtDlpFallback(options, streamlink, normalizer)
-            .then(async (fallbackProc) => {
-              fallbackInProgress = false;
-              fallbackActivated = true;
-
-              if (!tsSessionRegistry.has(options.session.key)) {
-                await fallbackProc.kill(5_000);
-                return;
-              }
-
-              tsSessionRegistry.setDestroyHandler(options.session.key, null);
-              this.activateSessionSource(options.session, fallbackProc, 'live');
-              logger.warn(
-                `[ts-source-manager] Fallback live ativo via yt-dlp: key=${options.session.key} pid=${fallbackProc.pid ?? 'null'}`,
-              );
-            })
-            .catch((error) => {
-              fallbackInProgress = false;
-              logger.error(
-                `[ts-source-manager] Falha no fallback yt-dlp: key=${options.session.key} err=${String(error)}`,
-              );
-              finalizeSession('live-fallback-failed');
-            });
+          activateFallback(`streamlink-exit-no-first-byte code=${code}`);
           return;
         }
 
@@ -186,6 +205,10 @@ export class TsSourceManager {
     }
 
     streamlink.stdout.on('data', (chunk: Buffer) => {
+      if (streamlinkBytes === 0 && chunk.length > 0 && noFirstByteTimer) {
+        clearTimeout(noFirstByteTimer);
+        noFirstByteTimer = null;
+      }
       streamlinkBytes += chunk.length;
     });
     streamlink.stdout.pipe(normalizer.stdin);
@@ -202,7 +225,20 @@ export class TsSourceManager {
       finalizeSession('ffmpeg-stdin-error');
     });
 
+    noFirstByteTimer = setTimeout(() => {
+      if (fallbackActivated || fallbackInProgress || finalized) return;
+      if (!tsSessionRegistry.has(options.session.key)) return;
+      if (streamlinkBytes > 0) return;
+      if (options.session.clientCount === 0) return;
+
+      activateFallback(`streamlink-no-first-byte-timeout ${LIVE_STREAMLINK_NO_FIRST_BYTE_TIMEOUT_MS}ms`);
+    }, LIVE_STREAMLINK_NO_FIRST_BYTE_TIMEOUT_MS);
+
     tsSessionRegistry.setDestroyHandler(options.session.key, async () => {
+      if (noFirstByteTimer) {
+        clearTimeout(noFirstByteTimer);
+        noFirstByteTimer = null;
+      }
       await this.stopLivePipeline(streamlink, normalizer);
     });
 
