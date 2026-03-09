@@ -36,7 +36,7 @@ function liveOptions(profile: HlsStartProfileValues): HlsOutputOptions {
   return {
     segmentDuration: String(profile.segmentDurationSeconds),
     listSize: String(profile.maxSegments),
-    flags: 'delete_segments+append_list+omit_endlist+independent_segments+program_date_time+temp_file',
+    flags: 'delete_segments+append_list+omit_endlist+program_date_time+temp_file+split_by_time',
     deleteThreshold: profile.deleteThreshold == null ? undefined : String(profile.deleteThreshold),
   };
 }
@@ -45,7 +45,7 @@ function vodOptions(profile: HlsStartProfileValues): HlsOutputOptions {
   return {
     segmentDuration: String(profile.segmentDurationSeconds),
     listSize: String(profile.maxSegments),
-    flags: 'append_list+omit_endlist+independent_segments+temp_file',
+    flags: 'append_list+omit_endlist+temp_file+split_by_time',
     deleteThreshold: profile.deleteThreshold == null ? undefined : String(profile.deleteThreshold),
   };
 }
@@ -96,11 +96,19 @@ export function startPipeToHls(params: PipeHlsParams): ManagedProcess {
   const args = [
     ...extraFfmpegFlags,
     '-loglevel', 'error',
-    '-fflags', '+genpts',
+    '-fflags', '+genpts+igndts+discardcorrupt',
+    '-max_interleave_delta', '0',
+    '-muxdelay', '0',
+    '-muxpreload', '0',
+    '-avoid_negative_ts', 'make_zero',
     '-i', 'pipe:0',
     '-map', '0:v:0?',
     '-map', '0:a:0?',
-    '-c', 'copy',
+    '-c:v', 'copy',
+    '-c:a', 'aac',
+    '-ar', '48000',
+    '-ac', '2',
+    '-b:a', '128k',
     ...commonHlsOutputArgs(liveOptions(profile)),
   ];
 
@@ -145,6 +153,11 @@ export function startUrlsToHls(params: UrlHlsParams): ManagedProcess {
   const args: string[] = [
     ...extraFfmpegFlags,
     '-loglevel', 'error',
+    '-fflags', '+genpts+igndts+discardcorrupt',
+    '-max_interleave_delta', '0',
+    '-muxdelay', '0',
+    '-muxpreload', '0',
+    '-avoid_negative_ts', 'make_zero',
   ];
 
   if (urls.length >= 2) {
@@ -159,7 +172,14 @@ export function startUrlsToHls(params: UrlHlsParams): ManagedProcess {
   }
 
   const hlsOptions = outputMode === 'live' ? liveOptions(profile) : vodOptions(profile);
-  args.push('-c', 'copy', ...commonHlsOutputArgs(hlsOptions));
+  args.push(
+    '-c:v', 'copy',
+    '-c:a', 'aac',
+    '-ar', '48000',
+    '-ac', '2',
+    '-b:a', '128k',
+    ...commonHlsOutputArgs(hlsOptions),
+  );
 
   logger.info(
     `[hls-runner] Iniciando ffmpeg HLS mode=${outputMode} (${urls.length} URL${urls.length > 1 ? 's' : ''}) dir=${dir}`,
