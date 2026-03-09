@@ -30,6 +30,9 @@ const LIVE_RESTART_BASE_MS = 1_000;
 const LIVE_RESTART_MAX_MS = 20_000;
 const LIVE_RESTART_JITTER_MS = 750;
 const LIVE_STABLE_UPTIME_MS = 20_000;
+const LIVE_UNAVAILABLE_COOLDOWN_MS = 5 * 60_000;
+const PERMANENT_LIVE_SOURCE_ERROR_RE =
+  /(this live event has ended|not made this video available in your country|video (is )?unavailable|private video|members[ -]?only|age[- ]restricted|sign in to confirm|no such video)/i;
 const MANIFEST_PROGRESS_GRACE_MS: Record<HlsSession['kind'], number> = {
   live: 1_500,
   vod: 2_000,
@@ -55,6 +58,7 @@ export class SmartPlayer {
   private readonly textsPath = path.join('/data', 'textos_epg.json');
   private readonly toolProfiles = new ToolProfileManager();
   private readonly pendingInits = new Map<string, Promise<void>>();
+  private readonly liveUnavailableUntil = new Map<string, { until: number; reason: string }>();
 
   async serveVideo(videoId: string, _req: Request, res: Response): Promise<void> {
     const session = await this.ensureSession(videoId);
@@ -142,6 +146,15 @@ export class SmartPlayer {
     const cache = this.readStateCache();
     const stream = cache.streams[videoId];
     logger.info(`[SmartPlayer] Init HLS: key=${videoId} status=${stream?.status ?? 'nao encontrado'}`);
+
+    if (stream?.status === 'live') {
+      const unavailableReason = this.getLiveUnavailableReason(videoId);
+      if (unavailableReason) {
+        throw new Error(`Live temporariamente indisponivel para key=${videoId}: ${unavailableReason}`);
+      }
+    } else {
+      this.liveUnavailableUntil.delete(videoId);
+    }
 
     let createdSession = false;
     try {
@@ -327,6 +340,17 @@ export class SmartPlayer {
         );
       } catch (err) {
         if (state.shuttingDown || !hlsSessionRegistry.has(session.key)) return;
+        if (this.isPermanentLiveSourceError(err)) {
+          const reason = this.normalizeLiveSourceError(err);
+          this.markLiveUnavailable(session.key, reason);
+          logger.error(
+            `[SmartPlayer] Live indisponivel (erro permanente), encerrando sessao: key=${session.key} trigger=${trigger} err=${reason}`,
+          );
+          state.shuttingDown = true;
+          clearRestartTimer();
+          void hlsSessionRegistry.destroy(session.key, 'live-source-unavailable');
+          return;
+        }
         logger.error(`[SmartPlayer] Falha ao iniciar fonte yt-dlp live HLS: key=${session.key} trigger=${trigger} err=${err}`);
         shouldRetry = true;
       } finally {
@@ -548,6 +572,7 @@ export class SmartPlayer {
   }
 
   private markManifestServed(session: HlsSession, policy: ManifestPolicy, segmentCount: number): void {
+    if (session.kind === 'live') this.liveUnavailableUntil.delete(session.key);
     session.manifestServeCount += 1;
     if (session.firstManifestServedAt !== null) return;
 
@@ -605,6 +630,34 @@ export class SmartPlayer {
 
   private isGenuinelyLive(stream: CacheStream): boolean {
     return stream.status === 'live' && !!stream.actualStart && !stream.actualEnd;
+  }
+
+  private normalizeLiveSourceError(err: unknown): string {
+    if (err instanceof Error) return err.message || String(err);
+    return String(err);
+  }
+
+  private isPermanentLiveSourceError(err: unknown): boolean {
+    return PERMANENT_LIVE_SOURCE_ERROR_RE.test(this.normalizeLiveSourceError(err));
+  }
+
+  private getLiveUnavailableReason(videoId: string): string | null {
+    const state = this.liveUnavailableUntil.get(videoId);
+    if (!state) return null;
+    if (Date.now() >= state.until) {
+      this.liveUnavailableUntil.delete(videoId);
+      return null;
+    }
+    return state.reason;
+  }
+
+  private markLiveUnavailable(videoId: string, reason: string): void {
+    const normalizedReason = reason.replace(/\s+/g, ' ').trim().slice(0, 220) || 'source-unavailable';
+    const until = Date.now() + LIVE_UNAVAILABLE_COOLDOWN_MS;
+    this.liveUnavailableUntil.set(videoId, { until, reason: normalizedReason });
+    logger.warn(
+      `[SmartPlayer] Live marcado como indisponivel por ${Math.floor(LIVE_UNAVAILABLE_COOLDOWN_MS / 1000)}s: key=${videoId} reason=${normalizedReason}`,
+    );
   }
 
   private readStateCache(): CacheFile {

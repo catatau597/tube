@@ -45,7 +45,7 @@ function liveOptions(profile: HlsStartProfileValues): HlsOutputOptions {
   return {
     segmentDuration: String(profile.segmentDurationSeconds),
     listSize: String(profile.maxSegments),
-    flags: 'delete_segments+append_list+omit_endlist+program_date_time+temp_file+split_by_time',
+    flags: 'delete_segments+append_list+omit_endlist+independent_segments+program_date_time+temp_file',
     deleteThreshold: profile.deleteThreshold == null ? undefined : String(profile.deleteThreshold),
   };
 }
@@ -54,7 +54,7 @@ function vodOptions(profile: HlsStartProfileValues): HlsOutputOptions {
   return {
     segmentDuration: String(profile.segmentDurationSeconds),
     listSize: String(profile.maxSegments),
-    flags: 'append_list+omit_endlist+temp_file+split_by_time',
+    flags: 'append_list+omit_endlist+independent_segments+temp_file',
     deleteThreshold: profile.deleteThreshold == null ? undefined : String(profile.deleteThreshold),
   };
 }
