@@ -300,6 +300,46 @@ function configFields(section, config) {
       <label>Stale Hours
         <input name="STALE_HOURS" type="number" min="1" max="48" value="${config.STALE_HOURS || 6}" />
       </label>
+      <div style="grid-column:1/-1;border-top:1px solid #334155;padding-top:0.75rem;margin-top:0.25rem">
+        <h4 style="margin:0 0 0.3rem 0">Proxy TS (avançado)</h4>
+        <small style="opacity:0.7">Ajustes de buffer/watchdog para estabilidade com múltiplos clientes.</small>
+      </div>
+      <label>Initial Behind Chunks
+        <input name="TS_PROXY_INITIAL_BEHIND_CHUNKS" type="number" min="1" max="120" value="${config.TS_PROXY_INITIAL_BEHIND_CHUNKS || 4}" />
+      </label>
+      <label>Max Client Lag Chunks
+        <input name="TS_PROXY_MAX_CLIENT_LAG_CHUNKS" type="number" min="4" max="500" value="${config.TS_PROXY_MAX_CLIENT_LAG_CHUNKS || 32}" />
+      </label>
+      <label>Max Buffered Chunks
+        <input name="TS_PROXY_MAX_BUFFERED_CHUNKS" type="number" min="16" max="1000" value="${config.TS_PROXY_MAX_BUFFERED_CHUNKS || 96}" />
+      </label>
+      <label>Session Idle Timeout (ms)
+        <input name="TS_PROXY_IDLE_TIMEOUT_MS" type="number" min="1000" max="600000" value="${config.TS_PROXY_IDLE_TIMEOUT_MS || 45000}" />
+      </label>
+      <label>Session Watchdog Interval (ms)
+        <input name="TS_PROXY_SESSION_WATCHDOG_INTERVAL_MS" type="number" min="1000" max="120000" value="${config.TS_PROXY_SESSION_WATCHDOG_INTERVAL_MS || 5000}" />
+      </label>
+      <label>Stale Client Timeout (ms)
+        <input name="TS_PROXY_STALE_CLIENT_TIMEOUT_MS" type="number" min="1000" max="600000" value="${config.TS_PROXY_STALE_CLIENT_TIMEOUT_MS || 30000}" />
+      </label>
+      <label>Ghost Empty Reads Threshold
+        <input name="TS_PROXY_GHOST_CLIENT_THRESHOLD" type="number" min="1" max="500" value="${config.TS_PROXY_GHOST_CLIENT_THRESHOLD || 30}" />
+      </label>
+      <label>Read Batch Chunks
+        <input name="TS_PROXY_READ_BATCH_CHUNKS" type="number" min="1" max="100" value="${config.TS_PROXY_READ_BATCH_CHUNKS || 4}" />
+      </label>
+      <label>Client Wait Timeout (ms)
+        <input name="TS_PROXY_CLIENT_WAIT_TIMEOUT_MS" type="number" min="1" max="60000" value="${config.TS_PROXY_CLIENT_WAIT_TIMEOUT_MS || 250}" />
+      </label>
+      <label>Drain Timeout (ms)
+        <input name="TS_PROXY_DRAIN_TIMEOUT_MS" type="number" min="1000" max="600000" value="${config.TS_PROXY_DRAIN_TIMEOUT_MS || 15000}" />
+      </label>
+      <label>Client Idle Timeout (ms)
+        <input name="TS_PROXY_CLIENT_IDLE_TIMEOUT_MS" type="number" min="1000" max="600000" value="${config.TS_PROXY_CLIENT_IDLE_TIMEOUT_MS || 30000}" />
+      </label>
+      <label>Client Watchdog Interval (ms)
+        <input name="TS_PROXY_CLIENT_WATCHDOG_INTERVAL_MS" type="number" min="1000" max="120000" value="${config.TS_PROXY_CLIENT_WATCHDOG_INTERVAL_MS || 5000}" />
+      </label>
       <label style="grid-column:1/-1">TubeWranglerr URL <small>(deixe vazio para usar o IP da requisição automaticamente)</small>
         <div style="display:flex;gap:0.4rem">
           <input id="tubewranglerr-url-input" name="TUBEWRANGLERR_URL" value="${escapeAttr(config.TUBEWRANGLERR_URL)}" placeholder="http://localhost:8888" style="flex:1" />
@@ -373,6 +413,18 @@ function settingsPayloadBySection(section, formData) {
       HTTP_PORT:              pick('HTTP_PORT',      '8888'),
       LOCAL_TIMEZONE:         pick('LOCAL_TIMEZONE', 'America/Sao_Paulo'),
       STALE_HOURS:            pick('STALE_HOURS',    '6'),
+      TS_PROXY_INITIAL_BEHIND_CHUNKS:       pick('TS_PROXY_INITIAL_BEHIND_CHUNKS', '4'),
+      TS_PROXY_MAX_CLIENT_LAG_CHUNKS:       pick('TS_PROXY_MAX_CLIENT_LAG_CHUNKS', '32'),
+      TS_PROXY_MAX_BUFFERED_CHUNKS:         pick('TS_PROXY_MAX_BUFFERED_CHUNKS', '96'),
+      TS_PROXY_IDLE_TIMEOUT_MS:             pick('TS_PROXY_IDLE_TIMEOUT_MS', '45000'),
+      TS_PROXY_SESSION_WATCHDOG_INTERVAL_MS:pick('TS_PROXY_SESSION_WATCHDOG_INTERVAL_MS', '5000'),
+      TS_PROXY_STALE_CLIENT_TIMEOUT_MS:     pick('TS_PROXY_STALE_CLIENT_TIMEOUT_MS', '30000'),
+      TS_PROXY_GHOST_CLIENT_THRESHOLD:      pick('TS_PROXY_GHOST_CLIENT_THRESHOLD', '30'),
+      TS_PROXY_READ_BATCH_CHUNKS:           pick('TS_PROXY_READ_BATCH_CHUNKS', '4'),
+      TS_PROXY_CLIENT_WAIT_TIMEOUT_MS:      pick('TS_PROXY_CLIENT_WAIT_TIMEOUT_MS', '250'),
+      TS_PROXY_DRAIN_TIMEOUT_MS:            pick('TS_PROXY_DRAIN_TIMEOUT_MS', '15000'),
+      TS_PROXY_CLIENT_IDLE_TIMEOUT_MS:      pick('TS_PROXY_CLIENT_IDLE_TIMEOUT_MS', '30000'),
+      TS_PROXY_CLIENT_WATCHDOG_INTERVAL_MS: pick('TS_PROXY_CLIENT_WATCHDOG_INTERVAL_MS', '5000'),
       TUBEWRANGLERR_URL:      pick('TUBEWRANGLERR_URL', ''),
       LOG_LEVEL:              pick('LOG_LEVEL',      'INFO'),
     };

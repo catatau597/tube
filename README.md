@@ -123,6 +123,12 @@ Ou apontando para outra URL:
 APP_URL=http://localhost:8888 npm run test:integration
 ```
 
+Smoke test do proxy TS com múltiplos clientes (usa um `videoId` existente no cache):
+
+```bash
+APP_URL=http://localhost:8888 STREAM_VIDEO_ID=SEU_VIDEO_ID CLIENTS=6 DURATION_SEC=20 npm run test:proxy-smoke
+```
+
 ## Estrutura de dados persistidos
 
 - Banco: `data/tubewranglerr.db`
@@ -130,4 +136,3 @@ APP_URL=http://localhost:8888 npm run test:integration
 - Textos de countdown: `data/textos_epg.json`
 - Cookies: `data/cookies/*.txt`
 - **Thumbnails em cache**: `data/thumbnails/*.jpg`
-

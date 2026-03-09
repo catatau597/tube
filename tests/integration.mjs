@@ -66,6 +66,37 @@ async function main() {
   });
   assert.equal(logs.response.status, 200, 'logs/meta deve responder 200 autenticado');
 
+  const streamNotFound = await request('/api/stream/does-not-exist');
+  assert.equal(streamNotFound.response.status, 404, 'stream inexistente deve retornar 404');
+
+  const configBefore = await request('/api/config', {
+    headers: { Cookie: cookie },
+  });
+  assert.equal(configBefore.response.status, 200, 'config deve responder 200 autenticado');
+  const configBeforeJson = JSON.parse(configBefore.body);
+  const previousBufferedChunks = configBeforeJson.TS_PROXY_MAX_BUFFERED_CHUNKS || '96';
+
+  const configPatch = await request('/api/config', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', Cookie: cookie },
+    body: JSON.stringify({ TS_PROXY_MAX_BUFFERED_CHUNKS: '120' }),
+  });
+  assert.equal(configPatch.response.status, 200, 'patch config TS_PROXY deve responder 200');
+
+  const configAfter = await request('/api/config', {
+    headers: { Cookie: cookie },
+  });
+  assert.equal(configAfter.response.status, 200, 'config após patch deve responder 200');
+  const configAfterJson = JSON.parse(configAfter.body);
+  assert.equal(configAfterJson.TS_PROXY_MAX_BUFFERED_CHUNKS, '120', 'config TS_PROXY deve persistir patch');
+
+  const configRestore = await request('/api/config', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', Cookie: cookie },
+    body: JSON.stringify({ TS_PROXY_MAX_BUFFERED_CHUNKS: previousBufferedChunks }),
+  });
+  assert.equal(configRestore.response.status, 200, 'deve restaurar config TS_PROXY');
+
   const playlist = await request('/live.m3u');
   assert.equal(playlist.response.status, 200, 'playlist pública live.m3u deve responder 200');
   assert.ok(playlist.body.startsWith('#EXTM3U'), 'playlist deve começar com #EXTM3U');

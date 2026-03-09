@@ -87,6 +87,8 @@ export function resolveBaseUrl(req: Request): string {
 app.use((request, response, next) => {
   const start = Date.now();
   response.on('finish', () => {
+    const isProxyStreamRequest = request.path.startsWith('/api/stream/');
+    if (isProxyStreamRequest && !getConfigBool('PROXY_ENABLE_ANALYTICS')) return;
     const ms = Date.now() - start;
     const user = request.session?.user?.username || 'anon';
     logger.info(`[HTTP] ${request.method} ${request.originalUrl} → ${response.statusCode} (${ms}ms) [${user}]`);

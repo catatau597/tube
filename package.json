@@ -9,7 +9,8 @@
     "start": "node dist/server.js",
     "dev": "ts-node src/server.ts",
     "test": "npm run test:integration",
-    "test:integration": "node tests/integration.mjs"
+    "test:integration": "node tests/integration.mjs",
+    "test:proxy-smoke": "node tests/proxy-smoke.mjs"
   },
   "engines": {
     "node": ">=20.0.0"
