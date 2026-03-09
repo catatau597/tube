@@ -102,13 +102,26 @@ export class TsSourceManager {
 
     const streamlinkProfile = this.toolProfiles.resolveProfile('streamlink');
     const ffProfile = this.toolProfiles.resolveProfile('ffmpeg');
+    let streamlinkBytes = 0;
+    let fallbackInProgress = false;
+    let fallbackActivated = false;
+    let finalized = false;
+
+    const finalizeSession = (reason: string): void => {
+      if (finalized) return;
+      finalized = true;
+      void tsSessionRegistry.destroy(options.session.key, reason);
+    };
 
     const normalizer = startFfmpegTsNormalizer({
       extraFlags: ffProfile.flags,
       onData: (chunk) => options.session.buffer.append(chunk),
-      onExit: () => {
-        logger.info(`[ts-source-manager] Origem finalizada: key=${options.session.key} kind=live stage=ffmpeg`);
-        void tsSessionRegistry.destroy(options.session.key, 'source-exit');
+      onExit: (code) => {
+        logger.info(
+          `[ts-source-manager] Origem finalizada: key=${options.session.key} kind=live stage=ffmpeg code=${code}`,
+        );
+        if (fallbackInProgress || fallbackActivated) return;
+        finalizeSession('source-exit');
       },
     });
 
@@ -117,9 +130,44 @@ export class TsSourceManager {
       userAgent: streamlinkProfile.userAgent,
       cookieFile: streamlinkProfile.cookieFile,
       extraFlags: streamlinkProfile.flags,
-      onExit: () => {
-        logger.info(`[ts-source-manager] Origem finalizada: key=${options.session.key} kind=live stage=streamlink`);
-        void tsSessionRegistry.destroy(options.session.key, 'streamlink-exit');
+      onExit: (code) => {
+        logger.info(
+          `[ts-source-manager] Origem finalizada: key=${options.session.key} kind=live stage=streamlink code=${code} bytes=${streamlinkBytes}`,
+        );
+        if (fallbackActivated || fallbackInProgress || finalized) return;
+
+        if (code !== 0 && streamlinkBytes === 0) {
+          fallbackInProgress = true;
+          logger.warn(
+            `[ts-source-manager] Streamlink falhou sem first-byte, ativando fallback yt-dlp: key=${options.session.key} code=${code}`,
+          );
+          void this.activateLiveYtDlpFallback(options, streamlink, normalizer)
+            .then(async (fallbackProc) => {
+              fallbackInProgress = false;
+              fallbackActivated = true;
+
+              if (!tsSessionRegistry.has(options.session.key)) {
+                await fallbackProc.kill(5_000);
+                return;
+              }
+
+              tsSessionRegistry.setDestroyHandler(options.session.key, null);
+              this.activateSessionSource(options.session, fallbackProc, 'live');
+              logger.warn(
+                `[ts-source-manager] Fallback live ativo via yt-dlp: key=${options.session.key} pid=${fallbackProc.pid ?? 'null'}`,
+              );
+            })
+            .catch((error) => {
+              fallbackInProgress = false;
+              logger.error(
+                `[ts-source-manager] Falha no fallback yt-dlp: key=${options.session.key} err=${String(error)}`,
+              );
+              finalizeSession('live-fallback-failed');
+            });
+          return;
+        }
+
+        finalizeSession('streamlink-exit');
       },
     });
 
@@ -129,36 +177,87 @@ export class TsSourceManager {
       throw new Error(`Pipeline live incompleto para key=${options.session.key}`);
     }
 
+    streamlink.stdout.on('data', (chunk: Buffer) => {
+      streamlinkBytes += chunk.length;
+    });
     streamlink.stdout.pipe(normalizer.stdin);
 
     streamlink.stdout.on('error', (error) => {
       logger.warn(`[ts-source-manager] Erro no stdout do streamlink: key=${options.session.key} err=${String(error)}`);
-      void tsSessionRegistry.destroy(options.session.key, 'streamlink-stdout-error');
+      if (fallbackActivated || fallbackInProgress) return;
+      finalizeSession('streamlink-stdout-error');
     });
 
     normalizer.stdin.on('error', (error) => {
       logger.warn(`[ts-source-manager] Erro no stdin do ffmpeg: key=${options.session.key} err=${String(error)}`);
-      void tsSessionRegistry.destroy(options.session.key, 'ffmpeg-stdin-error');
+      if (fallbackActivated || fallbackInProgress) return;
+      finalizeSession('ffmpeg-stdin-error');
     });
 
     tsSessionRegistry.setDestroyHandler(options.session.key, async () => {
-      try {
-        streamlink.stdout?.unpipe(normalizer.stdin!);
-      } catch {
-        // noop
-      }
-      try {
-        if (normalizer.stdin && !normalizer.stdin.destroyed) normalizer.stdin.end();
-      } catch {
-        // noop
-      }
-      await streamlink.kill(5_000);
+      await this.stopLivePipeline(streamlink, normalizer);
     });
 
     this.activateSessionSource(options.session, normalizer, 'live');
     logger.info(
       `[ts-source-manager] Pipeline live iniciado: key=${options.session.key} streamlinkPid=${streamlink.pid ?? 'null'} ffmpegPid=${normalizer.pid ?? 'null'}`,
     );
+  }
+
+  private async activateLiveYtDlpFallback(
+    options: StartTsSourceOptions,
+    streamlink: ManagedProcess,
+    normalizer: ManagedProcess,
+  ): Promise<ManagedProcess> {
+    if (!options.watchUrl) {
+      throw new Error(`Fallback live sem watchUrl para key=${options.session.key}`);
+    }
+
+    await this.stopLivePipeline(streamlink, normalizer);
+
+    const ytProfile = this.toolProfiles.resolveProfile('yt-dlp');
+    const ffProfile = this.toolProfiles.resolveProfile('ffmpeg');
+    const urls = await resolveYtDlpUrls(
+      options.watchUrl,
+      ytProfile.userAgent,
+      ytProfile.cookieFile,
+      ytProfile.flags,
+    );
+
+    return startYtDlpFfmpeg({
+      urls,
+      userAgent: ytProfile.userAgent,
+      extraFfmpegFlags: ffProfile.flags,
+      paceInput: true,
+      onData: (chunk) => options.session.buffer.append(chunk),
+      onExit: (code) => {
+        logger.info(
+          `[ts-source-manager] Origem finalizada: key=${options.session.key} kind=live stage=ytdlp-fallback code=${code}`,
+        );
+        void tsSessionRegistry.destroy(options.session.key, 'ytdlp-fallback-exit');
+      },
+    });
+  }
+
+  private async stopLivePipeline(streamlink: ManagedProcess, normalizer: ManagedProcess): Promise<void> {
+    try {
+      if (streamlink.stdout && normalizer.stdin) {
+        streamlink.stdout.unpipe(normalizer.stdin);
+      }
+    } catch {
+      // noop
+    }
+
+    try {
+      if (normalizer.stdin && !normalizer.stdin.destroyed) normalizer.stdin.end();
+    } catch {
+      // noop
+    }
+
+    await Promise.allSettled([
+      streamlink.kill(5_000),
+      normalizer.kill(5_000),
+    ]);
   }
 
   private activateSessionSource(session: TsSession, proc: ManagedProcess, kind: TsSessionKind): void {
