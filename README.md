@@ -1,6 +1,6 @@
 # TubeWranglerr
 
-Agregador de streams do YouTube com backend Node.js + TypeScript, geração de playlists IPTV (M3U), EPG XMLTV, Smart Player (proxy live/VOD/placeholder) e painel web.
+Agregador de streams do YouTube com backend Node.js + TypeScript, geração de playlists IPTV (M3U), EPG XMLTV, Smart Player HLS (live/VOD/placeholder) e painel web.
 
 ## Recursos
 
@@ -95,15 +95,24 @@ Acesse em: **Configurações → Formato de Título**
 	- `POST /api/scheduler/resume`
 - Smart Player/Credenciais
 	- `GET /api/stream/:videoId`
+	- `GET /api/stream/:videoId/index.m3u8`
+	- `GET /api/stream/:videoId/:segment`
 	- `GET /api/thumbnail/:videoId`
+	- `GET /api/cookies`
+	- `POST /api/cookies`
+	- `PATCH /api/cookies/:id/toggle`
+	- `DELETE /api/cookies/:id`
 	- `GET /api/credentials`
-	- `POST /api/credentials/cookie/:platform`
-	- `DELETE /api/credentials/cookie/:platform`
-	- `PATCH /api/credentials/cookie/:platform/toggle`
 	- `POST /api/credentials/ua`
 	- `DELETE /api/credentials/ua/:id`
 	- `PATCH /api/credentials/ua/:id/default`
-	- `POST /api/credentials/test`
+	- `PATCH /api/credentials/ua/:id/toggle`
+	- `GET /api/tool-profiles`
+	- `POST /api/tool-profiles`
+	- `PUT /api/tool-profiles/:id`
+	- `PATCH /api/tool-profiles/:id/activate`
+	- `PATCH /api/tool-profiles/:id/deactivate`
+	- `DELETE /api/tool-profiles/:id`
 - Logs
 	- `GET /api/logs`
 	- `GET /api/logs/meta`
@@ -130,4 +139,3 @@ APP_URL=http://localhost:8888 npm run test:integration
 - Textos de countdown: `data/textos_epg.json`
 - Cookies: `data/cookies/*.txt`
 - **Thumbnails em cache**: `data/thumbnails/*.jpg`
-

@@ -117,13 +117,23 @@ export interface UrlHlsParams {
   profile: HlsStartProfileValues;
   urls: string[];
   userAgent: string;
+  outputMode?: 'live' | 'vod';
   extraFfmpegFlags?: string[];
   paceInput?: boolean;
   onExit: (code: number | null) => void;
 }
 
 export function startUrlsToHls(params: UrlHlsParams): ManagedProcess {
-  const { dir, profile, urls, userAgent, extraFfmpegFlags = [], paceInput = false, onExit } = params;
+  const {
+    dir,
+    profile,
+    urls,
+    userAgent,
+    outputMode = 'vod',
+    extraFfmpegFlags = [],
+    paceInput = false,
+    onExit,
+  } = params;
   const inputPrefix = [
     ...(paceInput ? ['-re'] : []),
     '-user_agent', userAgent,
@@ -148,9 +158,12 @@ export function startUrlsToHls(params: UrlHlsParams): ManagedProcess {
     args.push(...inputPrefix, '-i', urls[0], '-map', '0:v:0?', '-map', '0:a:0?');
   }
 
-  args.push('-c', 'copy', ...commonHlsOutputArgs(vodOptions(profile)));
+  const hlsOptions = outputMode === 'live' ? liveOptions(profile) : vodOptions(profile);
+  args.push('-c', 'copy', ...commonHlsOutputArgs(hlsOptions));
 
-  logger.info(`[hls-runner] Iniciando ffmpeg HLS (${urls.length} URL${urls.length > 1 ? 's' : ''}) dir=${dir}`);
+  logger.info(
+    `[hls-runner] Iniciando ffmpeg HLS mode=${outputMode} (${urls.length} URL${urls.length > 1 ? 's' : ''}) dir=${dir}`,
+  );
   const proc = new ManagedProcess('ffmpeg-hls-urls', 'ffmpeg', args, {
     cwd: dir,
     stdio: ['ignore', 'ignore', 'pipe'],

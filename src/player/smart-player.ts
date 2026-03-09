@@ -26,6 +26,10 @@ interface CacheFile {
 
 const SESSION_INIT_TIMEOUT_MS = 45_000;
 const MANIFEST_WAIT_POLL_MS = 250;
+const LIVE_RESTART_BASE_MS = 1_000;
+const LIVE_RESTART_MAX_MS = 20_000;
+const LIVE_RESTART_JITTER_MS = 750;
+const LIVE_STABLE_UPTIME_MS = 20_000;
 const MANIFEST_PROGRESS_GRACE_MS: Record<HlsSession['kind'], number> = {
   live: 1_500,
   vod: 2_000,
@@ -214,128 +218,220 @@ export class SmartPlayer {
   ): void {
     const state: {
       replacing: boolean;
+      shuttingDown: boolean;
       source: ManagedProcess | null;
       writer: ManagedProcess | null;
       firstByteAt: number | null;
+      restartAttempt: number;
+      restartTimer: ReturnType<typeof setTimeout> | null;
+      sourceKind: 'streamlink' | 'yt-dlp' | null;
+      sourceStartedAt: number;
     } = {
       replacing: false,
+      shuttingDown: false,
       source: null,
       writer: null,
       firstByteAt: null,
+      restartAttempt: 0,
+      restartTimer: null,
+      sourceKind: null,
+      sourceStartedAt: 0,
     };
 
-    const ensureWriter = (): ManagedProcess => {
-      if (state.writer) return state.writer;
-      state.writer = startPipeToHls({
-        dir: session.dir,
-        profile: session.profile,
-        onExit: () => {
-          if (!state.replacing) {
-            void hlsSessionRegistry.destroy(session.key, 'live-writer-exit');
-          }
-        },
-      });
-      return state.writer;
+    const clearRestartTimer = (): void => {
+      if (!state.restartTimer) return;
+      clearTimeout(state.restartTimer);
+      state.restartTimer = null;
+    };
+
+    const maybeResetBackoffFromUptime = (): void => {
+      if (!state.sourceStartedAt) return;
+      if (Date.now() - state.sourceStartedAt >= LIVE_STABLE_UPTIME_MS) {
+        state.restartAttempt = 0;
+      }
+    };
+
+    const stopCurrentPipeline = async (): Promise<void> => {
+      state.replacing = true;
+      try {
+        if (state.source) {
+          await state.source.kill();
+          state.source = null;
+        }
+        if (state.writer) {
+          await state.writer.kill(3000);
+          state.writer = null;
+        }
+        state.firstByteAt = null;
+      } finally {
+        state.replacing = false;
+      }
+    };
+
+    const scheduleRestart = (reason: string): void => {
+      if (state.shuttingDown || state.replacing || state.restartTimer) return;
+      if (!hlsSessionRegistry.has(session.key)) return;
+
+      state.restartAttempt += 1;
+      const expBackoff = Math.min(
+        LIVE_RESTART_MAX_MS,
+        LIVE_RESTART_BASE_MS * 2 ** Math.min(state.restartAttempt - 1, 6),
+      );
+      const jitter = Math.floor(Math.random() * LIVE_RESTART_JITTER_MS);
+      const delayMs = expBackoff + jitter;
+
+      logger.warn(
+        `[SmartPlayer] Live HLS agendando restart: key=${session.key} source=${state.sourceKind ?? 'unknown'} reason=${reason} attempt=${state.restartAttempt} delayMs=${delayMs}`,
+      );
+      state.restartTimer = setTimeout(() => {
+        state.restartTimer = null;
+        void restartCurrentSource(`timer:${reason}`);
+      }, delayMs);
+      state.restartTimer.unref();
+    };
+
+    const startYtDlpSource = async (trigger: string): Promise<void> => {
+      clearRestartTimer();
+      state.replacing = true;
+      let shouldRetry = false;
+      try {
+        if (state.source) {
+          await state.source.kill();
+          state.source = null;
+        }
+        if (state.writer) {
+          await state.writer.kill(3000);
+          state.writer = null;
+        }
+
+        const urls = await resolveYtDlpUrls(url, yt.userAgent, yt.cookieFile, yt.flags, session.profile.vodResolveStrategy);
+        if (!hlsSessionRegistry.has(session.key) || state.shuttingDown) return;
+
+        state.sourceKind = 'yt-dlp';
+        state.sourceStartedAt = Date.now();
+        state.writer = startUrlsToHls({
+          dir: session.dir,
+          profile: session.profile,
+          urls,
+          userAgent: yt.userAgent,
+          outputMode: 'live',
+          paceInput: false,
+          onExit: (code) => {
+            if (state.replacing || state.shuttingDown) return;
+            maybeResetBackoffFromUptime();
+            scheduleRestart(`yt-dlp-exit-${code ?? 'null'}`);
+          },
+        });
+        logger.info(
+          `[SmartPlayer] Live HLS fonte yt-dlp iniciada: key=${session.key} trigger=${trigger} PID=${state.writer.pid}`,
+        );
+      } catch (err) {
+        if (state.shuttingDown || !hlsSessionRegistry.has(session.key)) return;
+        logger.error(`[SmartPlayer] Falha ao iniciar fonte yt-dlp live HLS: key=${session.key} trigger=${trigger} err=${err}`);
+        shouldRetry = true;
+      } finally {
+        state.replacing = false;
+      }
+      if (shouldRetry) scheduleRestart('yt-dlp-start-error');
+    };
+
+    const startStreamlinkSource = async (trigger: string): Promise<void> => {
+      clearRestartTimer();
+      state.replacing = true;
+      try {
+        if (state.source) {
+          await state.source.kill();
+          state.source = null;
+        }
+        if (state.writer) {
+          await state.writer.kill(3000);
+          state.writer = null;
+        }
+
+        if (!hlsSessionRegistry.has(session.key) || state.shuttingDown) return;
+
+        state.sourceKind = 'streamlink';
+        state.sourceStartedAt = Date.now();
+        state.firstByteAt = null;
+
+        state.writer = startPipeToHls({
+          dir: session.dir,
+          profile: session.profile,
+          onExit: (code) => {
+            if (state.replacing || state.shuttingDown) return;
+            maybeResetBackoffFromUptime();
+            scheduleRestart(`streamlink-writer-exit-${code ?? 'null'}`);
+          },
+        });
+
+        const startedAt = Date.now();
+        state.source = startStreamlink({
+          url,
+          userAgent: sl.userAgent,
+          cookieFile: sl.cookieFile,
+          extraFlags: sl.flags,
+          onData: (chunk) => {
+            if (state.firstByteAt === null) {
+              state.firstByteAt = Date.now();
+              logger.info(`[SmartPlayer] Streamlink primeiro byte HLS: key=${session.key} t=${state.firstByteAt - startedAt}ms`);
+            }
+            try {
+              if (state.writer?.stdin && !state.writer.stdin.destroyed && state.writer.stdin.writable) {
+                state.writer.stdin.write(chunk);
+              }
+            } catch { /* noop */ }
+          },
+          onExit: (code) => {
+            if (state.replacing || state.shuttingDown) return;
+            const hasOutput = state.firstByteAt !== null;
+            maybeResetBackoffFromUptime();
+
+            if (code !== 0 && !hasOutput && hlsSessionRegistry.has(session.key)) {
+              logger.warn(
+                `[SmartPlayer] Streamlink falhou sem output HLS, fallback yt-dlp: key=${session.key} code=${code}`,
+              );
+              void startYtDlpSource('streamlink-no-output');
+              return;
+            }
+
+            scheduleRestart(`streamlink-exit-${code ?? 'null'}`);
+          },
+        });
+
+        logger.info(
+          `[SmartPlayer] Live HLS fonte streamlink iniciada: key=${session.key} trigger=${trigger} streamlinkPid=${state.source.pid} writerPid=${state.writer.pid}`,
+        );
+      } finally {
+        state.replacing = false;
+      }
+    };
+
+    const restartCurrentSource = async (trigger: string): Promise<void> => {
+      if (state.shuttingDown || !hlsSessionRegistry.has(session.key)) return;
+      if (session.profile.liveSourcePriority === 'yt-dlp-first') {
+        await startYtDlpSource(trigger);
+        return;
+      }
+      if (state.sourceKind === 'yt-dlp') {
+        await startYtDlpSource(trigger);
+        return;
+      }
+      await startStreamlinkSource(trigger);
     };
 
     hlsSessionRegistry.setKillFn(session.key, async () => {
-      state.replacing = true;
-      if (state.source) await state.source.kill();
-      if (state.writer) await state.writer.kill(3000);
-      state.replacing = false;
+      state.shuttingDown = true;
+      clearRestartTimer();
+      await stopCurrentPipeline();
     });
 
     if (session.profile.liveSourcePriority === 'yt-dlp-first') {
       logger.info(`[SmartPlayer] Live HLS configurado para yt-dlp primeiro: key=${session.key}`);
-      void this.switchLiveSessionToYtDlp(session, url, yt, state);
+      void startYtDlpSource('initial');
       return;
     }
 
-    const startedAt = Date.now();
-    state.source = startStreamlink({
-      url,
-      userAgent: sl.userAgent,
-      cookieFile: sl.cookieFile,
-      extraFlags: sl.flags,
-      onData: (chunk) => {
-        if (state.firstByteAt === null) {
-          state.firstByteAt = Date.now();
-          logger.info(`[SmartPlayer] Streamlink primeiro byte HLS: key=${session.key} t=${state.firstByteAt - startedAt}ms`);
-        }
-
-        const writer = ensureWriter();
-        try {
-          if (writer.stdin && !writer.stdin.destroyed && writer.stdin.writable) writer.stdin.write(chunk);
-        } catch { /* noop */ }
-      },
-      onExit: (code) => {
-        const hasOutput = state.firstByteAt !== null;
-        if (code !== 0 && !hasOutput && hlsSessionRegistry.has(session.key)) {
-          logger.warn(`[SmartPlayer] Streamlink falhou sem output HLS, fallback yt-dlp: key=${session.key} code=${code}`);
-          void this.switchLiveSessionToYtDlp(session, url, yt, state);
-          return;
-        }
-
-        if (state.writer?.stdin && !state.writer.stdin.destroyed) {
-          try { state.writer.stdin.end(); } catch { /* noop */ }
-        } else {
-          void hlsSessionRegistry.destroy(session.key, 'live-source-exit');
-        }
-      },
-    });
-
-    logger.info(`[SmartPlayer] Streamlink HLS iniciado: key=${session.key} PID=${state.source.pid}`);
-  }
-
-  private async switchLiveSessionToYtDlp(
-    session: HlsSession,
-    url: string,
-    yt: ResolvedToolProfile,
-    state: {
-      replacing: boolean;
-      source: ManagedProcess | null;
-      writer: ManagedProcess | null;
-      firstByteAt: number | null;
-    },
-  ): Promise<void> {
-    state.replacing = true;
-    try {
-      if (state.writer) {
-        await state.writer.kill(3000);
-        state.writer = null;
-      }
-      this.clearSessionDir(session.dir);
-
-      const urls = await resolveYtDlpUrls(url, yt.userAgent, yt.cookieFile, yt.flags, session.profile.vodResolveStrategy);
-      if (!hlsSessionRegistry.has(session.key)) return;
-
-      state.writer = startUrlsToHls({
-        dir: session.dir,
-        profile: session.profile,
-        urls,
-        userAgent: yt.userAgent,
-        paceInput: false,
-        onExit: () => {
-          if (!state.replacing) {
-            void hlsSessionRegistry.destroy(session.key, 'live-fallback-exit');
-          }
-        },
-      });
-
-      hlsSessionRegistry.setKillFn(session.key, async () => {
-        state.replacing = true;
-        if (state.source) await state.source.kill();
-        if (state.writer) await state.writer.kill(3000);
-        state.replacing = false;
-      });
-
-      logger.info(`[SmartPlayer] Live HLS fallback yt-dlp iniciado: key=${session.key} PID=${state.writer.pid}`);
-    } catch (err) {
-      logger.error(`[SmartPlayer] Falha no fallback live->yt-dlp HLS: key=${session.key} err=${err}`);
-      await hlsSessionRegistry.destroy(session.key, 'live-fallback-error');
-    } finally {
-      state.replacing = false;
-    }
+    void startStreamlinkSource('initial');
   }
 
   private async spawnVodSession(
@@ -505,14 +601,6 @@ export class SmartPlayer {
     } catch (err) {
       logger.warn(`[SmartPlayer] Falha ao finalizar manifesto VOD: ${err}`);
     }
-  }
-
-  private clearSessionDir(dir: string): void {
-    try {
-      for (const entry of fs.readdirSync(dir)) {
-        fs.rmSync(path.join(dir, entry), { recursive: true, force: true });
-      }
-    } catch { /* noop */ }
   }
 
   private isGenuinelyLive(stream: CacheStream): boolean {
