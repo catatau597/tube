@@ -32,6 +32,15 @@ function commonHlsOutputArgs(options: HlsOutputOptions): string[] {
   return args;
 }
 
+function outputTimingArgs(): string[] {
+  return [
+    '-max_interleave_delta', '0',
+    '-muxdelay', '0',
+    '-muxpreload', '0',
+    '-avoid_negative_ts', 'make_zero',
+  ];
+}
+
 function liveOptions(profile: HlsStartProfileValues): HlsOutputOptions {
   return {
     segmentDuration: String(profile.segmentDurationSeconds),
@@ -97,10 +106,6 @@ export function startPipeToHls(params: PipeHlsParams): ManagedProcess {
     ...extraFfmpegFlags,
     '-loglevel', 'error',
     '-fflags', '+genpts+igndts+discardcorrupt',
-    '-max_interleave_delta', '0',
-    '-muxdelay', '0',
-    '-muxpreload', '0',
-    '-avoid_negative_ts', 'make_zero',
     '-i', 'pipe:0',
     '-map', '0:v:0?',
     '-map', '0:a:0?',
@@ -109,6 +114,7 @@ export function startPipeToHls(params: PipeHlsParams): ManagedProcess {
     '-ar', '48000',
     '-ac', '2',
     '-b:a', '128k',
+    ...outputTimingArgs(),
     ...commonHlsOutputArgs(liveOptions(profile)),
   ];
 
@@ -154,10 +160,6 @@ export function startUrlsToHls(params: UrlHlsParams): ManagedProcess {
     ...extraFfmpegFlags,
     '-loglevel', 'error',
     '-fflags', '+genpts+igndts+discardcorrupt',
-    '-max_interleave_delta', '0',
-    '-muxdelay', '0',
-    '-muxpreload', '0',
-    '-avoid_negative_ts', 'make_zero',
   ];
 
   if (urls.length >= 2) {
@@ -178,6 +180,7 @@ export function startUrlsToHls(params: UrlHlsParams): ManagedProcess {
     '-ar', '48000',
     '-ac', '2',
     '-b:a', '128k',
+    ...outputTimingArgs(),
     ...commonHlsOutputArgs(hlsOptions),
   );
 
