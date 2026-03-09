@@ -9,6 +9,7 @@ const DEFAULT_WAIT_TIMEOUT_MS = 250;
 const DEFAULT_DRAIN_TIMEOUT_MS = 15_000;
 const DEFAULT_CLIENT_IDLE_TIMEOUT_MS = 30_000;
 const DEFAULT_CLIENT_WATCHDOG_INTERVAL_MS = 5_000;
+const DEFAULT_FIRST_BYTE_TIMEOUT_MS = 25_000;
 
 export interface TsClientStreamOptions {
   clientId: string;
@@ -39,6 +40,7 @@ export class TsClientStream {
   private readonly drainTimeoutMs: number;
   private readonly clientIdleTimeoutMs: number;
   private readonly clientWatchdogIntervalMs: number;
+  private readonly firstByteTimeoutMs: number;
 
   private localIndex: number;
   private consecutiveEmptyReads = 0;
@@ -46,6 +48,7 @@ export class TsClientStream {
   private chunksSent = 0;
   private skippedAheadCount = 0;
   private lastProgressAt = Date.now();
+  private readonly startedAt = Date.now();
   private stopReason: string | null = null;
   private lastBufferedOutputAt = 0;
   private maxObservedBufferedOutput = 0;
@@ -77,6 +80,10 @@ export class TsClientStream {
     this.clientWatchdogIntervalMs = this.normalizePositiveInt(
       options.clientWatchdogIntervalMs ?? getConfigNumber('TS_PROXY_CLIENT_WATCHDOG_INTERVAL_MS', DEFAULT_CLIENT_WATCHDOG_INTERVAL_MS),
       DEFAULT_CLIENT_WATCHDOG_INTERVAL_MS,
+    );
+    this.firstByteTimeoutMs = this.normalizePositiveInt(
+      getConfigNumber('TS_PROXY_FIRST_BYTE_TIMEOUT_MS', DEFAULT_FIRST_BYTE_TIMEOUT_MS),
+      DEFAULT_FIRST_BYTE_TIMEOUT_MS,
     );
   }
 
@@ -156,13 +163,27 @@ export class TsClientStream {
   private async handleEmptyRead(response: Response): Promise<string | null> {
     if (this.stopReason) return this.stopReason;
 
+    const headIndex = this.options.session.buffer.getCurrentIndex();
+    const waitingFirstByte = this.chunksSent === 0 && headIndex < 0;
+    if (waitingFirstByte) {
+      const elapsedMs = Date.now() - this.startedAt;
+      if (elapsedMs >= this.firstByteTimeoutMs) {
+        logger.warn(
+          `[ts-client-stream] Cliente encerrado por timeout de first-byte: key=${this.options.session.key} client=${this.options.clientId} elapsedMs=${elapsedMs} firstByteTimeoutMs=${this.firstByteTimeoutMs}`,
+        );
+        this.safeEnd(response);
+        this.emitState('first-byte-timeout', response);
+        return 'first-byte-timeout';
+      }
+    }
+
     this.consecutiveEmptyReads += 1;
 
     if (this.isTerminalSessionState()) {
       return 'session-closed';
     }
 
-    if (this.consecutiveEmptyReads >= this.ghostClientThreshold) {
+    if (!waitingFirstByte && this.consecutiveEmptyReads >= this.ghostClientThreshold) {
       logger.warn(
         `[ts-client-stream] Cliente encerrado por ghost: key=${this.options.session.key} client=${this.options.clientId} localIndex=${this.localIndex} headIndex=${this.options.session.buffer.getCurrentIndex()} emptyReads=${this.consecutiveEmptyReads}`,
       );

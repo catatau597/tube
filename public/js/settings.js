@@ -334,6 +334,9 @@ function configFields(section, config) {
       <label>Drain Timeout (ms)
         <input name="TS_PROXY_DRAIN_TIMEOUT_MS" type="number" min="1000" max="600000" value="${config.TS_PROXY_DRAIN_TIMEOUT_MS || 15000}" />
       </label>
+      <label>First Byte Timeout (ms)
+        <input name="TS_PROXY_FIRST_BYTE_TIMEOUT_MS" type="number" min="1000" max="600000" value="${config.TS_PROXY_FIRST_BYTE_TIMEOUT_MS || 25000}" />
+      </label>
       <label>Client Idle Timeout (ms)
         <input name="TS_PROXY_CLIENT_IDLE_TIMEOUT_MS" type="number" min="1000" max="600000" value="${config.TS_PROXY_CLIENT_IDLE_TIMEOUT_MS || 30000}" />
       </label>
@@ -423,6 +426,7 @@ function settingsPayloadBySection(section, formData) {
       TS_PROXY_READ_BATCH_CHUNKS:           pick('TS_PROXY_READ_BATCH_CHUNKS', '4'),
       TS_PROXY_CLIENT_WAIT_TIMEOUT_MS:      pick('TS_PROXY_CLIENT_WAIT_TIMEOUT_MS', '250'),
       TS_PROXY_DRAIN_TIMEOUT_MS:            pick('TS_PROXY_DRAIN_TIMEOUT_MS', '15000'),
+      TS_PROXY_FIRST_BYTE_TIMEOUT_MS:       pick('TS_PROXY_FIRST_BYTE_TIMEOUT_MS', '25000'),
       TS_PROXY_CLIENT_IDLE_TIMEOUT_MS:      pick('TS_PROXY_CLIENT_IDLE_TIMEOUT_MS', '30000'),
       TS_PROXY_CLIENT_WATCHDOG_INTERVAL_MS: pick('TS_PROXY_CLIENT_WATCHDOG_INTERVAL_MS', '5000'),
       TUBEWRANGLERR_URL:      pick('TUBEWRANGLERR_URL', ''),

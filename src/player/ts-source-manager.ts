@@ -136,6 +136,14 @@ export class TsSourceManager {
         );
         if (fallbackActivated || fallbackInProgress || finalized) return;
 
+        if (options.session.clientCount === 0) {
+          logger.info(
+            `[ts-source-manager] Streamlink finalizado sem clientes ativos, encerrando sessao: key=${options.session.key} code=${code}`,
+          );
+          finalizeSession('streamlink-exit-no-clients');
+          return;
+        }
+
         if (code !== 0 && streamlinkBytes === 0) {
           fallbackInProgress = true;
           logger.warn(
