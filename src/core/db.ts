@@ -41,16 +41,16 @@ const DEFAULT_SETTINGS: Record<string, string> = {
   STALE_HOURS: '6',
   USE_PLAYLIST_ITEMS: 'true',
   PROXY_ENABLE_ANALYTICS: 'true',
-  TS_PROXY_INITIAL_BEHIND_CHUNKS: '4',
-  TS_PROXY_MAX_CLIENT_LAG_CHUNKS: '32',
-  TS_PROXY_MAX_BUFFERED_CHUNKS: '96',
+  TS_PROXY_INITIAL_BEHIND_CHUNKS: '6',
+  TS_PROXY_MAX_CLIENT_LAG_CHUNKS: '180',
+  TS_PROXY_MAX_BUFFERED_CHUNKS: '720',
   TS_PROXY_IDLE_TIMEOUT_MS: '45000',
   TS_PROXY_SESSION_WATCHDOG_INTERVAL_MS: '5000',
   TS_PROXY_STALE_CLIENT_TIMEOUT_MS: '30000',
   TS_PROXY_GHOST_CLIENT_THRESHOLD: '30',
-  TS_PROXY_READ_BATCH_CHUNKS: '4',
+  TS_PROXY_READ_BATCH_CHUNKS: '6',
   TS_PROXY_CLIENT_WAIT_TIMEOUT_MS: '250',
-  TS_PROXY_DRAIN_TIMEOUT_MS: '15000',
+  TS_PROXY_DRAIN_TIMEOUT_MS: '30000',
   TS_PROXY_FIRST_BYTE_TIMEOUT_MS: '25000',
   TS_PROXY_CLIENT_IDLE_TIMEOUT_MS: '30000',
   TS_PROXY_CLIENT_WATCHDOG_INTERVAL_MS: '5000',
@@ -237,6 +237,38 @@ export function initDb(): Database.Database {
     tx(Object.entries({ ...DEFAULT_SETTINGS, ...envSeed }));
     logger.info('[DB] Seed inicial de settings aplicado.');
   }
+
+  // Garante que novas chaves adicionadas em releases posteriores existam em bases antigas.
+  const ensureSetting = db.prepare('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)');
+  const ensureSettingsTx = db.transaction((entries: Array<[string, string]>) => {
+    for (const [key, value] of entries) ensureSetting.run(key, value);
+  });
+  ensureSettingsTx(Object.entries(DEFAULT_SETTINGS));
+
+  // Migra automaticamente instalacoes que ainda estao nos defaults legados do TS proxy.
+  // Nao sobrescreve valores customizados.
+  const legacyTsProxyDefaults: Array<{ key: string; from: string; to: string }> = [
+    { key: 'TS_PROXY_INITIAL_BEHIND_CHUNKS', from: '4', to: '6' },
+    { key: 'TS_PROXY_MAX_CLIENT_LAG_CHUNKS', from: '32', to: '180' },
+    { key: 'TS_PROXY_MAX_BUFFERED_CHUNKS', from: '96', to: '720' },
+    { key: 'TS_PROXY_READ_BATCH_CHUNKS', from: '4', to: '6' },
+    { key: 'TS_PROXY_DRAIN_TIMEOUT_MS', from: '15000', to: '30000' },
+  ];
+  const selectSetting = db.prepare('SELECT value FROM settings WHERE key = ?');
+  const updateSetting = db.prepare(
+    'UPDATE settings SET value = ?, updated_at = datetime(\'now\') WHERE key = ?',
+  );
+  const migrateLegacyDefaultsTx = db.transaction((migrations: Array<{ key: string; from: string; to: string }>) => {
+    for (const migration of migrations) {
+      const row = selectSetting.get(migration.key) as { value: string } | undefined;
+      if (!row || row.value !== migration.from) continue;
+      updateSetting.run(migration.to, migration.key);
+      logger.info(
+        `[DB] Ajuste default TS proxy aplicado: key=${migration.key} from=${migration.from} to=${migration.to}`,
+      );
+    }
+  });
+  migrateLegacyDefaultsTx(legacyTsProxyDefaults);
 
   const usersCount = db.prepare('SELECT COUNT(*) as count FROM auth_users').get() as { count: number };
   if (usersCount.count === 0) {

@@ -4,9 +4,9 @@ import { logger } from '../core/logger';
 import { TsSession, TsSessionClientSnapshot } from './ts-session-registry';
 
 const DEFAULT_GHOST_CLIENT_THRESHOLD = 30;
-const DEFAULT_READ_BATCH_CHUNKS = 4;
+const DEFAULT_READ_BATCH_CHUNKS = 6;
 const DEFAULT_WAIT_TIMEOUT_MS = 250;
-const DEFAULT_DRAIN_TIMEOUT_MS = 15_000;
+const DEFAULT_DRAIN_TIMEOUT_MS = 30_000;
 const DEFAULT_CLIENT_IDLE_TIMEOUT_MS = 30_000;
 const DEFAULT_CLIENT_WATCHDOG_INTERVAL_MS = 5_000;
 const DEFAULT_FIRST_BYTE_TIMEOUT_MS = 25_000;

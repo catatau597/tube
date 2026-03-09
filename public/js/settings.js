@@ -305,13 +305,13 @@ function configFields(section, config) {
         <small style="opacity:0.7">Ajustes de buffer/watchdog para estabilidade com múltiplos clientes.</small>
       </div>
       <label>Initial Behind Chunks
-        <input name="TS_PROXY_INITIAL_BEHIND_CHUNKS" type="number" min="1" max="120" value="${config.TS_PROXY_INITIAL_BEHIND_CHUNKS || 4}" />
+        <input name="TS_PROXY_INITIAL_BEHIND_CHUNKS" type="number" min="1" max="120" value="${config.TS_PROXY_INITIAL_BEHIND_CHUNKS || 6}" />
       </label>
       <label>Max Client Lag Chunks
-        <input name="TS_PROXY_MAX_CLIENT_LAG_CHUNKS" type="number" min="4" max="500" value="${config.TS_PROXY_MAX_CLIENT_LAG_CHUNKS || 32}" />
+        <input name="TS_PROXY_MAX_CLIENT_LAG_CHUNKS" type="number" min="4" max="500" value="${config.TS_PROXY_MAX_CLIENT_LAG_CHUNKS || 180}" />
       </label>
       <label>Max Buffered Chunks
-        <input name="TS_PROXY_MAX_BUFFERED_CHUNKS" type="number" min="16" max="1000" value="${config.TS_PROXY_MAX_BUFFERED_CHUNKS || 96}" />
+        <input name="TS_PROXY_MAX_BUFFERED_CHUNKS" type="number" min="16" max="1000" value="${config.TS_PROXY_MAX_BUFFERED_CHUNKS || 720}" />
       </label>
       <label>Session Idle Timeout (ms)
         <input name="TS_PROXY_IDLE_TIMEOUT_MS" type="number" min="1000" max="600000" value="${config.TS_PROXY_IDLE_TIMEOUT_MS || 45000}" />
@@ -326,13 +326,13 @@ function configFields(section, config) {
         <input name="TS_PROXY_GHOST_CLIENT_THRESHOLD" type="number" min="1" max="500" value="${config.TS_PROXY_GHOST_CLIENT_THRESHOLD || 30}" />
       </label>
       <label>Read Batch Chunks
-        <input name="TS_PROXY_READ_BATCH_CHUNKS" type="number" min="1" max="100" value="${config.TS_PROXY_READ_BATCH_CHUNKS || 4}" />
+        <input name="TS_PROXY_READ_BATCH_CHUNKS" type="number" min="1" max="100" value="${config.TS_PROXY_READ_BATCH_CHUNKS || 6}" />
       </label>
       <label>Client Wait Timeout (ms)
         <input name="TS_PROXY_CLIENT_WAIT_TIMEOUT_MS" type="number" min="1" max="60000" value="${config.TS_PROXY_CLIENT_WAIT_TIMEOUT_MS || 250}" />
       </label>
       <label>Drain Timeout (ms)
-        <input name="TS_PROXY_DRAIN_TIMEOUT_MS" type="number" min="1000" max="600000" value="${config.TS_PROXY_DRAIN_TIMEOUT_MS || 15000}" />
+        <input name="TS_PROXY_DRAIN_TIMEOUT_MS" type="number" min="1000" max="600000" value="${config.TS_PROXY_DRAIN_TIMEOUT_MS || 30000}" />
       </label>
       <label>First Byte Timeout (ms)
         <input name="TS_PROXY_FIRST_BYTE_TIMEOUT_MS" type="number" min="1000" max="600000" value="${config.TS_PROXY_FIRST_BYTE_TIMEOUT_MS || 25000}" />
@@ -416,16 +416,16 @@ function settingsPayloadBySection(section, formData) {
       HTTP_PORT:              pick('HTTP_PORT',      '8888'),
       LOCAL_TIMEZONE:         pick('LOCAL_TIMEZONE', 'America/Sao_Paulo'),
       STALE_HOURS:            pick('STALE_HOURS',    '6'),
-      TS_PROXY_INITIAL_BEHIND_CHUNKS:       pick('TS_PROXY_INITIAL_BEHIND_CHUNKS', '4'),
-      TS_PROXY_MAX_CLIENT_LAG_CHUNKS:       pick('TS_PROXY_MAX_CLIENT_LAG_CHUNKS', '32'),
-      TS_PROXY_MAX_BUFFERED_CHUNKS:         pick('TS_PROXY_MAX_BUFFERED_CHUNKS', '96'),
+      TS_PROXY_INITIAL_BEHIND_CHUNKS:       pick('TS_PROXY_INITIAL_BEHIND_CHUNKS', '6'),
+      TS_PROXY_MAX_CLIENT_LAG_CHUNKS:       pick('TS_PROXY_MAX_CLIENT_LAG_CHUNKS', '180'),
+      TS_PROXY_MAX_BUFFERED_CHUNKS:         pick('TS_PROXY_MAX_BUFFERED_CHUNKS', '720'),
       TS_PROXY_IDLE_TIMEOUT_MS:             pick('TS_PROXY_IDLE_TIMEOUT_MS', '45000'),
       TS_PROXY_SESSION_WATCHDOG_INTERVAL_MS:pick('TS_PROXY_SESSION_WATCHDOG_INTERVAL_MS', '5000'),
       TS_PROXY_STALE_CLIENT_TIMEOUT_MS:     pick('TS_PROXY_STALE_CLIENT_TIMEOUT_MS', '30000'),
       TS_PROXY_GHOST_CLIENT_THRESHOLD:      pick('TS_PROXY_GHOST_CLIENT_THRESHOLD', '30'),
-      TS_PROXY_READ_BATCH_CHUNKS:           pick('TS_PROXY_READ_BATCH_CHUNKS', '4'),
+      TS_PROXY_READ_BATCH_CHUNKS:           pick('TS_PROXY_READ_BATCH_CHUNKS', '6'),
       TS_PROXY_CLIENT_WAIT_TIMEOUT_MS:      pick('TS_PROXY_CLIENT_WAIT_TIMEOUT_MS', '250'),
-      TS_PROXY_DRAIN_TIMEOUT_MS:            pick('TS_PROXY_DRAIN_TIMEOUT_MS', '15000'),
+      TS_PROXY_DRAIN_TIMEOUT_MS:            pick('TS_PROXY_DRAIN_TIMEOUT_MS', '30000'),
       TS_PROXY_FIRST_BYTE_TIMEOUT_MS:       pick('TS_PROXY_FIRST_BYTE_TIMEOUT_MS', '25000'),
       TS_PROXY_CLIENT_IDLE_TIMEOUT_MS:      pick('TS_PROXY_CLIENT_IDLE_TIMEOUT_MS', '30000'),
       TS_PROXY_CLIENT_WATCHDOG_INTERVAL_MS: pick('TS_PROXY_CLIENT_WATCHDOG_INTERVAL_MS', '5000'),

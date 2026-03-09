@@ -1,8 +1,8 @@
 import { getConfigNumber } from '../core/config-manager';
 
-const DEFAULT_INITIAL_BEHIND_CHUNKS = 4;
-const DEFAULT_MAX_CLIENT_LAG_CHUNKS = 32;
-const DEFAULT_MAX_BUFFERED_CHUNKS = 96;
+const DEFAULT_INITIAL_BEHIND_CHUNKS = 6;
+const DEFAULT_MAX_CLIENT_LAG_CHUNKS = 180;
+const DEFAULT_MAX_BUFFERED_CHUNKS = 720;
 
 interface BufferWaiter {
   minIndex: number;
